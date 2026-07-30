@@ -1,0 +1,57 @@
+# Secrets and local environment files
+.env
+.env.*
+!.env.example
+
+# Python environments and caches
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Packaging
+build/
+dist/
+*.egg-info/
+
+# Test, lint, and coverage output
+.pytest_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Type checking
+.mypy_cache/
+.pyright/
+
+# Editors and operating systems
+.idea/
+.vscode/
+.DS_Store
+
+# Logs
+logs/
+*.log
+
+# DuckDB runtime files
+*.duckdb
+*.duckdb.wal
+data/duckdb/*
+!data/duckdb/.gitkeep
+
+# FAISS and generated vector metadata
+*.faiss
+data/faiss/*
+!data/faiss/.gitkeep
+
+# Runtime data and generated archives
+data/raw/*
+!data/raw/.gitkeep
+data/staging/*
+!data/staging/.gitkeep
+data/snapshots/*
+!data/snapshots/.gitkeep
+data/backups/*
+!data/backups/.gitkeep

@@ -44,6 +44,10 @@ black
 
 ruff
 
+## Type Checking
+
+mypy
+
 ## Typing
 
 All public functions must include type hints.
@@ -64,19 +68,14 @@ Google Style Docstring.
 
 ## Folder Layout
 
-backend/
-
-frontend/
-
-database/
-
-tests/
-
-scripts/
-
-docker/
-
-docs/
+- `apps/`: deployable API, scheduler, worker, and web applications
+- `config/`: application, provider, and prompt configuration
+- `data/`: local DuckDB, FAISS, raw data, snapshots, and backups
+- `docs/`: specifications, task definitions, and operations documentation
+- `infra/`: Docker, Compose, and reserved infrastructure
+- `scripts/`: bootstrap, maintenance, and operational scripts
+- `src/`: backend application packages
+- `tests/`: unit, integration, and fixture packages
 
 ## Forbidden
 

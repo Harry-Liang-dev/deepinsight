@@ -10,7 +10,7 @@
 | DuckDB Layer | Complete | 100% | Scoped connections, transactions, typed mappings, and Repository CRUD |
 | FAISS Layer | Planned | 0% | No vector index code |
 | Memory | Planned | 0% | Package scaffold only |
-| Data Ingestion | Planned | 0% | Package scaffold only |
+| Data Ingestion | Complete | 100% | Unified Provider adapters, canonical normalization, raw text retention, deterministic pending chunks, audited idempotent DuckDB ingestion, and offline Fake Provider |
 | LLM Gateway | Complete | 100% | OpenAI Responses API provider, deterministic DuckDB cache, safe metadata logging, dependency injection, and offline Fake Provider |
 | Analyst Agent | Planned | 0% | Package scaffold only |
 | Manager Agent | Planned | 0% | Package scaffold only |

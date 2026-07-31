@@ -156,6 +156,48 @@ directory. They never read or write the configured development database.
 Schema changes currently use idempotent bootstrap DDL only. No migration
 framework is installed; a formal migration strategy remains a later decision.
 
+## Data ingestion
+
+Provider source metadata lives in `config/providers.yaml`; it contains no
+credentials. All production credential values remain environment-owned.
+Wind, CNINFO, HKEXnews, SEC EDGAR, FRED, Alpaca, X, LSEG, and Bloomberg are
+explicit connector boundaries in the first release. They do not make network
+requests until a separately authorized implementation and credentials are
+configured.
+
+Offline development and tests use `FakeProviderAdapter`. Construct the
+ingestion service by injecting the DuckDB Repositories, `DataNormalizer`, a
+configured `RawTextStore`, and a configured `DocumentChunker`. No business
+module reads environment variables or opens a Provider connection during
+import.
+
+Raw document text is stored verbatim as UTF-8 below the injected raw-data root.
+The source directory and file name are deterministic hashes, and
+`text_documents.raw_text_path` retains the resulting reference. Source ID,
+source URL, publish timestamp, checksum, and ingestion/creation timestamp are
+stored in canonical records where the MASTER_SPEC schema provides them.
+
+The ingestion request supports `full`, `incremental`, and `repair` job types.
+Supplying `target_date` enables EOD ingestion; document start and end dates
+must be supplied together. Every run transitions from `running` to either
+`completed` or `failed`. On failure, inspect `ingestion_jobs.error_message` and
+`rows_written`; already committed normalized rows are attributable and may be
+replayed idempotently with a repair job.
+
+Document chunks are prepared for, but not written to, FAISS. Their metadata
+explicitly says `embedding_status: pending`. The Embedding/FAISS module must
+generate the vector before changing that state.
+
+Default ingestion tests are fully offline:
+
+```bash
+python -m pytest \
+  tests/unit/adapters \
+  tests/unit/services/test_data_normalization.py \
+  tests/unit/services/test_document_processing.py \
+  tests/integration/services/test_data_ingestion.py
+```
+
 ## LLM Gateway
 
 `src.services.LLMGateway` is the only Phase One text-inference entry point. It

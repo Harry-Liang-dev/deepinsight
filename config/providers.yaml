@@ -1,1 +1,82 @@
-
+providers:
+  - source_id: wind_wds
+    source_name: Wind Data Service
+    market_scope: GLOBAL
+    source_type: market
+    auth_mode: licensed
+    enabled: false
+    credential_env:
+      - WIND_USERNAME
+      - WIND_PASSWORD
+      - WIND_API_KEY
+    notes: Licensed connector boundary; no network implementation in this release.
+  - source_id: cninfo
+    source_name: CNINFO
+    market_scope: CN
+    source_type: filing
+    auth_mode: api_key
+    enabled: false
+    credential_env:
+      - CNINFO_API_KEY
+    notes: Official connector boundary; no network implementation in this release.
+  - source_id: hkexnews
+    source_name: HKEXnews
+    market_scope: HK
+    source_type: filing
+    auth_mode: internal
+    enabled: false
+    credential_env: []
+    notes: Official search connector boundary; no network implementation in this release.
+  - source_id: sec_edgar
+    source_name: SEC EDGAR
+    market_scope: US
+    source_type: filing
+    auth_mode: internal
+    enabled: false
+    credential_env:
+      - SEC_USER_AGENT
+    notes: Official connector boundary; no network implementation in this release.
+  - source_id: fred
+    source_name: FRED
+    market_scope: US
+    source_type: macro
+    auth_mode: api_key
+    enabled: false
+    credential_env:
+      - FRED_API_KEY
+    notes: Macro Adapter method remains pending specification.
+  - source_id: alpaca_market_data
+    source_name: Alpaca Market Data
+    market_scope: US
+    source_type: market
+    auth_mode: api_key
+    enabled: false
+    credential_env:
+      - APCA_API_KEY_ID
+      - APCA_API_SECRET_KEY
+    notes: Official connector boundary; no network implementation in this release.
+  - source_id: x_search_posts
+    source_name: X Search Posts
+    market_scope: US
+    source_type: social
+    auth_mode: oauth
+    enabled: false
+    credential_env:
+      - X_BEARER_TOKEN
+    notes: Official connector boundary; no network implementation in this release.
+  - source_id: lseg_news
+    source_name: LSEG Reuters News
+    market_scope: GLOBAL
+    source_type: news
+    auth_mode: licensed
+    enabled: false
+    credential_env: []
+    notes: Licensed connector boundary only.
+  - source_id: bloomberg_data
+    source_name: Bloomberg Data
+    market_scope: GLOBAL
+    source_type: market
+    auth_mode: licensed
+    enabled: false
+    credential_env: []
+    notes: Licensed connector boundary only.

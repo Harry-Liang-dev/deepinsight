@@ -181,3 +181,42 @@ the OpenAI SDK replaceable and fully testable offline. Delegating retries to
 the official SDK avoids duplicate retry loops, canonical cache keys make
 results reproducible, and the narrow logging boundary supplies operational
 metadata without exposing research content or credentials.
+
+---
+
+## ADR-0009
+
+Date
+
+2026-07-31
+
+Decision
+
+Phase One data providers implement `BaseProviderAdapter` and convert external
+SDK or API payloads into a small stable ingestion vocabulary inside the
+adapter boundary. `DataNormalizer` alone converts that vocabulary into strict
+domain records. Unconfigured official and licensed connectors are
+non-networking placeholders; offline execution uses `FakeProviderAdapter`.
+
+Raw document text is stored verbatim as UTF-8 below an injected root, using a
+source hash directory and document-ID hash file name. Canonical document
+metadata stores the path, checksum, source ID, URL, and timestamps.
+
+Document chunking uses explicit constructor-provided character window and
+overlap values. Chunk IDs and reserved vector IDs are deterministic. Ingestion
+does not create an embedding or update FAISS: persisted chunks explicitly set
+`metadata_json.embedding_status` to `pending`, keep `token_count` null, and
+carry only the configured target embedding model, dimension, and namespace.
+
+Ingestion writes are idempotent per existing table keys. A multi-stream job is
+not globally atomic across Repository calls; if a later stream fails, already
+committed rows remain and the failed `ingestion_jobs` record reports their
+exact count. A repair run can safely replay them.
+
+Reason
+
+This prevents provider response formats from leaking upward, makes licensed
+access impossible by accident, preserves source evidence, and supplies stable
+chunks to the future Embedding/FAISS task without pretending vectors already
+exist. Explicit failed-job accounting preserves operational clarity while
+reusing the existing per-operation Repository transaction boundary.

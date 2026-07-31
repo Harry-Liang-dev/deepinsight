@@ -23,7 +23,9 @@ indexes, LLM calls, or agent behavior.
 | US | `US:<uppercase ticker>` | `US:AAPL` |
 
 Asset normalization from provider-specific symbols is outside the domain model
-task. The model validates canonical values only.
+task. The model validates canonical values only. The Data Ingestion module now
+owns this conversion through `AssetIdentifierNormalizer`; ambiguous bare CN
+symbols require an explicit exchange rather than inferring one.
 
 ## Central enumerations
 
@@ -121,6 +123,31 @@ portfolio, backtest result, or executable trading signal.
 | `ReportPipelineProtocol` | Research request to final report |
 
 Protocols contain no implementation and perform no I/O.
+
+## Data ingestion boundary
+
+`BaseProviderAdapter` is the concrete ingestion contract. Its four methods
+return the stable adapter vocabulary for instruments, EOD bars, and documents.
+Provider SDK response objects and provider-specific field names are converted
+inside adapters and are never exposed to Repositories or upper layers.
+
+`DataNormalizer` converts adapter records into `InstrumentRecord`,
+`EodBarRecord`, and `TextDocumentRecord`. Pydantic validation is supplemented
+with finite/non-negative numeric checks and OHLC consistency checks. Optional
+missing values stay null; missing required values fail the ingestion job.
+
+`DocumentChunker` uses explicitly configured character windows and overlap.
+Chunk IDs, indexes, and reserved vector IDs are deterministic. Because Data
+Ingestion does not generate embeddings, each chunk stores
+`metadata_json.embedding_status = "pending"` and leaves `token_count` null.
+The target embedding model, dimension, and namespace must be supplied to the
+chunker; they are not hard-coded by the ingestion service.
+
+`DataIngestionService` persists records through existing Repositories and
+records every run in `ingestion_jobs`. Its row count includes instruments,
+bars, documents, and chunks actually committed. A later stream failure leaves
+an explicit failed job with the committed row count rather than an ambiguous
+job state.
 
 ## Minimum-design assumptions
 

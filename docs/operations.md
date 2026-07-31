@@ -156,6 +156,27 @@ directory. They never read or write the configured development database.
 Schema changes currently use idempotent bootstrap DDL only. No migration
 framework is installed; a formal migration strategy remains a later decision.
 
+## Research report pipeline
+
+`ResearchCoordinator` owns the fixed Agent execution sequence and Agent Run
+audit. `ReportAssembler` begins from its structured `ResearchTaskResult`; it
+does not repeat inference or retrieval.
+
+The report lifecycle is:
+
+1. Validate the single-asset request, all standard sections, all eight Agent
+   outputs, and every citation.
+2. Build Markdown and JSON from one in-memory standard section representation.
+3. Persist the report and sections with `running` status.
+4. Write an attributable `report_trace` item to L3 Memory under
+   `REPORT:<report_id>`.
+5. Persist the same report with `completed` status.
+
+Report persistence and Memory are injected through narrow interfaces. The
+report package does not import DuckDB or FAISS implementations and never calls
+an external Provider or LLM. If persistence or Memory fails, the completed
+state is not written.
+
 ## Data ingestion
 
 Provider source metadata lives in `config/providers.yaml`; it contains no

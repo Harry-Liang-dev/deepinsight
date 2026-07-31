@@ -14,7 +14,7 @@
 | LLM Gateway | Complete | 100% | OpenAI Responses API provider, deterministic DuckDB cache, safe metadata logging, dependency injection, and offline Fake Provider |
 | Analyst Agent | Complete | 100% | Four cited role Agents, deterministic fundamental/technical operators, versioned prompts, explicit missing data, and offline Fake Gateway tests |
 | Manager Agent | Complete | 100% | Research, Bull, Bear, and Risk Managers plus fixed research coordination, evidence inheritance, run audit, and degraded-chain tests |
-| Report Generator | Planned | 0% | Package scaffold only |
+| Report Generator | Complete | 100% | Ten-section single-asset Markdown/JSON assembly, evidence validation, lifecycle persistence, and L3 trace |
 | FastAPI | Planned | 0% | Application and package scaffold only |
 | Scheduler and Worker | Planned | 0% | Application package scaffold only |
 | Web UI | Planned | 0% | Application package scaffold only |

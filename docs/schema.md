@@ -287,3 +287,45 @@ operational inputs.
 Report and section writes share one transaction. Other Repository writes use
 the same explicit commit-or-rollback boundary. Connections are scoped to an
 operation and are never opened during module import.
+
+## Standard single-asset report
+
+The Phase One report generator accepts one completed, structured
+`ResearchTaskResult` and does not invoke an Agent, LLM, Provider, DuckDB, or
+FAISS directly. The only implemented report shape is `single_asset`.
+
+The standard report requires each section exactly once, in this order:
+
+1. `executive_view`
+2. `macro_context`
+3. `fundamentals`
+4. `technical_text`
+5. `sentiment`
+6. `news_events`
+7. `bull_case`
+8. `bear_case`
+9. `risk_review`
+10. `final_synthesis`
+
+Every JSON section uses the same epistemic structure:
+
+| Field | Meaning |
+|---|---|
+| `facts` | Attributable evidence supplied in the Agent context |
+| `inferences` | Evidence-linked Analyst or Manager conclusions |
+| `risk_warnings` | Evidence-linked conflicts, invalidators, and risks |
+| `uncertainties` | Explicit limits or missing evidence; citations are not invented |
+
+Each fact, inference, and risk warning contains text plus one or more
+`SourceReference` objects. References must already exist in the supplied
+document or Memory context. They are deduplicated by document, excerpt,
+provider, and source URL while preserving first occurrence order.
+
+`report_json` stores the ten section objects by section name. `report_markdown`
+is rendered from those same objects, so the two formats cannot diverge through
+separate assembly logic. `ReportSection.citations` contains the deduplicated
+references used by that section, and `ResearchReport.source_trace` contains
+the ordered report-wide union.
+
+The report is first persisted with `running` status. It becomes `completed`
+only after its attributable L3 report-trace Memory write succeeds.

@@ -137,3 +137,47 @@ are explicitly marked as pending. The native boundary implements the required
 schema and transaction behavior without adding a new component. Explicit
 Repositories keep the implementation replaceable when those pending decisions
 are resolved.
+
+---
+
+## ADR-0008
+
+Date
+
+2026-07-31
+
+Decision
+
+Phase One LLM inference uses one provider implementation:
+`OpenAIProvider` over the official OpenAI Responses API. `LLMGateway` depends
+on a structural provider interface and accepts injected Provider and cache
+implementations. The Gateway public contract remains
+`invoke_json(model, system_prompt, input_payload) -> JSON object`, as specified
+by `MASTER_SPEC`.
+
+Because the Gateway contract does not yet accept a caller-supplied JSON Schema,
+the provider requests Responses API JSON-object output and validates that the
+returned text decodes to an object. Schema-specific structured parsing is
+deferred until a schema parameter is formally specified; no inference
+parameters are added speculatively.
+
+The official SDK owns transient retries and receives the configured timeout and
+maximum additional retry count. Cache keys are SHA-256 digests of canonical
+JSON containing the model, full system prompt, and input payload. New entries
+have no expiry, and the Gateway does not add an unspecified `force_refresh`
+path.
+
+Gateway observability is limited to provider, model, success/error status,
+cache-hit state, latency, available token usage, available response ID, a
+truncated request fingerprint, and a stable error code. It never logs API
+keys, prompts, user payloads, or raw provider exceptions. Persisting full Agent
+run inputs and outputs remains outside the Gateway and belongs to the future
+Agent execution boundary.
+
+Reason
+
+This preserves the exact Phase One inference and cache contract while keeping
+the OpenAI SDK replaceable and fully testable offline. Delegating retries to
+the official SDK avoids duplicate retry loops, canonical cache keys make
+results reproducible, and the narrow logging boundary supplies operational
+metadata without exposing research content or credentials.

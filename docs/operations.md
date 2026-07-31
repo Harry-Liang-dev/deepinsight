@@ -103,6 +103,9 @@ Important environment variables:
 | `OPENAI_MODEL_DEFAULT` | Default reasoning model |
 | `OPENAI_MODEL_FAST` | Faster model |
 | `OPENAI_EMBEDDING_MODEL` | Embedding model |
+| `OPENAI_TIMEOUT_SECONDS` | Per-request OpenAI timeout in seconds |
+| `OPENAI_MAX_RETRIES` | Additional retries performed by the official SDK |
+| `OPENAI_STORE_REMOTE` | Whether OpenAI may retain Responses API output |
 
 Application processes must call `load_settings()` and receive the resulting
 object through dependency injection. Business modules must not read
@@ -152,3 +155,45 @@ directory. They never read or write the configured development database.
 
 Schema changes currently use idempotent bootstrap DDL only. No migration
 framework is installed; a formal migration strategy remains a later decision.
+
+## LLM Gateway
+
+`src.services.LLMGateway` is the only Phase One text-inference entry point. It
+uses the official OpenAI Python SDK and the Responses API. Model names,
+credentials, timeout, retry count, and remote-storage behavior come from
+`OpenAISettings`; no service reads environment variables directly.
+
+Create the production provider through the Gateway default and inject the
+DuckDB cache Repository:
+
+```python
+from src.core import load_settings
+from src.repositories import DuckDBDatabase, LLMCacheRepository
+from src.services import LLMGateway
+
+settings = load_settings()
+database = DuckDBDatabase(settings.storage.duckdb_path)
+database.bootstrap()
+gateway = LLMGateway(LLMCacheRepository(database), settings.openai)
+```
+
+`invoke_json(model, system_prompt, input_payload)` sends the system prompt as
+Responses API instructions and sends a deterministic JSON serialization of the
+input payload as the user input. Responses must decode to a JSON object.
+Identical model, prompt, and canonical payload values reuse the local
+`llm_cache` entry without contacting OpenAI.
+
+`OPENAI_MAX_RETRIES` is passed to the official SDK and means additional
+attempts after the initial request. Timeout, rate-limit, authentication,
+invalid-request, connection, remote-service, and invalid-response failures are
+mapped to stable service exceptions. Public exception messages and structured
+logs never include API keys, prompts, user payloads, or raw provider errors.
+
+Gateway logs contain only provider name, model name, status, cache-hit flag,
+latency, token usage when available, response ID when available, a truncated
+request fingerprint, and a stable error code. Agent-run persistence remains
+the responsibility of the later Agent execution layer.
+
+Tests must inject `FakeLLMProvider`, an in-process client stub, or an
+`httpx.MockTransport`. The default test suite must never use a real API key,
+make a real OpenAI request, or consume API quota.

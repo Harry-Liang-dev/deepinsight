@@ -11,7 +11,7 @@
 | FAISS Layer | Planned | 0% | No vector index code |
 | Memory | Planned | 0% | Package scaffold only |
 | Data Ingestion | Planned | 0% | Package scaffold only |
-| LLM Gateway | Planned | 0% | Package scaffold only |
+| LLM Gateway | Complete | 100% | OpenAI Responses API provider, deterministic DuckDB cache, safe metadata logging, dependency injection, and offline Fake Provider |
 | Analyst Agent | Planned | 0% | Package scaffold only |
 | Manager Agent | Planned | 0% | Package scaffold only |
 | Report Generator | Planned | 0% | Package scaffold only |

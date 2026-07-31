@@ -345,3 +345,43 @@ does not define a queue or status path. A replaceable in-process service is the
 smallest reliable Phase One implementation and avoids adding an unauthorized
 distributed component. Unified safe errors and query-only snapshot behavior
 make the public boundary explicit without leaking storage or provider details.
+
+---
+
+## ADR-0013
+
+Date
+
+2026-07-31
+
+Decision
+
+`ResearchWorkflowService` is the Phase One application boundary from
+`GenerateReportRequest` to a completed `ResearchReport`. It sequences existing
+modules without reimplementing them: provider ingestion, normalized
+Repository reads, pending document embedding, deterministic features,
+attributable Memory retrieval, the fixed eight-Agent coordinator, and
+`ResearchReportPipeline`.
+
+The first executable end-to-end composition is a separate offline API entry.
+It uses fixed provider records, `FakeLLMProvider`, `FakeEmbeddingService`,
+temporary DuckDB, and temporary FAISS. It never falls back silently between
+Fake and real OpenAI behavior. The safe default API remains unconfigured until
+a deployment composition explicitly supplies real provider and model
+dependencies.
+
+Redis queues, durable report jobs, Worker and Scheduler protocols,
+multi-process DuckDB locking, Web UI, snapshots, backups, and Docker Compose
+are not selected by this decision. Their task specification remains
+ambiguous, so the minimal workflow continues to use the existing single-process
+task boundary.
+
+Reason
+
+A thin application service closes the report loop while preserving every
+replaceable module boundary and keeping the API free of business logic. A
+separate explicit offline composition makes installation and regression tests
+deterministic without credentials, network access, or accidental use of Fake
+research in a production entry point. Deferring unresolved distributed and
+operational protocols avoids adding unapproved components under the guise of
+integration.

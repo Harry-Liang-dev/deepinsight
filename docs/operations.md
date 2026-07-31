@@ -213,6 +213,49 @@ API-focused checks are:
 "$CONDA_PREFIX/bin/python" -m pytest tests/unit/api tests/integration/api
 ```
 
+## Offline end-to-end workflow
+
+Run a complete no-credential demonstration API:
+
+```bash
+"$CONDA_PREFIX/bin/python" -m uvicorn apps.api.offline_main:app \
+  --host 127.0.0.1 \
+  --port 8001
+```
+
+The offline composition uses fixed US single-asset data, Fake LLM responses,
+Fake Embedding, and an ephemeral temporary storage root. It exercises:
+
+1. FastAPI report submission and task state
+2. provider ingestion, normalization, raw text, and DuckDB writes
+3. document embedding and persistent FAISS sidecars
+4. attributable Memory retrieval
+5. four Analysts and four Managers with Agent Run audit
+6. ten-section report assembly, report persistence, and L3 trace Memory
+7. report query through the public API
+
+It never instantiates an OpenAI client. An `OPENAI_API_KEY` is neither required
+nor used by this entry point, and LLM logs contain request fingerprints rather
+than prompts, payloads, or credentials.
+
+Run the deterministic success and failure checks:
+
+```bash
+"$CONDA_PREFIX/bin/python" -m pytest \
+  tests/integration/test_research_workflow_e2e.py -q
+```
+
+The test rebuilds DuckDB and FAISS Repository objects after generation to
+verify persisted reports, document vectors, L1 Memory, and L3 report Memory
+remain readable. A Fake LLM timeout case verifies that the API job becomes
+`failed` and no report is silently created.
+
+The offline app is not the unresolved Worker/Redis architecture. Report job
+state remains process-local and one worker is required. Redis message shape,
+durable job storage, multi-process DuckDB locking, Scheduler timing, Web UI,
+snapshot consistency, and recovery policy remain pending and are not inferred
+by this integration.
+
 ## Data ingestion
 
 Provider source metadata lives in `config/providers.yaml`; it contains no

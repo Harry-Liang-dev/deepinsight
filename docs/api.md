@@ -12,6 +12,12 @@ health endpoint works, while unconfigured report generation and Memory
 operations fail explicitly rather than opening DuckDB, FAISS, or an LLM
 Provider during import.
 
+`apps.api.offline_main:app` is a separate deterministic demonstration entry.
+It injects the complete local application workflow with fixed provider data,
+Fake LLM responses, Fake Embedding, temporary DuckDB, and temporary FAISS.
+It supports the same public report routes without an API key or network call.
+The temporary artifacts are removed when that demo process exits.
+
 ## Phase One endpoints
 
 | Method | Path | Success | Contract |
@@ -34,6 +40,12 @@ state. It has no distributed queue: jobs are not durable across process
 restarts, and a deployment must run one API worker if it relies on this task
 status implementation. A later durable task service can replace the injected
 protocol without changing routes.
+
+The injected report generator is `ResearchWorkflowService`. It owns only
+application sequencing: ingestion, normalized context reads, document
+indexing, deterministic feature calculation, one Memory search, fixed Agent
+coordination, and report finalization. Routes remain unaware of all storage,
+vector, provider, LLM, and Agent implementations.
 
 Snapshot GET only queries metadata for an existing snapshot; it never creates
 one. Responses contain logical artifact names only and reject absolute or

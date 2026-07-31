@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from datetime import date
+
+from src.models.identifiers import AssetId
 from src.repositories.base import (
     BaseRepository,
     decode_json_object,
@@ -113,10 +116,35 @@ class DocumentRepository(BaseRepository):
         )
         if row is None:
             return None
-        values = dict(zip(_DOCUMENT_COLUMNS, row, strict=True))
-        if values["metadata_json"] is not None:
-            values["metadata_json"] = decode_json_object(values["metadata_json"])
-        return TextDocumentRecord.model_validate(values)
+        return _map_document(row)
+
+    def list_documents(
+        self,
+        asset_id: AssetId,
+        *,
+        end_date: date,
+    ) -> list[TextDocumentRecord]:
+        """Return asset documents available through the report date.
+
+        Args:
+            asset_id: Canonical security identifier.
+            end_date: Inclusive publication-date cutoff.
+
+        Returns:
+            Available documents in deterministic chronological order.
+        """
+
+        rows = self._fetch_all(
+            f"""
+            SELECT {", ".join(_DOCUMENT_COLUMNS)}
+            FROM text_documents
+            WHERE asset_id = ?
+              AND (publish_ts IS NULL OR CAST(publish_ts AS DATE) <= ?)
+            ORDER BY publish_ts NULLS LAST, document_id
+            """,
+            (str(asset_id), end_date),
+        )
+        return [_map_document(row) for row in rows]
 
     def upsert_chunk(self, record: DocumentChunkRecord) -> None:
         """Insert or update one document chunk and FAISS sidecar mapping.
@@ -195,3 +223,10 @@ class DocumentRepository(BaseRepository):
 
 def _placeholders(count: int) -> str:
     return ", ".join("?" for _ in range(count))
+
+
+def _map_document(row: tuple[object, ...]) -> TextDocumentRecord:
+    values = dict(zip(_DOCUMENT_COLUMNS, row, strict=True))
+    if values["metadata_json"] is not None:
+        values["metadata_json"] = decode_json_object(values["metadata_json"])
+    return TextDocumentRecord.model_validate(values)

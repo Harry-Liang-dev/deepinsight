@@ -305,6 +305,38 @@ class MarketDataRepository(BaseRepository):
         )
         return None if row is None else map_row(EodBarRecord, _EOD_COLUMNS, row)
 
+    def list_eod_bars(
+        self,
+        asset_id: AssetId,
+        *,
+        end_date: date,
+        limit: int = 60,
+    ) -> list[EodBarRecord]:
+        """Return recent bars in chronological order for feature computation.
+
+        Args:
+            asset_id: Canonical security identifier.
+            end_date: Inclusive latest trading date.
+            limit: Maximum number of recent observations.
+
+        Returns:
+            At most ``limit`` normalized bars ordered oldest to newest.
+        """
+
+        if limit <= 0:
+            raise ValueError("EOD bar limit must be positive")
+        rows = self._fetch_all(
+            f"""
+            SELECT {", ".join(_EOD_COLUMNS)}
+            FROM eod_bars
+            WHERE asset_id = ? AND trade_date <= ?
+            ORDER BY trade_date DESC
+            LIMIT ?
+            """,
+            (str(asset_id), end_date, limit),
+        )
+        return [map_row(EodBarRecord, _EOD_COLUMNS, row) for row in reversed(rows)]
+
     def upsert_fundamental(self, record: FundamentalRecord) -> None:
         """Persist one normalized fundamental observation.
 
@@ -351,6 +383,33 @@ class MarketDataRepository(BaseRepository):
             if row is None
             else map_row(FundamentalRecord, _FUNDAMENTAL_COLUMNS, row)
         )
+
+    def list_fundamentals(
+        self,
+        asset_id: AssetId,
+        *,
+        end_date: date,
+    ) -> list[FundamentalRecord]:
+        """Return available fundamental observations through a report date.
+
+        Args:
+            asset_id: Canonical security identifier.
+            end_date: Inclusive fiscal-period cutoff.
+
+        Returns:
+            Normalized observations in chronological order.
+        """
+
+        rows = self._fetch_all(
+            f"""
+            SELECT {", ".join(_FUNDAMENTAL_COLUMNS)}
+            FROM fundamentals
+            WHERE asset_id = ? AND fiscal_period_end <= ?
+            ORDER BY fiscal_period_end, report_type
+            """,
+            (str(asset_id), end_date),
+        )
+        return [map_row(FundamentalRecord, _FUNDAMENTAL_COLUMNS, row) for row in rows]
 
     def upsert_macro_observation(self, record: MacroObservationRecord) -> None:
         """Persist one normalized macro observation.

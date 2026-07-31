@@ -5,9 +5,21 @@ from src.orchestration.report_pipeline import (
     ReportStore,
     ResearchReportPipeline,
 )
+from src.orchestration.research_workflow import (
+    AgentResearchError,
+    MissingResearchEvidenceError,
+    ResearchWorkflowError,
+    ResearchWorkflowService,
+    UnsupportedResearchRequestError,
+)
 
 __all__ = [
+    "AgentResearchError",
+    "MissingResearchEvidenceError",
     "ReportMemoryWriter",
     "ReportStore",
     "ResearchReportPipeline",
+    "ResearchWorkflowError",
+    "ResearchWorkflowService",
+    "UnsupportedResearchRequestError",
 ]

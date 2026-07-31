@@ -329,3 +329,16 @@ the ordered report-wide union.
 
 The report is first persisted with `running` status. It becomes `completed`
 only after its attributable L3 report-trace Memory write succeeds.
+
+## Integration read models
+
+The end-to-end application workflow adds no table, column, or index.
+`MarketDataRepository.list_eod_bars` and `list_fundamentals` read normalized
+feature inputs by canonical asset and inclusive report date.
+`DocumentRepository.list_documents` reads attributable asset documents
+available through that date; ordered chunks remain available through
+`list_chunks`.
+
+These methods return existing domain records and keep SQL inside Repository
+classes. The workflow never introduces a database model into Agent, Memory,
+report, or API contracts.

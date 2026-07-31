@@ -4,9 +4,10 @@
 |---|---|---:|---|
 | Repository Scaffold | Complete | 100% | Directory and Python package structure only |
 | Foundation | Complete | 100% | Conda Python 3.12, uv, pytest, Ruff, Black, mypy, and health checks |
-| Configuration | Planned | 0% | Package scaffold only |
-| Database Schema | Planned | 0% | No database code |
-| DuckDB Layer | Planned | 0% | No Repository code |
+| Configuration | Complete | 100% | Typed environment settings, secret handling, and structlog initialization |
+| Domain Models | Complete | 100% | Pydantic contracts, canonical asset identity, enums, and module Protocols |
+| Database Schema | Complete | 100% | All MASTER_SPEC tables and indexes have idempotent bootstrap |
+| DuckDB Layer | Complete | 100% | Scoped connections, transactions, typed mappings, and Repository CRUD |
 | FAISS Layer | Planned | 0% | No vector index code |
 | Memory | Planned | 0% | Package scaffold only |
 | Data Ingestion | Planned | 0% | Package scaffold only |

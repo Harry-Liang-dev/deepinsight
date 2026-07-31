@@ -1,8 +1,9 @@
 # Domain Schema
 
-This document describes Phase One cross-module contracts. These are Pydantic
-models and Protocol interfaces only; they do not create DuckDB tables, FAISS
-indexes, LLM calls, or agent behavior.
+This document describes Phase One cross-module contracts and their persistence
+boundaries. Pydantic models and Protocol interfaces perform no I/O themselves;
+the later sections identify the Repositories and services that implement
+DuckDB and FAISS storage.
 
 ## Shared conventions
 
@@ -72,7 +73,41 @@ to the declared market.
 - `MemorySearchResponse`
 
 Importance values are constrained to `[0, 1]`. Similarity score is a plain
-float because MASTER_SPEC does not define a normalized score range.
+float because MASTER_SPEC does not define a normalized score range. Every
+Memory write requires a `SourceReference`; search results return that source,
+the Memory type, importance score, and creator so callers can cite evidence
+without reconstructing or inventing attribution. Searches may additionally
+filter canonical `asset_ids`.
+
+## Memory and vector boundary
+
+`MemoryService` maps each `MemoryLevel` to exactly one persistent namespace:
+
+| Level | FAISS namespace |
+|---|---|
+| `L0` | `memory_L0_v1` |
+| `L1` | `memory_L1_v1` |
+| `L2` | `memory_L2_v1` |
+| `L3` | `memory_L3_v1` |
+| `L4` | `memory_L4_v1` |
+
+The namespace key inside a Memory record remains a separate exact-match
+isolation boundary. It can identify a market, asset, report, or research task.
+FAISS implementation objects never cross `FaissVectorRepository`; upper
+layers receive only validated vector IDs and similarity candidates.
+
+Each namespace directory contains `index.faiss`, `vector_meta.parquet`, and
+`manifest.json`. The manifest records namespace, embedding model and
+dimension, cosine distance, authoritative source table, `IndexFlatIP`, and
+creation time. Dense vectors are normalized before insertion and query, so
+inner product implements cosine similarity. DuckDB remains authoritative for
+Memory text, source, creator, times, importance, and filters.
+
+`EmbeddingService` is the replaceable text-to-vector interface.
+`OpenAIEmbeddingService` is the configured production adapter and
+`FakeEmbeddingService` is deterministic and offline. `DocumentEmbeddingService`
+advances existing document chunks from `embedding_status = pending` to
+`indexed` only after the matching vector is persisted.
 
 ## LLM contracts
 
@@ -203,6 +238,7 @@ The following indexes are initialized:
 - `idx_corporate_events_asset_date`
 - `idx_text_documents_asset_publish`
 - `idx_memory_items_level_namespace_ts`
+- `idx_memory_items_faiss_mapping` (unique namespace/vector mapping)
 - `idx_agent_runs_report_agent`
 - `idx_reports_date_market`
 

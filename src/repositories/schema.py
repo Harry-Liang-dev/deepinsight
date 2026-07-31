@@ -29,6 +29,7 @@ CORE_INDEXES = frozenset(
         "idx_eod_bars_asset_date",
         "idx_fundamentals_asset_period",
         "idx_macro_series_key_date",
+        "idx_memory_items_faiss_mapping",
         "idx_memory_items_level_namespace_ts",
         "idx_reports_date_market",
         "idx_text_documents_asset_publish",
@@ -337,6 +338,10 @@ INDEX_DDL = (
     """
     CREATE INDEX IF NOT EXISTS idx_memory_items_level_namespace_ts
     ON memory_items (memory_level, namespace_key, effective_ts)
+    """,
+    """
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_memory_items_faiss_mapping
+    ON memory_items (faiss_namespace, faiss_vector_id)
     """,
     """
     CREATE INDEX IF NOT EXISTS idx_agent_runs_report_agent

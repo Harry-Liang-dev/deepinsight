@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Self
 
-from pydantic import Field
+from pydantic import Field, field_validator, model_validator
 
 from src.models.enums import AgentStatus, MemoryLevel
 from src.models.identifiers import AssetId
@@ -22,8 +23,17 @@ class MemoryWriteRequest(DomainModel):
     asset_id: AssetId | None = None
     memory_type: str = Field(default="generic", min_length=1)
     importance_score: float = Field(default=0.5, ge=0.0, le=1.0)
-    source_ref_json: SourceReference | None = None
+    source_ref_json: SourceReference
     created_by: str = Field(default="system", min_length=1)
+
+    @field_validator("namespace_key", "summary_text", "memory_type", "created_by")
+    @classmethod
+    def reject_whitespace_only(cls, value: str) -> str:
+        """Reject values that satisfy length checks with whitespace only."""
+
+        if not value.strip():
+            raise ValueError("memory text fields cannot be blank")
+        return value
 
 
 class MemoryWriteResult(DomainModel):
@@ -44,6 +54,33 @@ class MemorySearchRequest(DomainModel):
     top_k: int = Field(default=8, gt=0)
     time_decay_days: int | None = Field(default=None, gt=0)
     min_importance_score: float = Field(default=0.0, ge=0.0, le=1.0)
+    asset_ids: list[AssetId] | None = None
+
+    @field_validator("namespace_keys")
+    @classmethod
+    def reject_blank_namespaces(cls, value: list[str]) -> list[str]:
+        """Reject blank namespace filters."""
+
+        if any(not namespace.strip() for namespace in value):
+            raise ValueError("namespace keys cannot be blank")
+        return value
+
+    @field_validator("query_text")
+    @classmethod
+    def reject_blank_query(cls, value: str) -> str:
+        """Reject a whitespace-only semantic query."""
+
+        if not value.strip():
+            raise ValueError("query text cannot be blank")
+        return value
+
+    @model_validator(mode="after")
+    def reject_empty_asset_filter(self) -> Self:
+        """Require an optional asset filter to contain at least one asset."""
+
+        if self.asset_ids == []:
+            raise ValueError("asset_ids cannot be empty when supplied")
+        return self
 
 
 class MemorySearchResult(DomainModel):
@@ -56,6 +93,10 @@ class MemorySearchResult(DomainModel):
     score: float
     effective_ts: datetime
     asset_id: AssetId | None = None
+    memory_type: str = Field(min_length=1)
+    importance_score: float = Field(ge=0.0, le=1.0)
+    source_ref_json: SourceReference
+    created_by: str = Field(min_length=1)
 
 
 class MemorySearchResponse(DomainModel):

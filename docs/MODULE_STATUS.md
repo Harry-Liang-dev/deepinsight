@@ -8,8 +8,8 @@
 | Domain Models | Complete | 100% | Pydantic contracts, canonical asset identity, enums, and module Protocols |
 | Database Schema | Complete | 100% | All MASTER_SPEC tables and indexes have idempotent bootstrap |
 | DuckDB Layer | Complete | 100% | Scoped connections, transactions, typed mappings, and Repository CRUD |
-| FAISS Layer | Planned | 0% | No vector index code |
-| Memory | Planned | 0% | Package scaffold only |
+| FAISS Layer | Complete | 100% | Private cosine index Repository, namespace manifests, Parquet vector metadata, persistence, reload, removal, and rebuild |
+| Memory | Complete | 100% | Attributable L0–L4 writes, document chunk embedding, namespace/asset isolation, semantic retrieval, DuckDB sidecars, and offline Fake Embedding |
 | Data Ingestion | Complete | 100% | Unified Provider adapters, canonical normalization, raw text retention, deterministic pending chunks, audited idempotent DuckDB ingestion, and offline Fake Provider |
 | LLM Gateway | Complete | 100% | OpenAI Responses API provider, deterministic DuckDB cache, safe metadata logging, dependency injection, and offline Fake Provider |
 | Analyst Agent | Planned | 0% | Package scaffold only |

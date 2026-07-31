@@ -198,6 +198,55 @@ python -m pytest \
   tests/integration/services/test_data_ingestion.py
 ```
 
+## Memory and FAISS
+
+Construct `FaissVectorRepository` from `StorageSettings.faiss_root`, the same
+model name exposed by the injected Embedding service, and its explicit vector
+dimension. Construct `MemoryService` with `MemoryItemRepository`, the vector
+Repository, and the Embedding service. Agents and other upper modules must
+depend on `MemoryService`; they must not import or retain FAISS indexes.
+
+Each namespace is persisted below the configured FAISS root:
+
+```text
+memory_L2_v1/
+├── index.faiss
+├── vector_meta.parquet
+└── manifest.json
+```
+
+Files are written to same-directory temporary paths and replaced individually.
+The manifest, index dimension, vector count, and vector-ID metadata are
+validated on reload. A partial or incompatible namespace raises a persistence
+error instead of being treated as an empty index.
+
+Memory writes persist the vector first and then the DuckDB sidecar. If DuckDB
+rejects the record, the service removes the new vector. A failed compensation
+raises `MemoryConsistencyError` and the namespace must be rebuilt from
+authoritative `memory_items`. `MemoryService.rebuild_level(level)` performs
+that rebuild. Writes are serialized within each Repository instance; the
+deployment must retain the existing single-writer process rule.
+
+Document ingestion leaves chunks pending. Run
+`DocumentEmbeddingService.index_document(document_id)` to embed those chunks,
+persist them in their configured document namespace, and update their
+Repository-managed status. Source documents and URLs remain in DuckDB and are
+not synthesized from vector metadata.
+
+Production OpenAI embedding calls require an explicitly injected output
+dimension matching the index contract. Unit and integration tests use
+`FakeEmbeddingService` and never call an external API:
+
+```bash
+python -m pytest \
+  tests/unit/repositories/test_vector.py \
+  tests/integration/memory \
+  tests/integration/services/test_document_embedding.py
+```
+
+Runtime FAISS artifacts remain ignored by Git. Only `data/faiss/.gitkeep` may
+be committed.
+
 ## LLM Gateway
 
 `src.services.LLMGateway` is the only Phase One text-inference entry point. It

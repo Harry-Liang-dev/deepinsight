@@ -9,6 +9,7 @@ from pydantic import ValidationError
 
 from src.models.enums import AgentStatus, DocumentType, MarketScope, MemoryLevel
 from src.models.identifiers import AssetId
+from src.schemas.common import SourceReference
 from src.schemas.documents import DocumentChunkRecord, TextDocumentRecord
 from src.schemas.llm import LLMRequest, LLMResponse, LLMUsage
 from src.schemas.memory import (
@@ -74,6 +75,7 @@ def test_memory_contracts_validate_levels_and_scores() -> None:
         memory_type="issuer_event",
         importance_score=0.92,
         summary_text="Guidance was reduced.",
+        source_ref_json=SourceReference(document_id="doc-1"),
         created_by="news_event_analyst",
     )
     result = MemorySearchResult(
@@ -84,6 +86,10 @@ def test_memory_contracts_validate_levels_and_scores() -> None:
         summary_text=write_request.summary_text,
         score=0.883,
         effective_ts=NOW,
+        memory_type=write_request.memory_type,
+        importance_score=write_request.importance_score,
+        source_ref_json=write_request.source_ref_json,
+        created_by=write_request.created_by,
     )
     response = MemorySearchResponse(results=[result])
 
@@ -101,6 +107,7 @@ def test_memory_rejects_invalid_importance(importance_score: float) -> None:
             effective_ts=NOW,
             summary_text="Macro event",
             importance_score=importance_score,
+            source_ref_json=SourceReference(provider="provider"),
         )
 
 
@@ -112,6 +119,40 @@ def test_memory_search_requires_nonempty_filters() -> None:
             namespace_keys=[],
             query_text="guidance cut",
         )
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {
+            "memory_level": "L5",
+            "namespace_key": "US",
+            "effective_ts": NOW,
+            "summary_text": "Macro event",
+            "source_ref_json": {"provider": "provider"},
+        },
+        {
+            "memory_level": "L1",
+            "namespace_key": "US",
+            "effective_ts": NOW,
+            "summary_text": "   ",
+            "source_ref_json": {"provider": "provider"},
+        },
+        {
+            "memory_level": "L1",
+            "namespace_key": "US",
+            "effective_ts": NOW,
+            "summary_text": "Macro event",
+        },
+    ],
+)
+def test_memory_write_rejects_invalid_level_text_and_missing_source(
+    payload: object,
+) -> None:
+    """Every Memory write needs a valid level, content, and real source."""
+
+    with pytest.raises(ValidationError):
+        MemoryWriteRequest.model_validate(payload)
 
 
 def test_llm_request_and_response_use_json_contracts() -> None:

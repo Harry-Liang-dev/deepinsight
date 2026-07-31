@@ -11,11 +11,25 @@ from src.services.data_normalization import (
     NormalizationError,
     NormalizedDocument,
 )
+from src.services.document_embedding import (
+    DocumentEmbeddingConsistencyError,
+    DocumentEmbeddingError,
+    DocumentEmbeddingService,
+)
 from src.services.document_processing import (
     DocumentChunker,
     HashVectorIdAllocator,
     RawTextStore,
     VectorIdAllocator,
+)
+from src.services.embedding import (
+    EmbeddingConfigurationError,
+    EmbeddingInputError,
+    EmbeddingRemoteError,
+    EmbeddingService,
+    EmbeddingServiceError,
+    FakeEmbeddingService,
+    OpenAIEmbeddingService,
 )
 from src.services.llm_gateway import LLMCache, LLMCacheError, LLMGateway
 from src.services.llm_provider import (
@@ -40,7 +54,16 @@ __all__ = [
     "DataIngestionService",
     "DataNormalizer",
     "DocumentChunker",
+    "DocumentEmbeddingConsistencyError",
+    "DocumentEmbeddingError",
+    "DocumentEmbeddingService",
+    "EmbeddingConfigurationError",
+    "EmbeddingInputError",
+    "EmbeddingRemoteError",
+    "EmbeddingService",
+    "EmbeddingServiceError",
     "FakeLLMProvider",
+    "FakeEmbeddingService",
     "HashVectorIdAllocator",
     "IngestionRequest",
     "IngestionRunError",
@@ -62,6 +85,7 @@ __all__ = [
     "NormalizationError",
     "NormalizedDocument",
     "OpenAIProvider",
+    "OpenAIEmbeddingService",
     "RawTextStore",
     "VectorIdAllocator",
 ]

@@ -23,6 +23,17 @@ from src.repositories.records import (
 from src.repositories.reports import ReportRepository
 from src.repositories.runs import AgentRunRepository, IngestionJobRepository
 from src.repositories.schema import CORE_INDEXES, CORE_TABLES
+from src.repositories.vector import (
+    FaissVectorRepository,
+    VectorDimensionError,
+    VectorEntry,
+    VectorIndexManifest,
+    VectorNamespaceError,
+    VectorPersistenceError,
+    VectorRepository,
+    VectorRepositoryError,
+    VectorSearchCandidate,
+)
 
 __all__ = [
     "CORE_INDEXES",
@@ -32,6 +43,7 @@ __all__ = [
     "DatabaseInitializationError",
     "DocumentRepository",
     "DuckDBDatabase",
+    "FaissVectorRepository",
     "IngestionJobRecord",
     "IngestionJobRepository",
     "InstrumentRepository",
@@ -44,4 +56,12 @@ __all__ = [
     "RepositoryError",
     "SourceRegistryRecord",
     "SourceRegistryRepository",
+    "VectorDimensionError",
+    "VectorEntry",
+    "VectorIndexManifest",
+    "VectorNamespaceError",
+    "VectorPersistenceError",
+    "VectorRepository",
+    "VectorRepositoryError",
+    "VectorSearchCandidate",
 ]

@@ -220,3 +220,44 @@ access impossible by accident, preserves source evidence, and supplies stable
 chunks to the future Embedding/FAISS task without pretending vectors already
 exist. Explicit failed-job accounting preserves operational clarity while
 reusing the existing per-operation Repository transaction boundary.
+
+---
+
+## ADR-0010
+
+Date
+
+2026-07-31
+
+Decision
+
+Phase One semantic storage uses a private `FaissVectorRepository` with one
+cosine `IndexFlatIP` namespace per Memory level. Every namespace persists an
+index, Parquet vector metadata, and a validated manifest. FAISS objects and
+provider arrays never cross the Repository boundary.
+
+DuckDB remains authoritative for Memory text, source references, creator,
+timestamps, importance, and namespace/asset filters. Every new Memory write
+must contain a real `SourceReference` and `created_by`; retrieval returns both
+without synthesizing missing citations. Vector IDs are deterministic hashes of
+new Memory IDs and are unique with their FAISS namespace in DuckDB.
+
+Memory writes use vector-first then DuckDB-sidecar ordering. A DuckDB failure
+triggers vector removal. A failed compensation raises an explicit consistency
+error and requires namespace rebuild from DuckDB. File writes use temporary
+files and atomic replacement per artifact, and loading rejects incomplete or
+incompatible namespace state. This is an in-process single-writer contract,
+not a distributed transaction or cross-process lock.
+
+Similarity is the only first-version ranking score. `min_importance_score` is
+an exact filter, while `time_decay_days` remains a validated no-op contract
+until MASTER_SPEC defines a decay formula. No unstated importance/time
+reranking formula is introduced.
+
+Reason
+
+This provides durable, attributable semantic retrieval while keeping
+structured metadata under existing Repositories and preventing FAISS details
+from coupling future Agents to the MVP index implementation. Explicit
+compensation and rebuild behavior makes double-write failures observable and
+recoverable without claiming atomicity the local stores cannot provide.

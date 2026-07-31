@@ -177,6 +177,42 @@ report package does not import DuckDB or FAISS implementations and never calls
 an external Provider or LLM. If persistence or Memory fails, the completed
 state is not written.
 
+## FastAPI service
+
+Start the safe default application from the active Conda environment:
+
+```bash
+"$CONDA_PREFIX/bin/python" -m uvicorn apps.api.main:app \
+  --host 127.0.0.1 \
+  --port 8000
+```
+
+Verify liveness:
+
+```bash
+curl --fail http://127.0.0.1:8000/health
+```
+
+OpenAPI is available at `/openapi.json`; the interactive development
+documentation is available at `/docs`.
+
+`apps.api.main:app` intentionally does not construct DuckDB, FAISS, Memory, or
+LLM dependencies. A deployment composition must inject configured application
+services before report and Memory endpoints are usable. Until then, those
+operations return an explicit service failure or a failed report task rather
+than silently touching local storage or an external network.
+
+Report work uses a process-local FastAPI background task. Task status is held
+in memory, is lost on restart, and is not shared between workers. Run one
+worker for this MVP implementation. Do not use it as a durable production job
+queue.
+
+API-focused checks are:
+
+```bash
+"$CONDA_PREFIX/bin/python" -m pytest tests/unit/api tests/integration/api
+```
+
 ## Data ingestion
 
 Provider source metadata lives in `config/providers.yaml`; it contains no

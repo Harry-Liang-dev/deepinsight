@@ -311,3 +311,37 @@ premature routing or debate machinery. A separate evidence envelope strengthens
 traceability without changing provisional cross-module role schemas, while
 explicit degradation prevents missing evidence from being presented as a
 certain investment conclusion.
+
+---
+
+## ADR-0012
+
+Date
+
+2026-07-31
+
+Decision
+
+Phase One exposes report task state at
+`GET /v1/reports/jobs/{job_id}`. Report submission uses FastAPI background
+tasks and an injected, process-local task service; state transitions are
+`queued`, `running`, then `completed` or `failed`. This implementation is not
+durable across restarts and requires one API worker when its status store is
+used.
+
+Routes depend only on injected report, task, Memory, and snapshot service
+interfaces. The default application starts without opening DuckDB, FAISS, or
+an external Provider and reports unavailable dependencies explicitly.
+
+All HTTP failures use an `ErrorInfo` envelope with a stable code, safe message,
+retryability, and optional details. Snapshot GET queries existing snapshot
+metadata only and exposes logical artifact names, never absolute paths. The
+six MASTER_SPEC Phase Two routes return HTTP 501 with no side effect.
+
+Reason
+
+The task specification requires an observable asynchronous report contract but
+does not define a queue or status path. A replaceable in-process service is the
+smallest reliable Phase One implementation and avoids adding an unauthorized
+distributed component. Unified safe errors and query-only snapshot behavior
+make the public boundary explicit without leaking storage or provider details.

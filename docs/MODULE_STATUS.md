@@ -15,7 +15,7 @@
 | Analyst Agent | Complete | 100% | Four cited role Agents, deterministic fundamental/technical operators, versioned prompts, explicit missing data, and offline Fake Gateway tests |
 | Manager Agent | Complete | 100% | Research, Bull, Bear, and Risk Managers plus fixed research coordination, evidence inheritance, run audit, and degraded-chain tests |
 | Report Generator | Complete | 100% | Ten-section single-asset Markdown/JSON assembly, evidence validation, lifecycle persistence, and L3 trace |
-| FastAPI | Planned | 0% | Application and package scaffold only |
+| FastAPI | Complete | 100% | Application factory, injected services, report task/status/query, Memory, health, unified errors, and Phase Two 501 routes |
 | Scheduler and Worker | Planned | 0% | Application package scaffold only |
 | Web UI | Planned | 0% | Application package scaffold only |
 | Docker | Planned | 0% | Infrastructure directory scaffold only |

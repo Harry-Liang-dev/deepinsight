@@ -12,8 +12,8 @@
 | Memory | Complete | 100% | Attributable L0–L4 writes, document chunk embedding, namespace/asset isolation, semantic retrieval, DuckDB sidecars, and offline Fake Embedding |
 | Data Ingestion | Complete | 100% | Unified Provider adapters, canonical normalization, raw text retention, deterministic pending chunks, audited idempotent DuckDB ingestion, and offline Fake Provider |
 | LLM Gateway | Complete | 100% | OpenAI Responses API provider, deterministic DuckDB cache, safe metadata logging, dependency injection, and offline Fake Provider |
-| Analyst Agent | Planned | 0% | Package scaffold only |
-| Manager Agent | Planned | 0% | Package scaffold only |
+| Analyst Agent | Complete | 100% | Four cited role Agents, deterministic fundamental/technical operators, versioned prompts, explicit missing data, and offline Fake Gateway tests |
+| Manager Agent | Complete | 100% | Research, Bull, Bear, and Risk Managers plus fixed research coordination, evidence inheritance, run audit, and degraded-chain tests |
 | Report Generator | Planned | 0% | Package scaffold only |
 | FastAPI | Planned | 0% | Application and package scaffold only |
 | Scheduler and Worker | Planned | 0% | Application package scaffold only |

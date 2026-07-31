@@ -134,6 +134,23 @@ retry and caching behavior.
 - `RiskManagerRequest` / `RiskManagerResponse`
 
 All scores explicitly defined by MASTER_SPEC are constrained to `[0, 1]`.
+The Agent execution layer adds the following strict wrappers without changing
+the role-specific domain payloads:
+
+- `PromptTemplate`
+- `AgentInvocation`
+- `EvidenceLink`
+- `AgentExecutionResult`
+- `ResearchTaskRequest`
+- `ResearchTaskResult`
+
+`AgentInvocation` carries one role payload, model, optional report identity,
+and optional public Memory query. `AgentExecutionResult` always contains either
+a validated role output or a stable error. Every accepted claim is linked by
+JSON path to citations that were present in the input document chunks or
+Memory source references. Missing data and uncertainty remain separate fields.
+`ResearchTaskResult` retains successful and failed roles when the fixed Agent
+chain degrades.
 
 ## Report contracts
 

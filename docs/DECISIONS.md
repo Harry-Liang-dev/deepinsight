@@ -261,3 +261,53 @@ structured metadata under existing Repositories and preventing FAISS details
 from coupling future Agents to the MVP index implementation. Explicit
 compensation and rebuild behavior makes double-write failures observable and
 recoverable without claiming atomicity the local stores cannot provide.
+
+---
+
+## ADR-0011
+
+Date
+
+2026-07-31
+
+Decision
+
+Phase One implements exactly four Analyst Agents and four Manager Agents named
+by MASTER_SPEC. `ResearchCoordinator` provides only their fixed collaboration
+inside `src/agents`: four Analysts, Research Manager, a single Bull review, a
+single Bear review, then Risk Manager. Bull and Bear are logical peers but are
+invoked in deterministic Bull-then-Bear order. There is no multi-round debate,
+dynamic routing, report assembly, or autonomous loop.
+
+Every Agent receives its model name by dependency-injected invocation, uses
+only public LLM Gateway and Memory interfaces, loads a versioned YAML prompt,
+and writes one `agent_runs` audit record. Existing role-specific domain
+responses remain unchanged. A common Agent execution envelope adds
+claim-to-citation evidence links, explicit missing data, uncertainties, and a
+stable failure object. Citations are accepted only when their document and
+chunk identifiers occur in input documents or attributable Memory sources.
+Manager evidence links inherit the validated analyst and Research Manager
+citations supplied to that Manager.
+
+Memory retrieval failure may degrade to existing document evidence and is
+reported as uncertainty. Invalid schemas, mismatched roles, fabricated
+citations, unattributed conclusions, and trading instructions fail an Agent
+run. A failed Analyst can be omitted from synthesis with an explicit coverage
+warning; failure of Research Manager stops thesis review, and failure of
+either Bull or Bear stops Risk Manager.
+
+Deterministic technical features follow the MASTER_SPEC windows but return a
+null trend when history is insufficient. Fundamental growth compares the
+latest observation with the same `report_type` and fiscal date one calendar
+year earlier. Missing values, absent comparable periods, empty inputs, short
+history, and zero growth denominators return null features with explicit
+`missing_data`.
+
+Reason
+
+This is the smallest report-oriented Agent chain required by MASTER_SPEC. The
+fixed topology and injected model preserve deterministic tests and avoid
+premature routing or debate machinery. A separate evidence envelope strengthens
+traceability without changing provisional cross-module role schemas, while
+explicit degradation prevents missing evidence from being presented as a
+certain investment conclusion.

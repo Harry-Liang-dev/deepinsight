@@ -283,8 +283,60 @@ logs never include API keys, prompts, user payloads, or raw provider errors.
 Gateway logs contain only provider name, model name, status, cache-hit flag,
 latency, token usage when available, response ID when available, a truncated
 request fingerprint, and a stable error code. Agent-run persistence remains
-the responsibility of the later Agent execution layer.
+the responsibility of the Agent execution layer.
 
 Tests must inject `FakeLLMProvider`, an in-process client stub, or an
 `httpx.MockTransport`. The default test suite must never use a real API key,
 make a real OpenAI request, or consume API quota.
+
+## Phase One Agents
+
+Agent prompts are YAML files under `config/prompts/`. Every file contains the
+closed `AgentName`, a version, and the full system prompt. Runtime code loads
+them through an injected `PromptLoader`; role instructions must not be embedded
+in Agent classes. Changing prompt text requires changing its version so
+`agent_runs.prompt_template_ver` remains reproducible.
+
+Construct each Agent with the public `LLMGateway`, `MemoryService`,
+`PromptLoader`, and `AgentRunRepository` boundaries. The model is supplied in
+`ResearchTaskRequest` from typed application settings rather than hard-coded by
+an Agent:
+
+```python
+from pathlib import Path
+
+from src.agents import FundamentalAnalystAgent, PromptLoader
+from src.repositories import AgentRunRepository
+
+fundamental_agent = FundamentalAnalystAgent(
+    llm_gateway=gateway,
+    memory_service=memory_service,
+    prompt_loader=PromptLoader(Path("config/prompts")),
+    run_logger=AgentRunRepository(database),
+)
+```
+
+`ResearchCoordinator` requires exactly the eight Phase One roles. It runs the
+four Analysts, Research Manager, Bull Manager, Bear Manager, and Risk Manager
+in the fixed MASTER_SPEC order. It returns Agent artifacts only; report
+assembly and API work remain separate modules.
+
+Memory search failure is recorded as uncertainty and may degrade to supplied
+document evidence. Invalid JSON, invalid role values, unsupported scores,
+fabricated citations, unattributed conclusions, and trading instructions fail
+the individual Agent run. One Analyst failure remains explicit and the chain
+may continue with coverage warnings. Research Manager failure stops both thesis
+reviews; either thesis failure stops Risk Manager.
+
+Deterministic feature operators accept normalized pandas frames. Missing or
+short history returns null values plus `missing_data`; the operators never ask
+an LLM to calculate a numeric feature.
+
+Run the Agent checks fully offline:
+
+```bash
+python -m pytest \
+  tests/unit/operators \
+  tests/unit/agents \
+  tests/integration/agents
+```

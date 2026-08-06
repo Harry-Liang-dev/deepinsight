@@ -389,6 +389,113 @@ Tests must inject `FakeLLMProvider`, an in-process client stub, or an
 `httpx.MockTransport`. The default test suite must never use a real API key,
 make a real OpenAI request, or consume API quota.
 
+### Manual live LLM smoke check
+
+The live check is an independent opt-in script and is never collected by
+pytest. Run it from the repository root after installing the project:
+
+```bash
+export OPENAI_API_KEY="inject-from-a-secure-source"
+OPENAI_MAX_RETRIES=0 OPENAI_STORE_REMOTE=false \
+  "$CONDA_PREFIX/bin/python" -m scripts.smoke_llm
+```
+
+Required configuration:
+
+- `OPENAI_API_KEY`: required and read through `OpenAISettings`.
+- `OPENAI_MODEL_FAST`: optional; defaults to the configured fast model.
+- `OPENAI_TIMEOUT_SECONDS`: optional positive timeout.
+- `OPENAI_MAX_RETRIES`: must be `0` for this check.
+- `OPENAI_STORE_REMOTE`: must be `false` for this check.
+
+The script performs one `LLMGateway.invoke_json` call with a compact request,
+validates the returned object with the existing `RiskManagerResponse` schema,
+verifies temporary DuckDB cache persistence, and inspects captured Gateway
+metadata for API key, prompt, or payload leakage. It prints metadata only,
+never the full model response. The temporary database is deleted on exit.
+
+Token use is bounded operationally by selecting `OPENAI_MODEL_FAST`, requesting
+only four compact fields, and making one call. The current Gateway contract
+does not expose a separate output-token limit. Timeout, authentication, and
+invalid-JSON mappings, plus failure-log redaction, remain deterministic offline
+checks:
+
+```bash
+"$CONDA_PREFIX/bin/python" -m pytest \
+  tests/unit/services/test_llm_provider.py \
+  tests/unit/services/test_llm_gateway.py -q
+```
+
+Exit code `0` means the live response passed schema, cache, and safe-metadata
+checks. Exit code `1` means a mapped provider/cache or validation failure.
+Exit code `2` means the required safe live configuration was not supplied.
+
+### Temporary DashScope Qwen compatibility smoke check
+
+When OpenAI account quota is unavailable, an independent manual script can
+verify the OpenAI SDK's Responses-compatible transport against DashScope:
+
+```bash
+export DASHSCOPE_API_KEY="inject-from-a-secure-source"
+DASHSCOPE_MODEL=qwen3.8-max \
+  "$CONDA_PREFIX/bin/python" -m scripts.smoke_qwen --diagnostic
+```
+
+The script makes exactly one request with SDK retries disabled, enables Qwen
+thinking through `extra_body`, validates the final JSON with the existing
+`RiskManagerResponse`, and prints only bounded reasoning summaries in
+diagnostic mode. The API key and full final answer are never printed.
+
+`DASHSCOPE_BASE_URL` may override the default legacy compatible endpoint when
+the account has a workspace-specific endpoint. `DASHSCOPE_MODEL` must identify
+a Responses-compatible model enabled for that account. This is an operational
+compatibility check only: it does not add Qwen to the production Gateway and
+does not prove the OpenAI production provider itself is available.
+
+Default pytest remains offline. Its Qwen smoke tests inject a client stub and
+never read credentials or access the network.
+
+### Live SEC-to-Qwen report acceptance
+
+Run the complete opt-in acceptance from the repository root:
+
+```bash
+export SEC_USER_AGENT="DeepInsight monitored-contact@example.com"
+export DASHSCOPE_API_KEY="inject-from-a-secure-source"
+env -u ALL_PROXY -u all_proxy \
+  DASHSCOPE_MODEL=qwen3.6-flash \
+  DASHSCOPE_ENABLE_THINKING=false \
+  "$CONDA_PREFIX/bin/python" -m scripts.live_report
+```
+
+The SEC adapter reads official submissions metadata and at most one recent
+10-Q/10-K primary document for `US:AAPL`. It declares the configured
+`SEC_USER_AGENT`, performs no scraping of commercial feeds, and makes no price
+request. The full extracted filing text is retained in the raw store and fully
+chunked/indexed; at most two deterministically distributed chunks per document
+enter the Agent context to bound live LLM cost without selecting only filing
+headers. Missing prices, deterministic technical history,
+structured fundamentals, macro Memory, and broad sentiment samples remain
+explicit report uncertainties.
+
+The Qwen Responses client is injected behind the existing
+`LLMGateway → OpenAIProvider` interface. The embedding client is injected into
+the existing `OpenAIEmbeddingService`, using `text-embedding-v4`, 256
+dimensions, and provider batches of at most ten inputs. Qwen requests use the
+standard compatible base URL. The live default is `qwen3.6-flash` with
+`enable_thinking=false`, because the eight schema-bound evidence tasks do not
+require long-form reasoning. SDK retries are zero. The fixed eight-Agent
+topology therefore makes exactly eight LLM requests.
+
+The script submits through FastAPI and fails unless every report citation can
+join to a persisted document chunk whose document has a source URL, raw-text
+path, and source metadata. Exit code 2 means required configuration is absent;
+exit code 1 means live ingestion, inference, assembly, or traceability failed.
+It never falls back to Fake data or Fake models.
+On failure it also reports DuckDB stage counts, ingestion/Agent state, and
+credential-redacted provider status, type, parameter, message, endpoint, and
+request ID when available.
+
 ## Phase One Agents
 
 Agent prompts are YAML files under `config/prompts/`. Every file contains the

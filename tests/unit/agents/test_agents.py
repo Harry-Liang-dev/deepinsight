@@ -207,7 +207,7 @@ def test_fundamental_agent_validates_and_links_every_claim() -> None:
     assert len(result.evidence) == 5
     assert result.uncertainties == ["Only one filing was supplied."]
     assert len(gateway.calls) == 1
-    assert logger.records[0].prompt_template_ver == "v1"
+    assert logger.records[0].prompt_template_ver == "v3"
     assert logger.records[0].status == "ok"
 
 
@@ -237,6 +237,7 @@ def test_each_nonfundamental_analyst_runs_with_fake_gateway(
     assert result.status is AgentStatus.OK
     assert len(result.evidence) == 2
     assert logger.records[0].agent_name is agent_name
+    assert logger.records[0].prompt_template_ver == "v2"
 
 
 def test_research_and_thesis_and_risk_managers_run_independently() -> None:
@@ -347,6 +348,8 @@ def test_invalid_schema_and_fabricated_citation_are_rejected() -> None:
     assert invalid_schema.status is AgentStatus.ERROR
     assert invalid_schema.error is not None
     assert invalid_schema.error.code == "schema_validation"
+    assert "status:missing" in (schema_logger.records[0].error_message or "")
+    assert "unexpected value" not in (schema_logger.records[0].error_message or "")
     assert invalid_citation.status is AgentStatus.ERROR
     assert invalid_citation.error is not None
     assert invalid_citation.error.code == "evidence_validation"
@@ -372,6 +375,24 @@ def test_trading_instruction_is_rejected_even_when_cited() -> None:
     assert result.error is not None
     assert result.error.code == "evidence_validation"
     assert logger.records[0].output_payload is None
+
+
+def test_sell_through_business_metric_is_not_a_trading_instruction() -> None:
+    """A hyphenated operating metric must not trigger the trade guard."""
+
+    response = _analyst_output(AgentName.TECHNICAL_TEXT_ANALYST)
+    response.analysis.key_points = ["Quarterly sell-through rates declined."]
+    request = _agent_request(AgentName.TECHNICAL_TEXT_ANALYST)
+
+    result, _, logger = _run(
+        TechnicalTextAnalystAgent,
+        AgentName.TECHNICAL_TEXT_ANALYST,
+        cast(JsonObject, response.model_dump(mode="json")),
+        cast(JsonObject, request.model_dump(mode="json")),
+    )
+
+    assert result.status is AgentStatus.OK
+    assert logger.records[0].status == "ok"
 
 
 def test_memory_failure_is_explicit_and_existing_evidence_allows_degradation() -> None:
@@ -427,10 +448,33 @@ def test_prompts_are_versioned_and_missing_prompt_is_explicit(tmp_path: Path) ->
 
     prompt = PromptLoader(PROMPT_ROOT).load(AgentName.RISK_MANAGER)
 
-    assert prompt.version == "v1"
+    assert prompt.version == "v3"
     assert "trade" in prompt.system_prompt
     with pytest.raises(PromptLoadError, match="unavailable"):
         PromptLoader(tmp_path).load(AgentName.RISK_MANAGER)
+
+
+@pytest.mark.parametrize(
+    "agent_name",
+    [
+        AgentName.FUNDAMENTAL_ANALYST,
+        AgentName.BULL_MANAGER,
+        AgentName.BEAR_MANAGER,
+        AgentName.RISK_MANAGER,
+    ],
+)
+def test_normalized_score_prompts_define_range_and_forbid_other_scales(
+    agent_name: AgentName,
+) -> None:
+    """Score-producing prompts must state the domain model's exact scale."""
+
+    prompt = PromptLoader(PROMPT_ROOT).load(agent_name)
+    normalized_prompt = " ".join(prompt.system_prompt.split())
+
+    assert prompt.version == "v3"
+    assert "between 0.0 and 1.0 inclusive" in normalized_prompt
+    assert "Never use a 1-to-5 or 0-to-100 scale" in normalized_prompt
+    assert "not 3 or 60" in normalized_prompt
 
 
 def test_agent_modules_do_not_import_storage_provider_or_openai_boundaries() -> None:

@@ -84,6 +84,7 @@ class OpenAIEmbeddingService:
         settings: OpenAISettings,
         *,
         dimension: int,
+        batch_size: int | None = None,
         client: OpenAI | _OpenAIEmbeddingClient | None = None,
     ) -> None:
         """Initialize an independently injectable embedding service.
@@ -91,6 +92,7 @@ class OpenAIEmbeddingService:
         Args:
             settings: Existing OpenAI credential, model, and timeout settings.
             dimension: Explicit output dimension expected by FAISS.
+            batch_size: Optional provider request batch limit.
             client: Optional injected client for offline tests.
         """
 
@@ -98,8 +100,11 @@ class OpenAIEmbeddingService:
             raise ValueError("embedding dimension must be positive")
         if not settings.embedding_model.strip():
             raise ValueError("embedding model cannot be empty")
+        if batch_size is not None and batch_size <= 0:
+            raise ValueError("embedding batch size must be positive")
         self._settings = settings
         self._dimension = dimension
+        self._batch_size = batch_size
         self._client = cast(_OpenAIEmbeddingClient | None, client)
 
     @property
@@ -125,13 +130,31 @@ class OpenAIEmbeddingService:
         _validate_texts(texts)
         if not texts:
             return []
+        batches = (
+            [texts]
+            if self._batch_size is None
+            else [
+                texts[index : index + self._batch_size]
+                for index in range(0, len(texts), self._batch_size)
+            ]
+        )
+        vectors: list[list[float]] = []
         try:
-            response = self._get_client().embeddings.create(
-                input=texts,
-                model=self.model_name,
-                dimensions=self.dimension,
-                timeout=float(self._settings.timeout_seconds),
-            )
+            for batch in batches:
+                response = self._get_client().embeddings.create(
+                    input=batch,
+                    model=self.model_name,
+                    dimensions=self.dimension,
+                    timeout=float(self._settings.timeout_seconds),
+                )
+                ordered = sorted(response.data, key=lambda item: item.index)
+                if len(ordered) != len(batch):
+                    raise EmbeddingRemoteError(
+                        "embedding provider returned an unexpected vector count"
+                    )
+                vectors.extend(
+                    _validate_vector(item.embedding, self.dimension) for item in ordered
+                )
         except openai.APITimeoutError:
             raise EmbeddingRemoteError("OpenAI embedding request timed out") from None
         except openai.RateLimitError:
@@ -153,12 +176,7 @@ class OpenAIEmbeddingService:
         except Exception:
             raise EmbeddingRemoteError("OpenAI embedding request failed") from None
 
-        ordered = sorted(response.data, key=lambda item: item.index)
-        if len(ordered) != len(texts):
-            raise EmbeddingRemoteError(
-                "embedding provider returned an unexpected vector count"
-            )
-        return [_validate_vector(item.embedding, self.dimension) for item in ordered]
+        return vectors
 
     def _get_client(self) -> _OpenAIEmbeddingClient:
         if self._client is not None:

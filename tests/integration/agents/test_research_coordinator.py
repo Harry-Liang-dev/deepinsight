@@ -235,7 +235,18 @@ def test_full_research_chain_is_ordered_cited_and_audited(tmp_path: Path) -> Non
         assert record is not None
         assert record.status == "ok"
         assert record.model_name == "fake-model"
-        assert record.prompt_template_ver == "v1"
+        expected_version = (
+            "v3"
+            if agent_name
+            in {
+                AgentName.FUNDAMENTAL_ANALYST,
+                AgentName.BULL_MANAGER,
+                AgentName.BEAR_MANAGER,
+                AgentName.RISK_MANAGER,
+            }
+            else "v2"
+        )
+        assert record.prompt_template_ver == expected_version
         assert record.output_payload is not None
 
 

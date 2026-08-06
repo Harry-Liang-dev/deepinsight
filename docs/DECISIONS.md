@@ -385,3 +385,64 @@ deterministic without credentials, network access, or accidental use of Fake
 research in a production entry point. Deferring unresolved distributed and
 operational protocols avoids adding unapproved components under the guise of
 integration.
+
+---
+
+## ADR-0014
+
+Date
+
+2026-08-06
+
+Decision
+
+The first controlled real-data acceptance uses official SEC EDGAR submissions
+and one recent Apple 10-Q/10-K primary document. Automated access requires an
+explicit `SEC_USER_AGENT` containing a monitored contact address. The adapter
+does not provide or synthesize price bars, valuation data, macro observations,
+or sentiment samples; those absences remain visible to deterministic operators
+and the report.
+
+The report workflow uses a 370-day disclosure lookback. Complete extracted
+filing text is retained, chunked, embedded, and indexed, while no more than two
+deterministically distributed chunks from each document enter the live Agent
+context. This bounds Qwen input cost and avoids selecting only filing headers
+without altering stored source evidence. Provider embedding
+batches are configurable; the live acceptance uses DashScope
+`text-embedding-v4`, 256 dimensions, and batches of ten.
+
+Qwen remains an acceptance-time compatible client injected through the
+existing `LLMGateway` and `OpenAIProvider` boundary. It is not registered as a
+new production provider and does not change the MASTER_SPEC decision that
+production Phase One inference is GPT via OpenAI. The live script submits the
+existing workflow through FastAPI, never falls back to Fake implementations,
+and fails unless every report citation joins to a stored document/chunk and
+that document retains its SEC URL, raw path, timestamp, and filing metadata.
+DashScope uses the standard OpenAI-compatible base URL. Live acceptance
+defaults to the Responses-supported `qwen3.6-flash` with
+`enable_thinking=false`; the fixed schema extraction and synthesis tasks do
+not justify long-form reasoning latency. Live failures expose only
+credential-redacted provider diagnostics and persisted stage state.
+
+All eight Agent prompts require plain-string claim, risk, condition,
+invalidator, watch-item, and uncertainty arrays; Analyst and Research Manager
+references remain exclusively in `supporting_citations`. List lengths are
+bounded and role-specific evidence limits are explicit. Score-producing
+Fundamental, Bull, Bear, and Risk prompts use version `v3` and explicitly
+require the domain model's inclusive 0.0-to-1.0 scale while forbidding
+1-to-5 and 0-to-100 scales; the other prompts remain at version `v2`. Domain
+schemas remain unchanged rather than accepting provider-invented nested claims
+or silently guessing how out-of-range scores should be converted. Trading
+guards reject explicit buy/sell-security instructions but do not reject
+operational terms such as `sell-through`; field-level trade, order, position,
+and price-target bans remain unchanged.
+
+Reason
+
+SEC EDGAR is the only already-specified source that is both authoritative for
+US issuer disclosures and usable without commercial authorization. A bounded
+filing-only acceptance can prove normalization, persistence, semantic indexing,
+Agent evidence discipline, report assembly, API integration, and citation
+traceability while honestly exposing the absence of a configured market-price
+provider. Injecting compatible clients reuses existing service boundaries and
+avoids a parallel Qwen or report implementation.

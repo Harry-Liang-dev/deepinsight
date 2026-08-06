@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from typing import Protocol, cast
 from uuid import uuid4
 
@@ -170,6 +170,8 @@ class ResearchWorkflowService:
         coordinator: AgentCoordinator,
         report_pipeline: ReportFinalizer,
         model_name: str,
+        document_lookback_days: int = 370,
+        evidence_chunks_per_document: int = 4,
         clock: Callable[[], datetime] | None = None,
         report_id_factory: Callable[[], str] | None = None,
         task_id_factory: Callable[[], str] | None = None,
@@ -178,6 +180,10 @@ class ResearchWorkflowService:
 
         if not model_name.strip():
             raise ValueError("model_name cannot be empty")
+        if document_lookback_days < 0:
+            raise ValueError("document lookback cannot be negative")
+        if evidence_chunks_per_document <= 0:
+            raise ValueError("evidence chunk limit must be positive")
         self._provider = provider
         self._ingestion = ingestion
         self._market_data = market_data
@@ -189,6 +195,8 @@ class ResearchWorkflowService:
         self._coordinator = coordinator
         self._report_pipeline = report_pipeline
         self._model_name = model_name
+        self._document_lookback_days = document_lookback_days
+        self._evidence_chunks_per_document = evidence_chunks_per_document
         self._clock = clock or (lambda: datetime.now(UTC))
         self._report_id_factory = report_id_factory or (lambda: f"rep_{uuid4().hex}")
         self._task_id_factory = task_id_factory or (lambda: f"task_{uuid4().hex}")
@@ -214,7 +222,9 @@ class ResearchWorkflowService:
                 job_type=IngestionJobType.INCREMENTAL,
                 asset_ids=(str(asset_id),),
                 target_date=request.report_date,
-                document_start_date=request.report_date,
+                document_start_date=(
+                    request.report_date - timedelta(days=self._document_lookback_days)
+                ),
                 document_end_date=request.report_date,
             ),
         )
@@ -274,7 +284,10 @@ class ResearchWorkflowService:
         retrieved: list[RetrievedDocument] = []
         for document in documents:
             indexed = self._document_indexer.index_document(document.document_id)
-            for chunk in indexed:
+            for chunk in _sample_evidence_chunks(
+                indexed,
+                self._evidence_chunks_per_document,
+            ):
                 retrieved.append(
                     RetrievedDocument(
                         document_id=document.document_id,
@@ -365,3 +378,18 @@ def _required_identifier(value: str, name: str) -> str:
     if not value.strip():
         raise ResearchWorkflowError(f"{name} cannot be empty")
     return value
+
+
+def _sample_evidence_chunks(
+    chunks: list[DocumentChunkRecord],
+    limit: int,
+) -> list[DocumentChunkRecord]:
+    """Select deterministic, evenly distributed evidence from a full document."""
+
+    if len(chunks) <= limit:
+        return chunks
+    indexes = [
+        min(len(chunks) - 1, round((position + 1) * len(chunks) / (limit + 1)))
+        for position in range(limit)
+    ]
+    return [chunks[index] for index in dict.fromkeys(indexes)]

@@ -845,9 +845,11 @@ def _reject_trading_text(text: str) -> None:
         "仓位",
         "下单",
     )
-    if re.search(r"\b(?:buy|sell)\b", normalized) is not None or any(
-        phrase in normalized for phrase in forbidden_phrases
-    ):
+    if re.search(
+        r"\b(?:buy|sell)\s+(?:the\s+)?"
+        r"(?:shares?|stocks?|securit(?:y|ies)|position)\b",
+        normalized,
+    ) is not None or any(phrase in normalized for phrase in forbidden_phrases):
         raise ReportAssemblyError("report content contained a trading instruction")
 
 

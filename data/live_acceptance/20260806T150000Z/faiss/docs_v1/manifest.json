@@ -1,0 +1,9 @@
+{
+  "namespace": "docs_v1",
+  "embedder_model": "text-embedding-v4",
+  "embedding_dim": 256,
+  "distance_metric": "cosine",
+  "source_table": "document_chunks",
+  "faiss_index_type": "IndexFlatIP",
+  "created_at": "2026-08-06T15:00:04.360323Z"
+}

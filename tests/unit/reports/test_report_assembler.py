@@ -50,6 +50,24 @@ def test_complete_report_has_standard_markdown_json_and_epistemic_sections() -> 
     assert fundamentals.inferences[0].text in report.report_markdown
 
 
+def test_report_allows_sell_through_operating_metric() -> None:
+    """A sell-through metric is analysis, not a trading instruction."""
+
+    payload = make_report_input()
+    risk_result = payload.agent_result.risk_manager
+    assert risk_result is not None
+    assert risk_result.output is not None
+    output = dict(risk_result.output)
+    output["watch_items"] = ["Monitor quarterly sell-through rates."]
+    payload.agent_result.risk_manager = risk_result.model_copy(
+        update={"output": output}
+    )
+
+    report = ReportAssembler().assemble(payload)
+
+    assert "sell-through rates" in report.report_markdown
+
+
 def test_missing_or_duplicate_standard_section_is_rejected() -> None:
     """The first standard report must contain each fixed section exactly once."""
 

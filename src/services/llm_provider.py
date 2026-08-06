@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import json
+import re
 from copy import deepcopy
 from dataclasses import dataclass
 from typing import Protocol, cast
+from urllib.parse import urlsplit, urlunsplit
 
 import openai
 from openai import OpenAI
@@ -14,11 +16,128 @@ from openai.types.responses import Response
 from src.core.settings import OpenAISettings
 from src.models.types import JsonObject
 
+_SAFE_PROVIDER_METADATA = re.compile(r"^[A-Za-z0-9_.\[\]-]{1,128}$")
+_API_KEY_DISCLOSURE = re.compile(
+    r"(?i)(api[ _-]?key(?:\s+provided)?(?:\s+is)?\s*[:=]\s*)\S+"
+)
+_BEARER_DISCLOSURE = re.compile(r"(?i)(bearer\s+)\S+")
+_MAX_PROVIDER_MESSAGE_LENGTH = 2_000
+
+
+def _safe_provider_metadata(value: object) -> str | None:
+    """Return one bounded provider diagnostic value, or suppress it."""
+
+    if not isinstance(value, str) or _SAFE_PROVIDER_METADATA.fullmatch(value) is None:
+        return None
+    return value
+
+
+def _safe_provider_message(value: object, *, api_key: str | None) -> str | None:
+    """Redact credentials from one bounded provider diagnostic message."""
+
+    if not isinstance(value, str) or not value:
+        return None
+    sanitized = value
+    if api_key:
+        sanitized = sanitized.replace(api_key, "[REDACTED]")
+    sanitized = _API_KEY_DISCLOSURE.sub(r"\1[REDACTED]", sanitized)
+    sanitized = _BEARER_DISCLOSURE.sub(r"\1[REDACTED]", sanitized)
+    return sanitized[:_MAX_PROVIDER_MESSAGE_LENGTH]
+
+
+def _safe_provider_endpoint(
+    value: object,
+    *,
+    api_key: str | None,
+) -> str | None:
+    """Return an HTTP endpoint without query, fragment, or user information."""
+
+    if not isinstance(value, str):
+        return None
+    sanitized = value.replace(api_key, "[REDACTED]") if api_key else value
+    parsed = urlsplit(sanitized)
+    if parsed.scheme not in {"http", "https"} or parsed.hostname is None:
+        return None
+    host = parsed.hostname
+    if parsed.port is not None:
+        host = f"{host}:{parsed.port}"
+    return urlunsplit((parsed.scheme, host, parsed.path, "", ""))
+
+
+def _provider_error_message(exc: openai.APIStatusError) -> object:
+    """Extract the provider message from an SDK status error body."""
+
+    body = exc.body
+    if not isinstance(body, dict):
+        return None
+    nested_error = body.get("error")
+    error = nested_error if isinstance(nested_error, dict) else body
+    return error.get("message")
+
 
 class LLMProviderError(RuntimeError):
     """Base error for safe, provider-independent LLM failures."""
 
     code = "provider_error"
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        provider_code: object = None,
+        provider_param: object = None,
+        provider_type: object = None,
+        provider_status_code: int | None = None,
+        provider_endpoint: object = None,
+        provider_message: object = None,
+        provider_request_id: object = None,
+        provider_retry_after: object = None,
+        provider_rate_limit_reset_requests: object = None,
+        provider_rate_limit_reset_tokens: object = None,
+        api_key: str | None = None,
+    ) -> None:
+        """Initialize a safe error with optional allowlisted diagnostics.
+
+        Args:
+            message: Provider-independent public error message.
+            provider_code: Optional provider error code.
+            provider_param: Optional rejected request parameter name.
+            provider_type: Optional provider error category.
+            provider_status_code: Optional provider HTTP status.
+            provider_endpoint: Optional request endpoint.
+            provider_message: Optional provider diagnostic message.
+            provider_request_id: Optional provider request identifier.
+            provider_retry_after: Optional Retry-After header.
+            provider_rate_limit_reset_requests: Optional request-limit reset.
+            provider_rate_limit_reset_tokens: Optional token-limit reset.
+            api_key: Optional credential to redact from diagnostics.
+        """
+
+        super().__init__(message)
+        self.provider_code = _safe_provider_metadata(provider_code)
+        self.provider_param = _safe_provider_metadata(provider_param)
+        self.provider_type = _safe_provider_metadata(provider_type)
+        self.provider_status_code = (
+            provider_status_code
+            if provider_status_code is not None and 100 <= provider_status_code <= 599
+            else None
+        )
+        self.provider_endpoint = _safe_provider_endpoint(
+            provider_endpoint,
+            api_key=api_key,
+        )
+        self.provider_message = _safe_provider_message(
+            provider_message,
+            api_key=api_key,
+        )
+        self.provider_request_id = _safe_provider_metadata(provider_request_id)
+        self.provider_retry_after = _safe_provider_metadata(provider_retry_after)
+        self.provider_rate_limit_reset_requests = _safe_provider_metadata(
+            provider_rate_limit_reset_requests
+        )
+        self.provider_rate_limit_reset_tokens = _safe_provider_metadata(
+            provider_rate_limit_reset_tokens
+        )
 
 
 class LLMConfigurationError(LLMProviderError):
@@ -69,6 +188,32 @@ class LLMInvalidResponseError(LLMProviderError):
     code = "invalid_response"
 
 
+def _mapped_status_error(
+    error_type: type[LLMProviderError],
+    message: str,
+    exc: openai.APIStatusError,
+    *,
+    api_key: str | None,
+) -> LLMProviderError:
+    """Map one SDK status error with bounded, credential-safe diagnostics."""
+
+    headers = exc.response.headers
+    return error_type(
+        message,
+        provider_code=exc.code,
+        provider_param=exc.param,
+        provider_type=getattr(exc, "type", None),
+        provider_status_code=exc.status_code,
+        provider_endpoint=str(exc.request.url),
+        provider_message=_provider_error_message(exc),
+        provider_request_id=headers.get("x-request-id"),
+        provider_retry_after=headers.get("retry-after"),
+        provider_rate_limit_reset_requests=headers.get("x-ratelimit-reset-requests"),
+        provider_rate_limit_reset_tokens=headers.get("x-ratelimit-reset-tokens"),
+        api_key=api_key,
+    )
+
+
 @dataclass(frozen=True, slots=True)
 class LLMProviderResult:
     """Structured result and safe metadata returned by an LLM provider."""
@@ -116,6 +261,7 @@ class _ResponsesClient(Protocol):
         text: object,
         store: bool,
         timeout: float,
+        extra_body: object | None,
     ) -> Response:
         """Create one synchronous model response."""
         ...
@@ -134,21 +280,27 @@ class OpenAIProvider:
     """OpenAI Responses API provider for Phase One structured inference."""
 
     provider_name = "openai"
+    json_input_prefix = "JSON input:\n"
 
     def __init__(
         self,
         settings: OpenAISettings,
         *,
+        request_extra_body: JsonObject | None = None,
         client: OpenAI | _OpenAIClient | None = None,
     ) -> None:
         """Initialize the provider with validated settings and an optional client.
 
         Args:
             settings: OpenAI timeout, retry, storage, and credential settings.
+            request_extra_body: Optional compatible-provider body extensions.
             client: Optional injected Responses API client for offline tests.
         """
 
         self._settings = settings
+        self._request_extra_body = (
+            None if request_extra_body is None else deepcopy(request_extra_body)
+        )
         self._client = cast(_OpenAIClient | None, client)
 
     def invoke_json(
@@ -172,18 +324,7 @@ class OpenAIProvider:
                 validation fails.
         """
 
-        try:
-            encoded_input = json.dumps(
-                input_payload,
-                allow_nan=False,
-                ensure_ascii=False,
-                separators=(",", ":"),
-                sort_keys=True,
-            )
-        except (TypeError, ValueError):
-            raise LLMInvalidRequestError(
-                "LLM input payload is not valid JSON"
-            ) from None
+        encoded_input = self.encode_input_payload(input_payload)
 
         try:
             response = self._get_client().responses.create(
@@ -193,24 +334,47 @@ class OpenAIProvider:
                 text={"format": {"type": "json_object"}},
                 store=self._settings.store_remote,
                 timeout=float(self._settings.timeout_seconds),
+                extra_body=self._request_extra_body,
             )
-        except openai.APITimeoutError:
-            raise LLMTimeoutError("OpenAI request timed out") from None
-        except openai.RateLimitError:
-            raise LLMRateLimitError("OpenAI request exceeded its rate limit") from None
-        except (openai.AuthenticationError, openai.PermissionDeniedError):
-            raise LLMAuthenticationError(
-                "OpenAI credentials or permissions were rejected"
+        except openai.APITimeoutError as exc:
+            secret = self._settings.api_key
+            api_key = None if secret is None else secret.get_secret_value()
+            raise LLMTimeoutError(
+                "OpenAI request timed out",
+                provider_endpoint=str(exc.request.url),
+                api_key=api_key,
+            ) from None
+        except openai.RateLimitError as exc:
+            raise self._map_status_error(
+                LLMRateLimitError,
+                "OpenAI request exceeded its rate limit",
+                exc,
+            ) from None
+        except (openai.AuthenticationError, openai.PermissionDeniedError) as exc:
+            raise self._map_status_error(
+                LLMAuthenticationError,
+                "OpenAI credentials or permissions were rejected",
+                exc,
             ) from None
         except (
             openai.BadRequestError,
             openai.NotFoundError,
             openai.UnprocessableEntityError,
-        ):
-            raise LLMInvalidRequestError("OpenAI rejected the request") from None
+        ) as exc:
+            raise self._map_status_error(
+                LLMInvalidRequestError,
+                "OpenAI rejected the request",
+                exc,
+            ) from None
         except openai.APIConnectionError:
             raise LLMConnectionError("OpenAI could not be reached") from None
-        except (openai.APIStatusError, openai.APIError):
+        except openai.APIStatusError as exc:
+            raise self._map_status_error(
+                LLMRemoteError,
+                "OpenAI request failed",
+                exc,
+            ) from None
+        except openai.APIError:
             raise LLMRemoteError("OpenAI request failed") from None
         except LLMProviderError:
             raise
@@ -225,6 +389,51 @@ class OpenAIProvider:
             prompt_tokens=None if usage is None else usage.input_tokens,
             completion_tokens=None if usage is None else usage.output_tokens,
             response_id=response.id,
+        )
+
+    @classmethod
+    def encode_input_payload(cls, input_payload: JsonObject) -> str:
+        """Serialize a payload with the JSON-mode input marker required by OpenAI.
+
+        Args:
+            input_payload: JSON-compatible user payload.
+
+        Returns:
+            Deterministic compact JSON preceded by a stable JSON-mode marker.
+
+        Raises:
+            LLMInvalidRequestError: If the payload is not strict JSON.
+        """
+
+        try:
+            payload_json = json.dumps(
+                input_payload,
+                allow_nan=False,
+                ensure_ascii=False,
+                separators=(",", ":"),
+                sort_keys=True,
+            )
+        except (TypeError, ValueError):
+            raise LLMInvalidRequestError(
+                "LLM input payload is not valid JSON"
+            ) from None
+        return f"{cls.json_input_prefix}{payload_json}"
+
+    def _map_status_error(
+        self,
+        error_type: type[LLMProviderError],
+        message: str,
+        exc: openai.APIStatusError,
+    ) -> LLMProviderError:
+        """Map an SDK status error using this provider's secret redaction."""
+
+        secret = self._settings.api_key
+        api_key = None if secret is None else secret.get_secret_value()
+        return _mapped_status_error(
+            error_type,
+            message,
+            exc,
+            api_key=api_key,
         )
 
     def _get_client(self) -> _OpenAIClient:

@@ -161,7 +161,7 @@ class BaseAgent:
                 uncertainties=uncertainties,
             )
             error_message = None
-        except ValidationError:
+        except ValidationError as exc:
             result = self._error_result(
                 payload.run_id,
                 code="schema_validation",
@@ -169,7 +169,7 @@ class BaseAgent:
                 missing_data=missing_data,
                 uncertainties=retrieval_uncertainties,
             )
-            error_message = result.error.message if result.error is not None else None
+            error_message = _validation_error_summary(exc)
         except AgentOutputError as exc:
             result = self._error_result(
                 payload.run_id,
@@ -474,7 +474,11 @@ def _reject_trading_output(output: JsonObject) -> None:
                 visit(child)
         elif isinstance(value, str):
             normalized = value.casefold()
-            contains_direction = re.search(r"\b(?:buy|sell)\b", normalized)
+            contains_direction = re.search(
+                r"\b(?:buy|sell)\s+(?:the\s+)?"
+                r"(?:shares?|stocks?|securit(?:y|ies)|position)\b",
+                normalized,
+            )
             if contains_direction is not None or any(
                 phrase in normalized for phrase in forbidden_phrases
             ):
@@ -485,3 +489,17 @@ def _reject_trading_output(output: JsonObject) -> None:
 
 def _unique(values: list[str]) -> list[str]:
     return list(dict.fromkeys(values))
+
+
+def _validation_error_summary(error: ValidationError) -> str:
+    """Return field paths and error types without rejected values."""
+
+    summaries: list[str] = []
+    for item in error.errors(
+        include_input=False,
+        include_url=False,
+    )[:5]:
+        location = ".".join(str(part) for part in item["loc"]) or "model"
+        summaries.append(f"{location}:{item['type']}")
+    detail = ", ".join(summaries) or "unknown_validation_error"
+    return f"Agent schema validation failed ({detail})."

@@ -248,6 +248,17 @@ EXPECTED_SCHEMA = {
         "error_message",
         "created_at",
     ),
+    "report_jobs": (
+        "job_id",
+        "request_json",
+        "status",
+        "report_id",
+        "error_json",
+        "attempt_count",
+        "created_at",
+        "started_at",
+        "finished_at",
+    ),
     "phase2_registry": (
         "module_name",
         "api_path",
@@ -273,6 +284,7 @@ EXPECTED_PRIMARY_KEYS = {
     "report_sections": ("report_id", "section_name"),
     "llm_cache": ("cache_key",),
     "ingestion_jobs": ("job_id",),
+    "report_jobs": ("job_id",),
     "phase2_registry": ("module_name",),
 }
 

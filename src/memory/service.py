@@ -234,6 +234,33 @@ class MemoryService:
                 break
         return MemorySearchResponse(results=results)
 
+    def delete(self, memory_id: str) -> None:
+        """Delete one Memory vector and sidecar during compensation."""
+
+        try:
+            record = self._duckdb_repo.get(memory_id)
+        except RepositoryError as exc:
+            raise MemoryConsistencyError("Memory compensation lookup failed") from exc
+        if record is None:
+            return
+        try:
+            removed = self._vector_repo.remove(
+                namespace=record.faiss_namespace,
+                vector_id=record.faiss_vector_id,
+            )
+        except VectorRepositoryError as exc:
+            raise MemoryConsistencyError("Memory vector compensation failed") from exc
+        if not removed:
+            raise MemoryConsistencyError(
+                "Memory compensation could not find the vector"
+            )
+        try:
+            self._duckdb_repo.delete(memory_id)
+        except RepositoryError as exc:
+            raise MemoryConsistencyError(
+                "Memory sidecar compensation failed; namespace rebuild is required"
+            ) from exc
+
     def rebuild_level(self, level: MemoryLevel) -> int:
         """Rebuild one Memory level from authoritative DuckDB records.
 

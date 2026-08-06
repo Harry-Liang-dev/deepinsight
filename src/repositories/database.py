@@ -9,6 +9,7 @@ from threading import RLock
 
 import duckdb
 
+from src.repositories.locking import duckdb_file_lock
 from src.repositories.schema import INDEX_DDL, TABLE_DDL
 
 
@@ -19,9 +20,9 @@ class DatabaseInitializationError(RuntimeError):
 class DuckDBDatabase:
     """Own scoped DuckDB connections for one configured database file.
 
-    The class serializes writes made through the same instance. Deployment must
-    still preserve the documented single-writer process boundary because this
-    lock is intentionally not a distributed or cross-process lock.
+    Connections are serialized within the process and across local processes
+    that use the same database path. Deployment still preserves a single
+    report Worker so DuckDB remains an embedded database rather than a queue.
     """
 
     def __init__(self, path: str | Path) -> None:
@@ -37,7 +38,7 @@ class DuckDBDatabase:
         if not str(path).strip():
             raise ValueError("DuckDB path cannot be empty")
         self._path = Path(path)
-        self._write_lock = RLock()
+        self._connection_lock = RLock()
 
     @property
     def path(self) -> Path:
@@ -72,11 +73,14 @@ class DuckDBDatabase:
             An open DuckDB connection.
         """
 
-        connection = duckdb.connect(database=str(self._path))
-        try:
-            yield connection
-        finally:
-            connection.close()
+        self._ensure_parent_directory()
+        with self._connection_lock:
+            with duckdb_file_lock(self._path):
+                connection = duckdb.connect(database=str(self._path))
+                try:
+                    yield connection
+                finally:
+                    connection.close()
 
     @contextmanager
     def transaction(self) -> Iterator[duckdb.DuckDBPyConnection]:
@@ -86,17 +90,15 @@ class DuckDBDatabase:
             An open DuckDB connection inside a transaction.
         """
 
-        self._ensure_parent_directory()
-        with self._write_lock:
-            with self.connection() as connection:
-                connection.execute("BEGIN TRANSACTION")
-                try:
-                    yield connection
-                except BaseException:
-                    connection.execute("ROLLBACK")
-                    raise
-                else:
-                    connection.execute("COMMIT")
+        with self.connection() as connection:
+            connection.execute("BEGIN TRANSACTION")
+            try:
+                yield connection
+            except BaseException:
+                connection.execute("ROLLBACK")
+                raise
+            else:
+                connection.execute("COMMIT")
 
     def _ensure_parent_directory(self) -> None:
         self._path.parent.mkdir(parents=True, exist_ok=True)

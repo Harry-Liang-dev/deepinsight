@@ -18,6 +18,12 @@ Fake LLM responses, Fake Embedding, temporary DuckDB, and temporary FAISS.
 It supports the same public report routes without an API key or network call.
 The temporary artifacts are removed when that demo process exits.
 
+`apps.api.production:create_production_application` is the single-node
+production factory. It bootstraps DuckDB, persists report requests in
+`report_jobs`, publishes only the stable job ID to Redis, queries reports from
+the Repository, and exposes existing local snapshot manifests. It does not
+load LLM credentials or execute report business logic.
+
 ## Phase One endpoints
 
 | Method | Path | Success | Contract |
@@ -35,11 +41,13 @@ unconfirmed status-query requirement. A report request is accepted in
 `queued` state. The instance-local task service then records `running` and
 either `completed` with `report_id`, or `failed` with safe `ErrorInfo`.
 
-This Phase One implementation uses FastAPI background tasks and in-process
-state. It has no distributed queue: jobs are not durable across process
-restarts, and a deployment must run one API worker if it relies on this task
-status implementation. A later durable task service can replace the injected
-protocol without changing routes.
+The same routes support two injected task services. The safe default/offline
+composition uses an in-process implementation for deterministic development.
+Production uses `DurableReportTaskService`: DuckDB is authoritative for request
+and status, Redis carries only `job_id`, and one separate Worker claims and
+executes jobs. The route still schedules the protocol's `run` hook; that hook
+is intentionally a no-op for the durable service, so no report logic runs in
+the API process.
 
 The injected report generator is `ResearchWorkflowService`. It owns only
 application sequencing: ingestion, normalized context reads, document
@@ -47,9 +55,9 @@ indexing, deterministic feature calculation, one Memory search, fixed Agent
 coordination, and report finalization. Routes remain unaware of all storage,
 vector, provider, LLM, and Agent implementations.
 
-Snapshot GET only queries metadata for an existing snapshot; it never creates
-one. Responses contain logical artifact names only and reject absolute or
-nested filesystem paths.
+Snapshot GET only queries the latest valid local manifest for the requested
+UTC date; it never creates one. Responses contain logical artifact names only
+and reject absolute or nested filesystem paths.
 
 ## Memory service boundary
 

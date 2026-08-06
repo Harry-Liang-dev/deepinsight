@@ -18,8 +18,10 @@ from src.repositories.records import (
     IngestionJobRecord,
     LLMCacheRecord,
     MemoryItemRecord,
+    ReportJobRecord,
     SourceRegistryRecord,
 )
+from src.repositories.report_jobs import ReportJobRepository
 from src.repositories.reports import ReportRepository
 from src.repositories.runs import AgentRunRepository, IngestionJobRepository
 from src.repositories.schema import CORE_INDEXES, CORE_TABLES
@@ -53,6 +55,8 @@ __all__ = [
     "MemoryItemRecord",
     "MemoryItemRepository",
     "ReportRepository",
+    "ReportJobRecord",
+    "ReportJobRepository",
     "RepositoryError",
     "SourceRegistryRecord",
     "SourceRegistryRepository",

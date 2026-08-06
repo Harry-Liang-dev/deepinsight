@@ -250,6 +250,12 @@ class BaseAgent:
         claim_paths = self._claim_paths(output)
         if claim_paths and not citations:
             raise AgentOutputError("Agent conclusions require attributable citations.")
+        _validate_numeric_claims(
+            input_payload,
+            output,
+            claim_paths,
+            citations,
+        )
         return [
             EvidenceLink(claim_path=claim_path, citations=citations)
             for claim_path in claim_paths
@@ -424,6 +430,89 @@ def _citations_at_path(output: JsonObject, path: str) -> list[SourceReference]:
 
 def _citation_key(citation: SourceReference) -> tuple[str, str]:
     return (citation.document_id or "", citation.excerpt_ref or "")
+
+
+def _validate_numeric_claims(
+    input_payload: JsonObject,
+    output: JsonObject,
+    claim_paths: list[str],
+    citations: list[SourceReference],
+) -> None:
+    """Reject claim numbers that cannot be found verbatim in cited evidence."""
+
+    evidence = _citation_text(input_payload, citations)
+    for claim_path in claim_paths:
+        claim = _value_at_indexed_path(output, claim_path)
+        if not isinstance(claim, str):
+            continue
+        unsupported = [
+            token
+            for token in _numeric_tokens(claim)
+            if not any(token in _numeric_tokens(text) for text in evidence)
+        ]
+        if unsupported:
+            raise AgentOutputError(
+                f"Agent numeric claim was absent from evidence ({claim_path})."
+            )
+
+
+def _citation_text(
+    payload: JsonObject,
+    citations: list[SourceReference],
+) -> list[str]:
+    requested = {_citation_key(citation) for citation in citations}
+    context = _context(payload)
+    texts: list[str] = []
+    documents = context.get("retrieved_documents")
+    if isinstance(documents, list):
+        for document in documents:
+            if not isinstance(document, dict):
+                continue
+            key = (
+                str(document.get("document_id") or ""),
+                str(document.get("chunk_id") or ""),
+            )
+            text = document.get("chunk_text")
+            if key in requested and isinstance(text, str):
+                texts.append(text)
+    memories = context.get("retrieved_memories")
+    if isinstance(memories, list):
+        for memory in memories:
+            if not isinstance(memory, dict):
+                continue
+            source = memory.get("source_ref_json")
+            if not isinstance(source, dict):
+                continue
+            key = (
+                str(source.get("document_id") or ""),
+                str(source.get("excerpt_ref") or ""),
+            )
+            summary = memory.get("summary_text")
+            if key in requested and isinstance(summary, str):
+                texts.append(summary)
+    return texts
+
+
+def _numeric_tokens(value: str) -> set[str]:
+    return {
+        token.replace(",", "")
+        for token in re.findall(r"(?<![\w.])\d[\d,]*(?:\.\d+)?%?", value)
+    }
+
+
+def _value_at_indexed_path(value: JsonObject, path: str) -> JsonValue | None:
+    current: JsonValue = value
+    for part in path.split("."):
+        match = re.fullmatch(r"([^\[]+)(?:\[(\d+)])?", part)
+        if match is None or not isinstance(current, dict):
+            return None
+        current = current.get(match.group(1))
+        index = match.group(2)
+        if index is not None:
+            if not isinstance(current, list) or int(index) >= len(current):
+                return None
+            current = current[int(index)]
+    return current
 
 
 def _value_at_path(value: JsonObject, path: str) -> JsonValue | None:

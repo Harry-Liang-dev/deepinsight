@@ -15,6 +15,7 @@ CORE_TABLES = frozenset(
         "macro_series",
         "memory_items",
         "phase2_registry",
+        "report_jobs",
         "report_sections",
         "reports",
         "source_registry",
@@ -32,6 +33,7 @@ CORE_INDEXES = frozenset(
         "idx_memory_items_faiss_mapping",
         "idx_memory_items_level_namespace_ts",
         "idx_reports_date_market",
+        "idx_report_jobs_status_created",
         "idx_text_documents_asset_publish",
     }
 )
@@ -267,6 +269,19 @@ TABLE_DDL = (
     )
     """,
     """
+    CREATE TABLE IF NOT EXISTS report_jobs (
+        job_id                 VARCHAR PRIMARY KEY,
+        request_json           VARCHAR NOT NULL,
+        status                 VARCHAR NOT NULL,
+        report_id              VARCHAR,
+        error_json             VARCHAR,
+        attempt_count          INTEGER DEFAULT 0,
+        created_at             TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        started_at             TIMESTAMP,
+        finished_at            TIMESTAMP
+    )
+    """,
+    """
     CREATE TABLE IF NOT EXISTS report_sections (
         report_id              VARCHAR NOT NULL,
         section_name           VARCHAR NOT NULL,
@@ -350,5 +365,9 @@ INDEX_DDL = (
     """
     CREATE INDEX IF NOT EXISTS idx_reports_date_market
     ON reports (report_date, market_scope)
+    """,
+    """
+    CREATE INDEX IF NOT EXISTS idx_report_jobs_status_created
+    ON report_jobs (status, created_at)
     """,
 )

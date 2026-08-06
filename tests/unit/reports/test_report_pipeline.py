@@ -35,6 +35,7 @@ class CapturingMemoryWriter:
 
     def __init__(self, *, fail: bool = False) -> None:
         self.requests: list[MemoryWriteRequest] = []
+        self.deleted: list[str] = []
         self._fail = fail
 
     def write(self, request: MemoryWriteRequest) -> MemoryWriteResult:
@@ -46,6 +47,9 @@ class CapturingMemoryWriter:
             faiss_namespace="memory_L3_v1",
             faiss_vector_id=1,
         )
+
+    def delete(self, memory_id: str) -> None:
+        self.deleted.append(memory_id)
 
 
 def test_pipeline_marks_report_completed_only_after_memory_write() -> None:
@@ -68,8 +72,8 @@ def test_pipeline_marks_report_completed_only_after_memory_write() -> None:
     assert memory.requests[0].source_ref_json == report.source_trace[0]
 
 
-def test_memory_failure_never_persists_completed_report() -> None:
-    """A failed L3 write leaves only the explicit running state."""
+def test_memory_failure_persists_explicit_failed_report() -> None:
+    """A failed L3 write must not leave a stale running report."""
 
     store = CapturingReportStore()
     pipeline = ResearchReportPipeline(
@@ -81,20 +85,28 @@ def test_memory_failure_never_persists_completed_report() -> None:
     with pytest.raises(RuntimeError, match="Memory"):
         pipeline.execute(make_report_input())
 
-    assert [item.status for item in store.reports] == [TaskStatus.RUNNING]
+    assert [item.status for item in store.reports] == [
+        TaskStatus.RUNNING,
+        TaskStatus.FAILED,
+    ]
 
 
-def test_final_persistence_failure_keeps_previous_running_state() -> None:
-    """A failed completion write cannot expose a completed stored report."""
+def test_final_persistence_failure_compensates_memory_and_marks_failed() -> None:
+    """A failed completion write must compensate Memory and terminalize state."""
 
     store = CapturingReportStore(fail_on_call=2)
+    memory = CapturingMemoryWriter()
     pipeline = ResearchReportPipeline(
         ReportAssembler(),
         store,
-        CapturingMemoryWriter(),
+        memory,
     )
 
     with pytest.raises(RuntimeError, match="persistence"):
         pipeline.execute(make_report_input())
 
-    assert [item.status for item in store.reports] == [TaskStatus.RUNNING]
+    assert [item.status for item in store.reports] == [
+        TaskStatus.RUNNING,
+        TaskStatus.FAILED,
+    ]
+    assert memory.deleted == ["memory-report-1"]

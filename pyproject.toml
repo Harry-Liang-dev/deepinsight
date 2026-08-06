@@ -19,6 +19,7 @@ dependencies = [
     "pydantic>=2,<3",
     "pydantic-settings>=2,<3",
     "pyyaml>=6,<7",
+    "redis>=5,<7",
     "sqlalchemy>=2,<3",
     "streamlit>=1,<2",
     "structlog>=24,<27",
@@ -56,6 +57,10 @@ python_version = "3.12"
 files = ["apps", "src", "tests"]
 strict = true
 warn_unused_configs = true
+
+[[tool.mypy.overrides]]
+module = ["apscheduler.*"]
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 addopts = "-ra --strict-config --strict-markers"

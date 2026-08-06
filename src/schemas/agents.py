@@ -41,6 +41,7 @@ class FundamentalAnalysis(DomainModel):
     quality_score: float = Field(ge=0.0, le=1.0)
     growth_score: float = Field(ge=0.0, le=1.0)
     valuation_score: float = Field(ge=0.0, le=1.0)
+    facts: list[str] = Field(default_factory=list)
     key_points: list[str]
     risk_points: list[str]
     uncertainties: list[str] = Field(default_factory=list)
@@ -58,6 +59,7 @@ class FundamentalAnalystResponse(DomainModel):
 class AnalystAnalysis(DomainModel):
     """Minimum common output for analyst roles without a fixed schema."""
 
+    facts: list[str] = Field(default_factory=list)
     key_points: list[str]
     risk_points: list[str] = Field(default_factory=list)
     uncertainties: list[str] = Field(default_factory=list)

@@ -1,1 +1,106 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile
+    command:
+      - python
+      - -m
+      - uvicorn
+      - apps.api.production:create_production_application
+      - --factory
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DEEPINSIGHT_REDIS_URL: redis://redis:6379/0
+    volumes:
+      - deepinsight_data:/app/data
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2)"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
 
+  worker:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile
+    command: ["python", "-m", "apps.worker.main"]
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DEEPINSIGHT_REDIS_URL: redis://redis:6379/0
+    volumes:
+      - deepinsight_data:/app/data
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  scheduler:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile
+    command: ["python", "-m", "apps.scheduler.main"]
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DEEPINSIGHT_SCHEDULER_ENABLED: "true"
+      DEEPINSIGHT_WEB_API_BASE_URL: http://api:8000
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+
+  web:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile
+    command:
+      - python
+      - -m
+      - streamlit
+      - run
+      - apps/web/main.py
+      - --server.address=0.0.0.0
+      - --server.port=8501
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DEEPINSIGHT_WEB_API_BASE_URL: http://api:8000
+    ports:
+      - "8501:8501"
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  deepinsight_data:
+  redis_data:

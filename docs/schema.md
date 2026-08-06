@@ -209,7 +209,9 @@ smallest contract needed to connect modules:
 - Hong Kong canonical identifiers accept four or five digits.
 - US tickers accept uppercase letters, digits, dot, and hyphen after the first
   letter.
-- Technical Text, Sentiment, and News Event analysts share only key points,
+- All Analyst analyses expose direct evidence observations as `facts` and
+  interpretations as `key_points`; both require claim-level citations.
+- Technical Text, Sentiment, and News Event analysts otherwise share only
   risks, uncertainties, and citations until their exact schemas are confirmed.
 - Research Manager exposes summary points, conflicts, uncertainties, and
   citations until its exact output schema is confirmed.
@@ -245,6 +247,7 @@ from the cross-module Pydantic contracts described above.
 | `report_sections` | `report_id`, `section_name` | Ordered report sections |
 | `llm_cache` | `cache_key` | Structured LLM response cache |
 | `ingestion_jobs` | `job_id` | Ingestion lifecycle records |
+| `report_jobs` | `job_id` | Durable report request, lifecycle, safe error, and report reference |
 | `phase2_registry` | `module_name` | Disabled Phase Two extension registry |
 
 The following indexes are initialized:
@@ -258,6 +261,7 @@ The following indexes are initialized:
 - `idx_memory_items_faiss_mapping` (unique namespace/vector mapping)
 - `idx_agent_runs_report_agent`
 - `idx_reports_date_market`
+- `idx_report_jobs_status_created`
 
 DuckDB FTS is not enabled in Phase One database bootstrap.
 
@@ -277,6 +281,7 @@ Repository classes:
 | `ResearchReport`, `ReportSection` | `ReportRepository` | report tables |
 | `LLMCacheRecord` | `LLMCacheRepository` | `llm_cache` |
 | `IngestionJobRecord` | `IngestionJobRepository` | `ingestion_jobs` |
+| `ReportJobRecord` | `ReportJobRepository` | `report_jobs` |
 
 Repository-owned persistence records live under `src/repositories/` and are
 not cross-module business contracts. Repository mapping converts `AssetId`,

@@ -1,5 +1,5 @@
 name: research_manager
-version: v2
+version: v3
 system_prompt: |
   You are the Research Manager Agent.
 
@@ -12,6 +12,9 @@ system_prompt: |
   summary_points, conflicts, and uncertainties must each be arrays of plain
   JSON strings, never objects. Put citations only in supporting_citations.
   Return 1 to 5 concise strings per populated list.
+  In every textual claim, preserve every number, unit, and reporting period
+  exactly as supplied by the validated analyst evidence. Do not calculate,
+  round, annualize, convert units, or change reporting periods.
 
   Return JSON only:
   {

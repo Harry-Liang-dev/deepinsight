@@ -276,6 +276,7 @@ class ReportAssembler:
                 "fundamentals",
                 2,
                 fundamental_result,
+                fundamental.facts,
                 fundamental.key_points,
                 fundamental.risk_points,
                 [*fundamental.uncertainties, *fundamental_result.uncertainties],
@@ -285,6 +286,7 @@ class ReportAssembler:
                 "technical_text",
                 3,
                 technical_result,
+                technical.facts,
                 technical.key_points,
                 technical.risk_points,
                 [*technical.uncertainties, *technical_result.uncertainties],
@@ -294,6 +296,7 @@ class ReportAssembler:
                 "sentiment",
                 4,
                 sentiment_result,
+                sentiment.facts,
                 sentiment.key_points,
                 sentiment.risk_points,
                 [*sentiment.uncertainties, *sentiment_result.uncertainties],
@@ -303,6 +306,7 @@ class ReportAssembler:
                 "news_events",
                 5,
                 news_result,
+                news.facts,
                 news.key_points,
                 news.risk_points,
                 [*news.uncertainties, *news_result.uncertainties],
@@ -505,21 +509,25 @@ def _parse_outputs(payload: ReportAssemblyInput) -> _ParsedOutputs:
 
     _require_content(
         "fundamental_analyst",
+        fundamental.analysis.facts,
         fundamental.analysis.key_points,
         fundamental.analysis.risk_points,
     )
     _require_content(
         "technical_text_analyst",
+        technical.analysis.facts,
         technical.analysis.key_points,
         technical.analysis.risk_points,
     )
     _require_content(
         "sentiment_analyst",
+        sentiment.analysis.facts,
         sentiment.analysis.key_points,
         sentiment.analysis.risk_points,
     )
     _require_content(
         "news_event_analyst",
+        news.analysis.facts,
         news.analysis.key_points,
         news.analysis.risk_points,
     )
@@ -592,6 +600,7 @@ def _analyst_section(
     section_name: str,
     order: int,
     result: AgentExecutionResult,
+    facts: list[str],
     key_points: list[str],
     risk_points: list[str],
     uncertainties: list[str],
@@ -601,6 +610,12 @@ def _analyst_section(
         section_name=section_name,
         title=_SECTION_TITLES[section_name],
         section_order=order,
+        facts=_claims(
+            result,
+            "analysis.facts",
+            facts,
+            allowed,
+        ),
         inferences=_claims(
             result,
             "analysis.key_points",

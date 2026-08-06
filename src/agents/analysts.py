@@ -18,7 +18,11 @@ class FundamentalAnalystAgent(BaseAgent):
     agent_role = "analyst"
     request_model = AgentRequest
     response_model = FundamentalAnalystResponse
-    claim_list_paths = ("analysis.key_points", "analysis.risk_points")
+    claim_list_paths = (
+        "analysis.facts",
+        "analysis.key_points",
+        "analysis.risk_points",
+    )
     scalar_claim_paths = (
         "analysis.quality_score",
         "analysis.growth_score",
@@ -35,7 +39,11 @@ class TechnicalTextAnalystAgent(BaseAgent):
     agent_role = "analyst"
     request_model = AgentRequest
     response_model = AnalystResponse
-    claim_list_paths = ("analysis.key_points", "analysis.risk_points")
+    claim_list_paths = (
+        "analysis.facts",
+        "analysis.key_points",
+        "analysis.risk_points",
+    )
     response_citation_path = "analysis.supporting_citations"
     uncertainty_path = "analysis.uncertainties"
 
@@ -47,7 +55,11 @@ class SentimentAnalystAgent(BaseAgent):
     agent_role = "analyst"
     request_model = AgentRequest
     response_model = AnalystResponse
-    claim_list_paths = ("analysis.key_points", "analysis.risk_points")
+    claim_list_paths = (
+        "analysis.facts",
+        "analysis.key_points",
+        "analysis.risk_points",
+    )
     response_citation_path = "analysis.supporting_citations"
     uncertainty_path = "analysis.uncertainties"
 
@@ -59,6 +71,10 @@ class NewsEventAnalystAgent(BaseAgent):
     agent_role = "analyst"
     request_model = AgentRequest
     response_model = AnalystResponse
-    claim_list_paths = ("analysis.key_points", "analysis.risk_points")
+    claim_list_paths = (
+        "analysis.facts",
+        "analysis.key_points",
+        "analysis.risk_points",
+    )
     response_citation_path = "analysis.supporting_citations"
     uncertainty_path = "analysis.uncertainties"

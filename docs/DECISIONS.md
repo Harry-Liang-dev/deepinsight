@@ -428,11 +428,12 @@ All eight Agent prompts require plain-string claim, risk, condition,
 invalidator, watch-item, and uncertainty arrays; Analyst and Research Manager
 references remain exclusively in `supporting_citations`. List lengths are
 bounded and role-specific evidence limits are explicit. Score-producing
-Fundamental, Bull, Bear, and Risk prompts use version `v3` and explicitly
-require the domain model's inclusive 0.0-to-1.0 scale while forbidding
-1-to-5 and 0-to-100 scales; the other prompts remain at version `v2`. Domain
-schemas remain unchanged rather than accepting provider-invented nested claims
-or silently guessing how out-of-range scores should be converted. Trading
+Fundamental uses prompt version `v5`; the other Analysts and Bull/Bear/Risk
+Managers use `v4`, and Research Manager uses `v3`. Score-producing prompts
+explicitly require the domain model's inclusive 0.0-to-1.0 scale while
+forbidding 1-to-5 and 0-to-100 scales. Domain schemas do not accept
+provider-invented nested claims or silently guess how out-of-range scores
+should be converted. Trading
 guards reject explicit buy/sell-security instructions but do not reject
 operational terms such as `sell-through`; field-level trade, order, position,
 and price-target bans remain unchanged.
@@ -446,3 +447,63 @@ Agent evidence discipline, report assembly, API integration, and citation
 traceability while honestly exposing the absence of a configured market-price
 provider. Injecting compatible clients reuses existing service boundaries and
 avoids a parallel Qwen or report implementation.
+
+---
+
+## ADR-0015
+
+Date
+
+2026-08-07
+
+Decision
+
+Phase One closes with a single-node durable production topology. DuckDB
+`report_jobs` is authoritative for the validated report request, lifecycle,
+safe error, attempt count, and final report ID. Redis is delivery transport
+only and contains a UTF-8 `job_id`; it never contains prompts, credentials,
+evidence, or the full request. FastAPI persists then enqueues, one separate
+Worker atomically claims and executes jobs, and restart recovery returns
+interrupted `running` records to `queued`. Duplicate queue delivery is harmless
+because only `queued` records can be claimed.
+
+All Repository connections use both an in-process lock and a
+path-specific Linux advisory file lock. Snapshot and backup creation acquires
+the same file lock, copies DuckDB and FAISS into a temporary bundle, records
+SHA-256 hashes, and publishes by atomic rename. This is a local single-machine
+consistency boundary, not a distributed database protocol. The report
+pipeline persists an explicit failed state on downstream Memory or completion
+failure and deletes an already-written L3 trace when final report persistence
+fails.
+
+Analyst outputs now distinguish direct `facts` from interpretive
+`key_points`. Both carry claim-level citations. Every numeric token in an
+accepted textual Agent claim must occur verbatim in its cited document chunk
+or Memory summary; prompts also forbid calculation, rounding, unit conversion,
+annualization, and reporting-period changes. This is deliberately conservative
+grounding and does not attempt financial calculation inside the LLM layer.
+
+The Phase One auxiliary topology consists of a UTC Scheduler that submits
+configured single-asset requests through FastAPI, a read-only Streamlit task
+and report viewer, and Docker Compose services for API, one Worker, Scheduler,
+Web, and Redis. Reserved Phase Two interfaces are abstract and
+non-instantiable; no trading, backtest, strategy, optimization, or training
+runtime is enabled. Future `data/live_acceptance/` output is Git-ignored; the
+already tracked 2026-08-06 successful acceptance artifact remains historical
+delivery evidence.
+
+This decision supersedes ADR-0013 only for the operational items that ADR-0013
+explicitly deferred. The deterministic offline composition remains unchanged
+and is still the default test boundary. Official OpenAI successful live smoke
+P1-3 remains deferred until account funding is restored; the successful Qwen
+compatibility acceptance is not reclassified as an OpenAI production pass.
+
+Reason
+
+Persist-before-enqueue and claim-by-status provide restart visibility without
+introducing a distributed orchestrator. A single Worker and a shared local
+file lock match DuckDB and FAISS deployment constraints while keeping process
+responsibilities explicit. Exact citation and numeric checks address the
+observed reporting-period drift without weakening schemas to accommodate model
+errors. The auxiliary services satisfy the MASTER_SPEC single-node deployment
+shape while preserving the Phase One report-only boundary.

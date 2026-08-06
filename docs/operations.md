@@ -96,8 +96,14 @@ Important environment variables:
 | `DEEPINSIGHT_TIMEZONE` | Application timezone |
 | `DEEPINSIGHT_DUCKDB_PATH` | DuckDB file path |
 | `DEEPINSIGHT_FAISS_ROOT` | FAISS index root |
+| `DEEPINSIGHT_RAW_ROOT` | Original source-document root |
 | `DEEPINSIGHT_SNAPSHOT_ROOT` | Snapshot root |
 | `DEEPINSIGHT_BACKUP_ROOT` | Backup root |
+| `DEEPINSIGHT_REDIS_URL` | Durable report job ID queue |
+| `DEEPINSIGHT_PROVIDER_SEC_USER_AGENT` | SEC Fair Access identity |
+| `DEEPINSIGHT_PROVIDER_SEC_CIK_MAP` | Canonical asset-to-CIK JSON mapping |
+| `DEEPINSIGHT_SCHEDULER_ENABLED` | Explicit daily Scheduler switch |
+| `DEEPINSIGHT_WEB_API_BASE_URL` | FastAPI address used by Scheduler/Web |
 | `DEEPINSIGHT_LOG_LEVEL` | Validated stdlib/structlog level |
 | `OPENAI_API_KEY` | OpenAI secret; may be empty before LLM work starts |
 | `OPENAI_MODEL_DEFAULT` | Default reasoning model |
@@ -148,8 +154,11 @@ directory. They never read or write the configured development database.
 - Connections are opened for one scoped operation and then closed.
 - Writes use explicit commit-or-rollback transactions.
 - Writes made through one `DuckDBDatabase` instance are serialized in-process.
-- Deployment must designate one writer process for the DuckDB file. The
-  in-process lock is not a cross-process or distributed lock.
+- Every Repository connection acquires a path-specific Linux advisory lock,
+  shared with snapshot and backup scripts. This serializes API reads and
+  Worker writes across local processes.
+- Deployment designates one report Worker. API writes only durable job
+  metadata; the Scheduler and Web do not open DuckDB.
 - Readers must not open the file with incompatible DuckDB configuration while
   the writer is active.
 
@@ -202,10 +211,13 @@ services before report and Memory endpoints are usable. Until then, those
 operations return an explicit service failure or a failed report task rather
 than silently touching local storage or an external network.
 
-Report work uses a process-local FastAPI background task. Task status is held
-in memory, is lost on restart, and is not shared between workers. Run one
-worker for this MVP implementation. Do not use it as a durable production job
-queue.
+The safe default and offline demo retain their deterministic process-local task
+service. The production factory
+`apps.api.production:create_production_application` instead persists the full
+request and lifecycle in `report_jobs`, then sends only `job_id` through Redis.
+The separate single Worker atomically claims `queued` jobs and writes a safe
+terminal state. On restart it requeues interrupted `running` jobs; duplicate
+Redis messages cannot claim an already terminal job.
 
 API-focused checks are:
 
@@ -250,11 +262,60 @@ verify persisted reports, document vectors, L1 Memory, and L3 report Memory
 remain readable. A Fake LLM timeout case verifies that the API job becomes
 `failed` and no report is silently created.
 
-The offline app is not the unresolved Worker/Redis architecture. Report job
-state remains process-local and one worker is required. Redis message shape,
-durable job storage, multi-process DuckDB locking, Scheduler timing, Web UI,
-snapshot consistency, and recovery policy remain pending and are not inferred
-by this integration.
+The offline app intentionally remains independent of Redis so default pytest
+is deterministic. The production task path is separately covered by
+Repository/Worker tests and the Compose topology below.
+
+## Production processes and Docker Compose
+
+Validate and start the single-node topology:
+
+```bash
+cp .env.example .env
+docker compose config --quiet
+docker compose up --build
+```
+
+The local `.env` is optional for Compose parsing but the Worker fails
+explicitly until SEC and OpenAI credentials are configured. The services are:
+
+- `api`: request persistence, Redis dispatch, task/report/snapshot reads
+- `worker`: the only full report-workflow executor
+- `scheduler`: one UTC cron that submits configured single-asset reports via API
+- `web`: read-only Streamlit task/report viewer via API
+- `redis`: append-only delivery queue containing job IDs only
+
+The production worker remains bound to the official OpenAI implementation
+required by MASTER_SPEC. Its successful live smoke (P1-3) is deferred until
+account funding is restored; Qwen compatibility acceptance must not be
+reported as an official OpenAI production pass.
+
+## Snapshot, backup, and recovery
+
+Create local bundles:
+
+```bash
+"$CONDA_PREFIX/bin/python" -m scripts.snapshot_local
+"$CONDA_PREFIX/bin/python" -m scripts.backup_local
+```
+
+Each bundle contains `platform.duckdb`, `faiss.tar.gz`, and `manifest.json`
+with SHA-256 digests. Creation acquires the same DuckDB file lock used by
+Repository writes, builds in a same-root temporary directory, and publishes
+with atomic rename. The snapshot API reads only validated manifests and
+returns logical artifact names.
+
+Recovery procedure:
+
+1. stop API, Worker, Scheduler, and Web;
+2. verify both manifest hashes;
+3. restore DuckDB and extract FAISS into the configured paths;
+4. start Redis, API, then the single Worker;
+5. Worker recovery returns interrupted `running` jobs to `queued`;
+6. verify `/health`, job status, report retrieval, and Memory search.
+
+Never restore over a running process. Local file locking is not a
+multi-machine distributed lock.
 
 ## Data ingestion
 

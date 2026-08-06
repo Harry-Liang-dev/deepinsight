@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import json
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import date
+from datetime import UTC, date, datetime
+from pathlib import Path
 from threading import RLock
 from typing import Protocol
 from uuid import uuid4
@@ -12,6 +14,8 @@ from uuid import uuid4
 from src.api.errors import ApiError, service_unavailable
 from src.api.schemas import MemorySnapshotResponse
 from src.models.enums import TaskStatus
+from src.orchestration.job_queue import JobQueueError, ReportJobQueue
+from src.repositories import ReportJobRecord, ReportJobRepository, RepositoryError
 from src.schemas.common import ErrorInfo, TaskStatusResponse
 from src.schemas.memory import (
     MemorySearchRequest,
@@ -164,6 +168,85 @@ class InProcessReportTaskService:
             return None if status is None else status.model_copy(deep=True)
 
 
+class DurableReportTaskService:
+    """Persist report requests in DuckDB and enqueue only their identifiers."""
+
+    def __init__(
+        self,
+        jobs: ReportJobRepository,
+        queue: ReportJobQueue,
+        *,
+        job_id_factory: Callable[[], str] | None = None,
+        clock: Callable[[], datetime] | None = None,
+    ) -> None:
+        """Bind durable task state and queue transport."""
+
+        self._jobs = jobs
+        self._queue = queue
+        self._job_id_factory = job_id_factory or (lambda: f"job_report_{uuid4().hex}")
+        self._clock = clock or (lambda: datetime.now(UTC))
+
+    def submit(self, request: GenerateReportRequest) -> TaskStatusResponse:
+        """Persist a queued request before publishing its stable identifier."""
+
+        job_id = self._job_id_factory()
+        if not job_id.strip():
+            raise service_unavailable("Report task ID generation failed.")
+        created_at = self._clock()
+        try:
+            self._jobs.create(
+                ReportJobRecord(
+                    job_id=job_id,
+                    request=request,
+                    status=TaskStatus.QUEUED,
+                    created_at=created_at,
+                )
+            )
+        except RepositoryError as exc:
+            raise service_unavailable("Report task submission failed.") from exc
+        try:
+            self._queue.enqueue(job_id)
+        except JobQueueError as exc:
+            error = ErrorInfo(
+                code="report_queue_unavailable",
+                message="Report task queue is unavailable.",
+                retryable=True,
+            )
+            try:
+                self._jobs.fail_queued(
+                    job_id,
+                    error=error,
+                    finished_at=self._clock(),
+                )
+            except RepositoryError as compensation_error:
+                raise service_unavailable(
+                    "Report task submission and compensation failed."
+                ) from compensation_error
+            raise service_unavailable("Report task submission failed.") from exc
+        return TaskStatusResponse(job_id=job_id, status=TaskStatus.QUEUED)
+
+    def run(self, job_id: str, request: GenerateReportRequest) -> None:
+        """Leave execution to the separately deployed single Worker."""
+
+        del job_id, request
+
+    def get_status(self, job_id: str) -> TaskStatusResponse | None:
+        """Read durable task state without consulting Redis."""
+
+        try:
+            record = self._jobs.get(job_id)
+        except RepositoryError as exc:
+            raise service_unavailable("Report task status is unavailable.") from exc
+        if record is None:
+            return None
+        return TaskStatusResponse(
+            job_id=record.job_id,
+            status=record.status,
+            report_id=record.report_id,
+            error=record.error,
+        )
+
+
 class UnavailableReportGenerator:
     """Explicit default used until a process wires the full report workflow."""
 
@@ -208,6 +291,48 @@ class EmptySnapshotQueryService:
 
         del snapshot_date
         return None
+
+
+class LocalSnapshotQueryService:
+    """Read validated local snapshot manifests without creating artifacts."""
+
+    def __init__(self, snapshot_root: Path) -> None:
+        """Bind the configured snapshot root."""
+
+        self._snapshot_root = snapshot_root
+
+    def get(self, snapshot_date: date) -> MemorySnapshotResponse | None:
+        """Return the latest valid local snapshot for one UTC date."""
+
+        if not self._snapshot_root.is_dir():
+            return None
+        candidates: list[tuple[datetime, Path]] = []
+        for bundle in self._snapshot_root.iterdir():
+            manifest_path = bundle / "manifest.json"
+            if not bundle.is_dir() or not manifest_path.is_file():
+                continue
+            try:
+                payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+                created_at = datetime.fromisoformat(str(payload["created_at"]))
+            except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError):
+                continue
+            if (
+                payload.get("bundle_type") == "snapshot"
+                and created_at.date() == snapshot_date
+            ):
+                candidates.append((created_at, bundle))
+        if not candidates:
+            return None
+        _, latest = max(candidates, key=lambda candidate: candidate[0])
+        return MemorySnapshotResponse(
+            snapshot_date=snapshot_date,
+            duckdb_artifact=(
+                "platform.duckdb" if (latest / "platform.duckdb").is_file() else None
+            ),
+            faiss_artifacts=(
+                ["faiss.tar.gz"] if (latest / "faiss.tar.gz").is_file() else []
+            ),
+        )
 
 
 def default_api_services() -> ApiServices:

@@ -73,6 +73,42 @@ uv pip install --python "$CONDA_PREFIX/bin/python" -e ".[dev]"
 curl --fail http://127.0.0.1:8000/health
 ```
 
+### 单机生产拓扑
+
+生产入口采用 `FastAPI → DuckDB report_jobs → Redis(job_id) → 单 Worker`
+的持久化任务链。Redis 只传递任务 ID；请求、状态、错误和报告 ID 以 DuckDB
+为准。Scheduler 只通过 FastAPI 提交请求，Streamlit Web 只通过 FastAPI
+查询任务和报告。
+
+先复制并填写本地配置；真实密钥只放在未纳入 Git 的 `.env` 或受控环境变量中：
+
+```bash
+cp .env.example .env
+docker compose config --quiet
+docker compose up --build
+```
+
+服务地址：
+
+- API：`http://127.0.0.1:8000`
+- Web：`http://127.0.0.1:8501`
+
+Worker 要求有效的 `OPENAI_API_KEY`、`DEEPINSIGHT_PROVIDER_SEC_USER_AGENT`
+和 `DEEPINSIGHT_PROVIDER_SEC_CIK_MAP`。缺少配置时会显式启动失败，不会切换到
+Fake Provider。当前官方 OpenAI 账户充值受阻，因此该生产调用的最终复验
+（P1-3）明确延期；离线闭环及已完成的 SEC + Qwen 受控验收不受影响。
+
+本地不使用 Compose 时，可分别启动：
+
+```bash
+"$CONDA_PREFIX/bin/python" -m uvicorn \
+  apps.api.production:create_production_application --factory \
+  --host 127.0.0.1 --port 8000
+"$CONDA_PREFIX/bin/python" -m apps.worker.main
+"$CONDA_PREFIX/bin/python" -m apps.scheduler.main
+"$CONDA_PREFIX/bin/python" -m streamlit run apps/web/main.py
+```
+
 ## 离线端到端演示
 
 启动不需要任何密钥的临时离线 API：
@@ -201,11 +237,27 @@ SEC 不提供行情，因此价格历史和结构化估值会在报告中明确�
 ## 当前运行边界
 
 - 报告仅支持 `single_asset`。
-- API 任务状态保存在单进程内，重启后不保留。
-- Redis 消息协议、持久化 Job 表和多进程 DuckDB 写锁策略仍待确认。
-- Worker、Scheduler、Web、Docker Compose、快照与恢复尚未完成。
+- 安全默认入口和离线演示仍使用进程内任务服务；生产入口使用持久化
+  `report_jobs` 和 Redis ID 队列。
+- 生产部署固定为单 Worker；同一 DuckDB 文件的 Repository 写事务和
+  快照/备份由跨进程 advisory lock 串行化。
+- Scheduler 当前只提交配置的单资产日报，不扩展为多市场 ETL 编排。
+- Web 是只读任务/报告查看器，不直接访问 DuckDB 或 FAISS。
 - SEC EDGAR 有受控 live Adapter；其他商业及官方数据连接器仍为显式不可用
   的网络隔离边界。
+- 官方 OpenAI live smoke 的成功复验属于延期项 P1-3；不得用 Qwen 结果冒充。
+
+创建一致性快照或备份：
+
+```bash
+"$CONDA_PREFIX/bin/python" -m scripts.snapshot_local
+"$CONDA_PREFIX/bin/python" -m scripts.backup_local
+```
+
+脚本在同一文件锁边界内复制 DuckDB 和 FAISS，生成 SHA-256 manifest，并通过
+同目录临时目录原子发布。未来 live 运行产物位于 Git 忽略的
+`data/live_acceptance/`；仓库中已有的 2026-08-06 验收样本作为历史交付证据
+保留。
 
 详细说明见 [运维文档](docs/operations.md)、[API 文档](docs/api.md) 和
 [模块状态](docs/MODULE_STATUS.md)。

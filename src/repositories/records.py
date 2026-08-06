@@ -6,10 +6,17 @@ from datetime import date, datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from src.models.enums import AgentName, IngestionJobType, MarketScope, MemoryLevel
+from src.models.enums import (
+    AgentName,
+    IngestionJobType,
+    MarketScope,
+    MemoryLevel,
+    TaskStatus,
+)
 from src.models.identifiers import AssetId
 from src.models.types import JsonObject
-from src.schemas.common import SourceReference
+from src.schemas.common import ErrorInfo, SourceReference
+from src.schemas.reports import GenerateReportRequest
 
 
 class PersistenceRecord(BaseModel):
@@ -103,3 +110,17 @@ class IngestionJobRecord(PersistenceRecord):
     rows_written: int = Field(default=0, ge=0)
     error_message: str | None = None
     created_at: datetime | None = None
+
+
+class ReportJobRecord(PersistenceRecord):
+    """Durable request and lifecycle state for one report job."""
+
+    job_id: str = Field(min_length=1)
+    request: GenerateReportRequest
+    status: TaskStatus
+    report_id: str | None = None
+    error: ErrorInfo | None = None
+    attempt_count: int = Field(default=0, ge=0)
+    created_at: datetime | None = None
+    started_at: datetime | None = None
+    finished_at: datetime | None = None

@@ -81,7 +81,8 @@ def make_report_input() -> ReportAssemblyInput:
             quality_score=0.8,
             growth_score=0.7,
             valuation_score=0.5,
-            key_points=["Revenue increased."],
+            facts=["Revenue increased."],
+            key_points=["Revenue trend may support growth."],
             risk_points=["Valuation remained elevated."],
             uncertainties=["Only one filing period was supplied."],
             supporting_citations=[citation],
@@ -138,6 +139,7 @@ def make_report_input() -> ReportAssemblyInput:
             AgentName.FUNDAMENTAL_ANALYST,
             cast(JsonObject, fundamental.model_dump(mode="json")),
             (
+                "analysis.facts[0]",
                 "analysis.key_points[0]",
                 "analysis.risk_points[0]",
             ),

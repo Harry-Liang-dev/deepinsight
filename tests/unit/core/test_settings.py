@@ -29,6 +29,7 @@ def test_default_settings_use_relative_paths(
     assert settings.openai.api_key is None
     assert not settings.storage.duckdb_path.is_absolute()
     assert not settings.storage.faiss_root.is_absolute()
+    assert not settings.storage.raw_root.is_absolute()
     assert not settings.storage.snapshot_root.is_absolute()
     assert not settings.storage.backup_root.is_absolute()
 
@@ -45,6 +46,13 @@ def test_settings_read_environment_variables(
     monkeypatch.setenv("OPENAI_API_KEY", "test-secret")
     monkeypatch.setenv("OPENAI_MODEL_DEFAULT", "test-model")
     monkeypatch.setenv("OPENAI_TIMEOUT_SECONDS", "15")
+    monkeypatch.setenv("OPENAI_EMBEDDING_DIMENSION", "256")
+    monkeypatch.setenv("DEEPINSIGHT_REDIS_URL", "redis://queue:6379/1")
+    monkeypatch.setenv(
+        "DEEPINSIGHT_PROVIDER_SEC_CIK_MAP",
+        '{"US:AAPL":"0000320193"}',
+    )
+    monkeypatch.setenv("DEEPINSIGHT_SCHEDULER_ASSET_IDS", '["US:AAPL"]')
 
     settings = load_settings()
 
@@ -57,6 +65,10 @@ def test_settings_read_environment_variables(
     assert settings.openai.api_key.get_secret_value() == "test-secret"
     assert settings.openai.model_default == "test-model"
     assert settings.openai.timeout_seconds == 15
+    assert settings.openai.embedding_dimension == 256
+    assert settings.redis.url == "redis://queue:6379/1"
+    assert settings.providers.sec_cik_map == {"US:AAPL": "0000320193"}
+    assert settings.scheduler.asset_ids == ["US:AAPL"]
 
 
 def test_explicit_test_settings_override_environment(

@@ -7,7 +7,11 @@ from src.core.settings import (
     LoggingSettings,
     LogLevel,
     OpenAISettings,
+    ProviderSettings,
+    RedisSettings,
+    SchedulerSettings,
     StorageSettings,
+    WebSettings,
     load_settings,
 )
 
@@ -17,7 +21,11 @@ __all__ = [
     "LoggingSettings",
     "LogLevel",
     "OpenAISettings",
+    "ProviderSettings",
+    "RedisSettings",
+    "SchedulerSettings",
     "StorageSettings",
+    "WebSettings",
     "configure_logging",
     "load_settings",
 ]

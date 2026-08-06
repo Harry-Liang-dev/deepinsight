@@ -38,6 +38,7 @@ logs/
 # DuckDB runtime files
 *.duckdb
 *.duckdb.wal
+*.duckdb.lock
 data/duckdb/*
 !data/duckdb/.gitkeep
 
@@ -55,3 +56,4 @@ data/snapshots/*
 !data/snapshots/.gitkeep
 data/backups/*
 !data/backups/.gitkeep
+data/live_acceptance/

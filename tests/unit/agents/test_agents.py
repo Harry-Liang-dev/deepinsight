@@ -207,7 +207,7 @@ def test_fundamental_agent_validates_and_links_every_claim() -> None:
     assert len(result.evidence) == 5
     assert result.uncertainties == ["Only one filing was supplied."]
     assert len(gateway.calls) == 1
-    assert logger.records[0].prompt_template_ver == "v3"
+    assert logger.records[0].prompt_template_ver == "v5"
     assert logger.records[0].status == "ok"
 
 
@@ -237,7 +237,7 @@ def test_each_nonfundamental_analyst_runs_with_fake_gateway(
     assert result.status is AgentStatus.OK
     assert len(result.evidence) == 2
     assert logger.records[0].agent_name is agent_name
-    assert logger.records[0].prompt_template_ver == "v2"
+    assert logger.records[0].prompt_template_ver == "v4"
 
 
 def test_research_and_thesis_and_risk_managers_run_independently() -> None:
@@ -377,6 +377,28 @@ def test_trading_instruction_is_rejected_even_when_cited() -> None:
     assert logger.records[0].output_payload is None
 
 
+def test_numeric_claim_absent_from_evidence_is_rejected() -> None:
+    """A cited chunk cannot legitimize a number that it does not contain."""
+
+    response = _analyst_output(AgentName.TECHNICAL_TEXT_ANALYST)
+    response.analysis.key_points = [
+        "Share-based compensation was $10.5 billion for the quarter."
+    ]
+    request = _agent_request(AgentName.TECHNICAL_TEXT_ANALYST)
+
+    result, _, logger = _run(
+        TechnicalTextAnalystAgent,
+        AgentName.TECHNICAL_TEXT_ANALYST,
+        cast(JsonObject, response.model_dump(mode="json")),
+        cast(JsonObject, request.model_dump(mode="json")),
+    )
+
+    assert result.status is AgentStatus.ERROR
+    assert result.error is not None
+    assert result.error.code == "evidence_validation"
+    assert "numeric claim was absent" in (logger.records[0].error_message or "")
+
+
 def test_sell_through_business_metric_is_not_a_trading_instruction() -> None:
     """A hyphenated operating metric must not trigger the trade guard."""
 
@@ -448,7 +470,7 @@ def test_prompts_are_versioned_and_missing_prompt_is_explicit(tmp_path: Path) ->
 
     prompt = PromptLoader(PROMPT_ROOT).load(AgentName.RISK_MANAGER)
 
-    assert prompt.version == "v3"
+    assert prompt.version == "v4"
     assert "trade" in prompt.system_prompt
     with pytest.raises(PromptLoadError, match="unavailable"):
         PromptLoader(tmp_path).load(AgentName.RISK_MANAGER)
@@ -471,7 +493,8 @@ def test_normalized_score_prompts_define_range_and_forbid_other_scales(
     prompt = PromptLoader(PROMPT_ROOT).load(agent_name)
     normalized_prompt = " ".join(prompt.system_prompt.split())
 
-    assert prompt.version == "v3"
+    expected_version = "v5" if agent_name is AgentName.FUNDAMENTAL_ANALYST else "v4"
+    assert prompt.version == expected_version
     assert "between 0.0 and 1.0 inclusive" in normalized_prompt
     assert "Never use a 1-to-5 or 0-to-100 scale" in normalized_prompt
     assert "not 3 or 60" in normalized_prompt

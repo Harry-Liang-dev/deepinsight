@@ -26,6 +26,10 @@ class ReportMemoryWriter(Protocol):
         """Write one attributable L3 report trace."""
         ...
 
+    def delete(self, memory_id: str) -> None:
+        """Delete one L3 trace during failed completion compensation."""
+        ...
+
 
 class ResearchReportPipeline:
     """Finalize structured Agent output without direct storage dependencies."""
@@ -68,9 +72,32 @@ class ResearchReportPipeline:
             status=TaskStatus.RUNNING,
         )
         self._report_store.save(running_report)
-        self._memory_writer.write(self._assembler.to_memory_request(running_report))
+        try:
+            memory = self._memory_writer.write(
+                self._assembler.to_memory_request(running_report)
+            )
+        except Exception:
+            self._record_failed(running_report)
+            raise
         completed_report = running_report.model_copy(
             update={"status": TaskStatus.COMPLETED}
         )
-        self._report_store.save(completed_report)
+        try:
+            self._report_store.save(completed_report)
+        except Exception:
+            try:
+                self._memory_writer.delete(memory.memory_id)
+            finally:
+                self._record_failed(running_report)
+            raise
         return completed_report
+
+    def _record_failed(self, report: ResearchReport) -> None:
+        """Best-effort replacement of a stale running report state."""
+
+        try:
+            self._report_store.save(
+                report.model_copy(update={"status": TaskStatus.FAILED})
+            )
+        except Exception:
+            return

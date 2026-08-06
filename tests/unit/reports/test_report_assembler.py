@@ -44,9 +44,11 @@ def test_complete_report_has_standard_markdown_json_and_epistemic_sections() -> 
     fundamentals = StandardReportSection.model_validate(
         report.report_json["fundamentals"]
     )
-    assert fundamentals.inferences[0].text == "Revenue increased."
+    assert fundamentals.facts[0].text == "Revenue increased."
+    assert fundamentals.inferences[0].text == "Revenue trend may support growth."
     assert fundamentals.risk_warnings[0].text == "Valuation remained elevated."
     assert fundamentals.uncertainties
+    assert fundamentals.facts[0].text in report.report_markdown
     assert fundamentals.inferences[0].text in report.report_markdown
 
 
@@ -94,6 +96,7 @@ def test_duplicate_references_are_stably_deduplicated() -> None:
     fundamentals = StandardReportSection.model_validate(
         report.report_json["fundamentals"]
     )
+    assert len(fundamentals.facts[0].citations) == 1
     assert len(fundamentals.inferences[0].citations) == 1
 
 
@@ -141,7 +144,12 @@ def test_unknown_agent_citation_is_rejected() -> None:
         document_id="invented-document",
         excerpt_ref="invented-chunk",
     )
-    result.evidence[0] = EvidenceLink(
+    key_point_index = next(
+        index
+        for index, evidence in enumerate(result.evidence)
+        if evidence.claim_path == "analysis.key_points[0]"
+    )
+    result.evidence[key_point_index] = EvidenceLink(
         claim_path="analysis.key_points[0]",
         citations=[fabricated],
     )

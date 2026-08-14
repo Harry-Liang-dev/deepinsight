@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
+from copy import deepcopy
 from datetime import UTC, datetime
 from itertools import count
 from pathlib import Path
-from typing import cast
 
 from fastapi import FastAPI
 
@@ -38,7 +38,7 @@ from src.core.settings import (
 from src.memory import MemoryService
 from src.models.enums import AgentName, MemoryLevel, ReportMarketScope, ReportType
 from src.models.identifiers import AssetId
-from src.models.types import JsonObject, JsonValue
+from src.models.types import JsonObject
 from src.operators import FundamentalFeatureOperator, TechnicalFeatureOperator
 from src.orchestration import ResearchReportPipeline, ResearchWorkflowService
 from src.reports import STANDARD_SECTION_NAMES, ReportAssembler
@@ -61,10 +61,12 @@ from src.services import (
     DocumentChunker,
     DocumentEmbeddingService,
     FakeEmbeddingService,
-    FakeLLMProvider,
     LLMGateway,
+    LLMProviderCapabilities,
     LLMProviderError,
+    LLMProviderResult,
     RawTextStore,
+    ResearchDataBundleService,
 )
 
 OFFLINE_NOW = datetime(2026, 7, 31, 9, 30, tzinfo=UTC)
@@ -79,10 +81,9 @@ OFFLINE_MEMORY_TEXT = (
 )
 OFFLINE_QUERY_TEXT = "Research evidence for US:AAPL through 2026-07-31"
 OFFLINE_REPORT_MEMORY_TEXT = (
-    "Research synthesis: Growth remained positive while valuation risk "
-    "required caution. Narrative risk score: 0.50. This conclusion is "
-    "research analysis only. Risk review: Valuation remained elevated. "
-    "Demand may slow."
+    "This report contains research analysis only and does not issue a system "
+    "recommendation or execution instruction. Risk review: Valuation remained "
+    "elevated. Demand may slow."
 )
 OFFLINE_EMBEDDING_MODEL = "offline-fake-embedding-v1"
 OFFLINE_EMBEDDING_DIMENSION = 3
@@ -150,11 +151,6 @@ def create_offline_application(
     )
     if len(fixture_chunks) != 1:
         raise RuntimeError("offline fixture must produce exactly one chunk")
-    citation = SourceReference(
-        document_id=OFFLINE_DOCUMENT_ID,
-        excerpt_ref=fixture_chunks[0].chunk_id,
-    )
-
     embedder = FakeEmbeddingService(
         {
             OFFLINE_DOCUMENT_TEXT: [1.0, 0.0, 0.0],
@@ -171,6 +167,7 @@ def create_offline_application(
     )
     documents = DocumentRepository(database)
     market_data = MarketDataRepository(database)
+    instruments = InstrumentRepository(database)
     memory_ids = count(1)
     memory = MemoryService(
         MemoryItemRepository(database),
@@ -195,7 +192,7 @@ def create_offline_application(
 
     ingestion_ids = count(1)
     ingestion = DataIngestionService(
-        instruments=InstrumentRepository(database),
+        instruments=instruments,
         market_data=market_data,
         documents=documents,
         jobs=IngestionJobRepository(database),
@@ -209,7 +206,6 @@ def create_offline_application(
     coordinator = _coordinator(
         database,
         memory,
-        citation,
         settings,
         llm_error=llm_error,
     )
@@ -233,6 +229,11 @@ def create_offline_application(
         coordinator=coordinator,
         report_pipeline=report_pipeline,
         model_name=settings.openai.model_default,
+        data_bundle_builder=ResearchDataBundleService(
+            instruments=instruments,
+            market_data=market_data,
+        ),
+        dataset_version="offline_api_fixture_v1",
         clock=lambda: OFFLINE_NOW,
         report_id_factory=lambda: f"rep_demo_{next(report_ids)}",
         task_id_factory=lambda: f"task_demo_{next(task_ids)}",
@@ -293,12 +294,10 @@ def _document_record() -> JsonObject:
 def _coordinator(
     database: DuckDBDatabase,
     memory: MemoryService,
-    citation: SourceReference,
     settings: AppSettings,
     *,
     llm_error: LLMProviderError | None,
 ) -> ResearchCoordinator:
-    responses = _agent_responses(citation)
     prompt_root = Path(__file__).resolve().parents[2] / "config" / "prompts"
     prompts = PromptLoader(prompt_root)
     run_logger = AgentRunRepository(database)
@@ -318,10 +317,7 @@ def _coordinator(
             LLMGateway(
                 cache,
                 settings.openai,
-                provider=FakeLLMProvider(
-                    responses[agent_name],
-                    error=llm_error,
-                ),
+                provider=_OfflineAgentProvider(agent_name, error=llm_error),
             ),
             memory,
             prompts,
@@ -333,93 +329,264 @@ def _coordinator(
     return ResearchCoordinator(registry)
 
 
-def _agent_responses(
-    source: SourceReference,
-) -> dict[AgentName, JsonObject]:
-    citation = cast(
-        list[JsonValue],
-        [source.model_dump(mode="json")],
-    )
-    return {
-        AgentName.FUNDAMENTAL_ANALYST: {
+class _OfflineAgentProvider:
+    """Build deterministic v2 Fake output from the role-local manifest."""
+
+    provider_name = "fake"
+
+    def __init__(
+        self,
+        agent_name: AgentName,
+        *,
+        error: LLMProviderError | None,
+    ) -> None:
+        self._agent_name = agent_name
+        self._error = error
+
+    @property
+    def capabilities(self) -> LLMProviderCapabilities:
+        """Expose the same offline capabilities as the standard Fake provider."""
+
+        return LLMProviderCapabilities(
+            structured_json=True,
+            native_json_schema=True,
+            remote_storage_enabled=False,
+        )
+
+    def invoke_json(
+        self,
+        model: str,
+        system_prompt: str,
+        input_payload: JsonObject,
+        *,
+        response_schema: JsonObject | None = None,
+        schema_name: str = "deepinsight_response",
+    ) -> LLMProviderResult:
+        """Return one role-correct response citing only manifest Evidence IDs."""
+
+        del system_prompt, response_schema, schema_name
+        if self._error is not None:
+            raise self._error
+        content = _agent_response(self._agent_name, input_payload)
+        return LLMProviderResult(
+            content=deepcopy(content),
+            model=model,
+            response_id=f"offline-{self._agent_name.value}",
+        )
+
+
+def _agent_response(agent_name: AgentName, input_payload: JsonObject) -> JsonObject:
+    is_analyst = agent_name in {
+        AgentName.FUNDAMENTAL_ANALYST,
+        AgentName.TECHNICAL_TEXT_ANALYST,
+        AgentName.SENTIMENT_ANALYST,
+        AgentName.NEWS_EVENT_ANALYST,
+    }
+    if is_analyst:
+        evidence_id, evidence_text = _first_manifest_evidence(input_payload)
+        provenance_key = "evidence_ids"
+        provenance_id = evidence_id
+    else:
+        provenance_id, evidence_text = _first_upstream_claim(input_payload)
+        provenance_key = "upstream_claim_ids"
+
+    def binding(path: str, text: str) -> JsonObject:
+        return {
+            "claim_path": path,
+            "claim_text": text,
+            "numeric_literals": [],
+            provenance_key: [provenance_id],
+        }
+
+    if agent_name is AgentName.FUNDAMENTAL_ANALYST:
+        return {
             "agent_name": "fundamental_analyst",
             "status": "ok",
             "analysis": {
                 "quality_score": 0.8,
                 "growth_score": 0.7,
                 "valuation_score": 0.5,
-                "key_points": ["Revenue evidence was reviewed."],
-                "risk_points": ["Valuation evidence remains limited."],
+                "facts": [evidence_text],
+                "key_points": ["The supplied evidence supports a bounded review."],
+                "risk_points": ["Evidence coverage remains limited."],
                 "uncertainties": ["Historical fundamentals were unavailable."],
-                "supporting_citations": citation,
+                "claim_evidence": [
+                    binding("analysis.facts[0]", evidence_text),
+                    binding(
+                        "analysis.key_points[0]",
+                        "The supplied evidence supports a bounded review.",
+                    ),
+                    binding(
+                        "analysis.risk_points[0]", "Evidence coverage remains limited."
+                    ),
+                ],
             },
-        },
-        AgentName.TECHNICAL_TEXT_ANALYST: _analyst_response(
-            AgentName.TECHNICAL_TEXT_ANALYST,
-            "The latest normalized close was available.",
-            "Long technical history was unavailable.",
-            citation,
-        ),
-        AgentName.SENTIMENT_ANALYST: _analyst_response(
-            AgentName.SENTIMENT_ANALYST,
-            "The supplied document tone was stable.",
-            "The sentiment sample was limited.",
-            citation,
-        ),
-        AgentName.NEWS_EVENT_ANALYST: _analyst_response(
-            AgentName.NEWS_EVENT_ANALYST,
-            "No adverse event was stated in the supplied filing.",
-            "Later events may not be represented.",
-            citation,
-        ),
-        AgentName.RESEARCH_MANAGER: {
+        }
+    if agent_name is AgentName.SENTIMENT_ANALYST:
+        return {
+            "agent_name": agent_name.value,
+            "status": "ok",
+            "analysis": {
+                "claims": [
+                    binding("analysis.facts[0]", evidence_text),
+                    binding(
+                        "analysis.risk_points[0]",
+                        "The supplied sentiment sample has limited coverage.",
+                    ),
+                ],
+                "uncertainties": ["Broader sentiment coverage was unavailable."],
+            },
+        }
+    if agent_name is AgentName.TECHNICAL_TEXT_ANALYST:
+        return {
+            "agent_name": agent_name.value,
+            "status": "ok",
+            "analysis": {
+                "claims": [
+                    binding("analysis.facts[0]", evidence_text),
+                    binding(
+                        "analysis.risk_points[0]",
+                        "Technical evidence coverage remains limited.",
+                    ),
+                ],
+                "uncertainties": ["Long technical history was unavailable."],
+            },
+        }
+    if agent_name is AgentName.NEWS_EVENT_ANALYST:
+        return {
+            "agent_name": agent_name.value,
+            "status": "ok",
+            "analysis": {
+                "claims": [
+                    binding("analysis.facts[0]", evidence_text),
+                    binding(
+                        "analysis.risk_points[0]",
+                        "Event evidence coverage remains limited.",
+                    ),
+                ],
+                "uncertainties": ["Later events may not be represented."],
+            },
+        }
+    if agent_name is AgentName.RESEARCH_MANAGER:
+        summary = "Growth remained positive while valuation risk required caution."
+        conflict = "Constructive operating evidence was offset by limited history."
+        return {
             "agent_name": "research_manager",
             "status": "ok",
             "analysis": {
-                "summary_points": [
-                    "Growth remained positive while valuation risk required caution."
-                ],
-                "conflicts": [
-                    "Constructive operating evidence was offset by limited history."
+                "claims": [
+                    binding("analysis.summary_points[0]", summary),
+                    binding("analysis.conflicts[0]", conflict),
                 ],
                 "uncertainties": ["Only fixed offline evidence was supplied."],
-                "supporting_citations": citation,
             },
-        },
-        AgentName.BULL_MANAGER: {
-            "bull_thesis": ["Growth remained positive."],
-            "conditions_required": ["Demand remains stable."],
-            "invalidators": ["Revenue contracts."],
+        }
+    if agent_name is AgentName.BULL_MANAGER:
+        return {
+            "claims": [
+                binding("bull_thesis[0]", evidence_text),
+                binding("conditions_required[0]", "Demand remains stable."),
+                binding("invalidators[0]", "Revenue contracts."),
+            ],
             "confidence": 0.6,
-        },
-        AgentName.BEAR_MANAGER: {
-            "bear_thesis": ["Valuation remained elevated."],
-            "conditions_required": ["Growth slows."],
-            "invalidators": ["Growth accelerates."],
+        }
+    if agent_name is AgentName.BEAR_MANAGER:
+        return {
+            "claims": [
+                binding("bear_thesis[0]", evidence_text),
+                binding("conditions_required[0]", "Growth slows."),
+                binding("invalidators[0]", "Growth accelerates."),
+            ],
             "confidence": 0.5,
-        },
-        AgentName.RISK_MANAGER: {
-            "confirmed_risks": ["Valuation remained elevated."],
-            "scenario_risks": ["Demand may slow."],
-            "watch_items": ["Revenue growth requires monitoring."],
+        }
+    if agent_name is AgentName.RISK_MANAGER:
+        confirmed_risk = "Valuation remained elevated."
+        return {
+            "claims": [
+                binding("confirmed_risks[0]", confirmed_risk),
+                binding("scenario_risks[0]", "Demand may slow."),
+                binding("watch_items[0]", "Revenue growth requires monitoring."),
+            ],
             "narrative_risk_score": 0.5,
-        },
-    }
+            "uncertainties": [],
+        }
+    raise RuntimeError("offline Agent role is unsupported")
+
+
+def _first_manifest_evidence(input_payload: JsonObject) -> tuple[str, str]:
+    context = input_payload.get("input_context")
+    if not isinstance(context, dict):
+        raise RuntimeError("offline Agent input context is unavailable")
+    manifest = context.get("role_evidence_manifest")
+    if not isinstance(manifest, dict):
+        raise RuntimeError("offline role Evidence manifest is unavailable")
+    entries = manifest.get("entries")
+    if not isinstance(entries, list) or not entries:
+        raise RuntimeError("offline role Evidence manifest is empty")
+    entry = entries[0]
+    if not isinstance(entry, dict):
+        raise RuntimeError("offline role Evidence entry is invalid")
+    evidence_id = entry.get("evidence_id")
+    description = entry.get("short_description")
+    if not isinstance(evidence_id, str) or not isinstance(description, str):
+        raise RuntimeError("offline role Evidence entry is incomplete")
+    claim_text = description.split(": ", 1)[-1]
+    return evidence_id, claim_text
+
+
+def _first_upstream_claim(input_payload: JsonObject) -> tuple[str, str]:
+    contract = input_payload.get("research_contract")
+    if not isinstance(contract, dict):
+        raise RuntimeError("offline Manager research contract is unavailable")
+    claims = contract.get("validated_upstream_claims")
+    if not isinstance(claims, list) or not claims:
+        raise RuntimeError("offline Manager upstream Claims are unavailable")
+    claim = claims[0]
+    if not isinstance(claim, dict):
+        raise RuntimeError("offline Manager upstream Claim is invalid")
+    claim_id = claim.get("claim_id")
+    claim_text = claim.get("claim_text")
+    if not isinstance(claim_id, str) or not isinstance(claim_text, str):
+        raise RuntimeError("offline Manager upstream Claim is incomplete")
+    return claim_id, claim_text
 
 
 def _analyst_response(
     agent_name: AgentName,
-    key_point: str,
-    risk_point: str,
-    citation: list[JsonValue],
+    evidence_id: str,
+    evidence_text: str,
 ) -> JsonObject:
+    risk_text = "Evidence coverage remains limited."
     return {
         "agent_name": agent_name.value,
         "status": "ok",
         "analysis": {
-            "key_points": [key_point],
-            "risk_points": [risk_point],
+            "facts": [evidence_text],
+            "key_points": ["The supplied evidence supports a bounded review."],
+            "risk_points": [risk_text],
             "uncertainties": ["Evidence coverage was limited."],
-            "supporting_citations": citation,
+            "claim_evidence": [
+                {
+                    "claim_path": "analysis.facts[0]",
+                    "claim_text": evidence_text,
+                    "numeric_literals": [],
+                    "evidence_ids": [evidence_id],
+                    "derivation_type": "direct_evidence",
+                },
+                {
+                    "claim_path": "analysis.key_points[0]",
+                    "claim_text": "The supplied evidence supports a bounded review.",
+                    "numeric_literals": [],
+                    "evidence_ids": [evidence_id],
+                    "derivation_type": "direct_evidence",
+                },
+                {
+                    "claim_path": "analysis.risk_points[0]",
+                    "claim_text": risk_text,
+                    "numeric_literals": [],
+                    "evidence_ids": [evidence_id],
+                    "derivation_type": "direct_evidence",
+                },
+            ],
         },
     }

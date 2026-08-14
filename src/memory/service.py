@@ -7,6 +7,8 @@ from collections.abc import Callable
 from datetime import UTC, datetime
 from uuid import uuid4
 
+from src.memory.contracts import ResearchContextBundle, ResearchContextRequest
+from src.memory.retrieval import build_research_context
 from src.models.enums import MemoryLevel
 from src.models.types import JsonObject
 from src.repositories.base import RepositoryError
@@ -233,6 +235,28 @@ class MemoryService:
             if len(results) == request.top_k:
                 break
         return MemorySearchResponse(results=results)
+
+    def retrieve_context(
+        self,
+        request: ResearchContextRequest,
+    ) -> ResearchContextBundle:
+        """Return a structured, source-preserving point-in-time context bundle.
+
+        Args:
+            request: Time-safe semantic query and isolation filters.
+
+        Returns:
+            Categorized L0–L4 context, retrieval audit metadata, and explicit
+            missing-context records. No vector implementation object crosses
+            this boundary.
+        """
+
+        return build_research_context(
+            request=request,
+            memory_repository=self._duckdb_repo,
+            vector_repository=self._vector_repo,
+            embedder=self._embedder,
+        )
 
     def delete(self, memory_id: str) -> None:
         """Delete one Memory vector and sidecar during compensation."""

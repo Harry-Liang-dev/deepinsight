@@ -1,0 +1,75 @@
+benchmark_version: research_benchmark_v1
+case_id: us_high_volatility_major_event
+case_version: v1
+scenario: high_volatility_major_event
+market: US
+asset_id: US:EVENT
+report_date: 2026-08-01
+expected_outcome: report
+sources:
+  - evidence_id: us-event-source
+    fixture_kind: synthetic
+    provider: benchmark_fixture
+    document_id: us-event-document
+    excerpt_ref: us-event-chunk
+    source_locator: benchmarks/cases/v1/us_high_volatility_major_event.yaml
+    collected_at: 2026-08-01
+    published_at: "2026-07-31T14:00:00+00:00"
+    usage_basis: Synthetic redistribution-safe event and volatility scenario.
+    text: >-
+      The exchange filing announced a production halt. The observed daily
+      price range reached 18%. Management did not provide a restart date.
+      Supply commitments may be delayed.
+known_missing_data: [restart_date]
+simulated_failures: []
+report:
+  title: US High Volatility Major Event Benchmark Report
+  facts:
+    - text: The exchange filing announced a production halt.
+      evidence_ids: [us-event-source]
+    - text: The observed daily price range reached 18%.
+      evidence_ids: [us-event-source]
+    - text: Management did not provide a restart date.
+      evidence_ids: [us-event-source]
+  inferences:
+    - text: Supply commitments may be delayed.
+      evidence_ids: [us-event-source]
+  risks:
+    - text: The production halt and 18% daily range indicate elevated event risk.
+      evidence_ids: [us-event-source]
+  uncertainties:
+    - "Known missing data: restart_date."
+    - The duration and financial impact of the halt are unknown.
+  bull_summary: A timely restart could limit the event impact.
+  bear_summary: An extended halt could delay supply commitments.
+  risk_summary: Event duration and elevated volatility are the principal risks.
+  final_recommendation: Event uncertainty is high and no trading action is provided.
+observed_failure_code: null
+expected:
+  required_facts:
+    - The exchange filing announced a production halt.
+    - The observed daily price range reached 18%.
+    - Management did not provide a restart date.
+  allowed_missing_items: [restart_date]
+  forbidden_conclusions:
+    - buy the stock
+    - sell the shares
+    - guaranteed return
+  expected_failure_code: null
+thresholds:
+  lifecycle_compliance_min: 1.0
+  deterministic_score_min: 1.0
+  expected_fact_coverage_min: 1.0
+  forbidden_conclusion_compliance_min: 1.0
+  check_minimums:
+    structure_completeness: 1.0
+    numeric_grounding: 1.0
+    citation_coverage: 1.0
+    citation_traceability: 1.0
+    uncertainty_presence: 1.0
+    temporal_validity: 1.0
+    trading_instruction_compliance: 1.0
+    missing_data_disclosure: 1.0
+  live_dimension_minimums:
+    risk_identification_quality: 0.8
+    uncertainty_expression: 0.8

@@ -1,0 +1,76 @@
+benchmark_version: research_benchmark_v1
+case_id: us_complete_company
+case_version: v1
+scenario: complete_company
+market: US
+asset_id: US:BENCH
+report_date: 2026-08-01
+expected_outcome: report
+sources:
+  - evidence_id: us-complete-filing
+    fixture_kind: synthetic
+    provider: benchmark_fixture
+    document_id: us-complete-document
+    excerpt_ref: us-complete-chunk
+    source_locator: benchmarks/cases/v1/us_complete_company.yaml
+    collected_at: 2026-08-01
+    published_at: "2026-07-30T12:00:00+00:00"
+    usage_basis: Synthetic redistribution-safe fixture; not a real issuer disclosure.
+    text: >-
+      Revenue increased 8%. Gross margin was 42%. Operating cash flow was
+      positive. Demand remained stable. Input costs remained a disclosed risk.
+known_missing_data: []
+simulated_failures: []
+report:
+  title: US Complete Company Benchmark Report
+  facts:
+    - text: Revenue increased 8%.
+      evidence_ids: [us-complete-filing]
+    - text: Gross margin was 42%.
+      evidence_ids: [us-complete-filing]
+    - text: Operating cash flow was positive.
+      evidence_ids: [us-complete-filing]
+  inferences:
+    - text: Demand remained stable.
+      evidence_ids: [us-complete-filing]
+    - text: Revenue increased 8%, which supports a measured growth interpretation.
+      evidence_ids: [us-complete-filing]
+  risks:
+    - text: Input costs remained a disclosed risk.
+      evidence_ids: [us-complete-filing]
+  uncertainties:
+    - The fixture contains one reporting period and cannot establish a long-term trend.
+  bull_summary: Stable demand and positive operating cash flow support the bull case.
+  bear_summary: Input-cost pressure could weaken the observed margin.
+  risk_summary: Input costs remain the primary disclosed risk.
+  final_recommendation: Evidence is balanced; no trading action is provided.
+observed_failure_code: null
+expected:
+  required_facts:
+    - Revenue increased 8%.
+    - Gross margin was 42%.
+    - Operating cash flow was positive.
+  allowed_missing_items: []
+  forbidden_conclusions:
+    - buy the stock
+    - sell the shares
+    - guaranteed return
+  expected_failure_code: null
+thresholds:
+  lifecycle_compliance_min: 1.0
+  deterministic_score_min: 1.0
+  expected_fact_coverage_min: 1.0
+  forbidden_conclusion_compliance_min: 1.0
+  check_minimums:
+    structure_completeness: 1.0
+    numeric_grounding: 1.0
+    citation_coverage: 1.0
+    citation_traceability: 1.0
+    uncertainty_presence: 1.0
+    temporal_validity: 1.0
+    trading_instruction_compliance: 1.0
+    missing_data_disclosure: 1.0
+  live_dimension_minimums:
+    factual_correctness: 0.8
+    conclusion_evidence_consistency: 0.8
+    readability: 0.8

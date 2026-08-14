@@ -1,4 +1,4 @@
-"""Deterministic Phase One fundamental feature computation."""
+"""Point-in-time deterministic fundamental feature computation."""
 
 from __future__ import annotations
 
@@ -8,7 +8,9 @@ import pandas as pd  # type: ignore[import-untyped]
 
 from src.models.types import JsonObject
 
-_LATEST_FIELDS = (
+_OUTPUT_KEYS = (
+    "revenue_yoy",
+    "net_income_yoy",
     "gross_margin",
     "operating_margin",
     "net_margin",
@@ -16,38 +18,23 @@ _LATEST_FIELDS = (
     "roa",
     "debt_to_equity",
     "current_ratio",
-    "pe_ttm",
-    "pb",
 )
-_OUTPUT_KEYS = ("revenue_yoy", "net_income_yoy", *_LATEST_FIELDS)
 
 
 class FundamentalFeatureOperator:
-    """Compute deterministic growth, quality, leverage, and valuation inputs."""
+    """Derive growth and accounting ratios from normalized SEC facts."""
+
+    version = "fundamental_features_v2"
 
     def compute(self, fundamentals: pd.DataFrame) -> JsonObject:
-        """Compute the minimum MVP fundamental feature set.
+        """Compute ratios only when their canonical inputs are available.
 
-        Growth compares the latest observation with the observation having the
-        same ``report_type`` and fiscal date one calendar year earlier.
-
-        Args:
-            fundamentals: Frame of normalized fundamental observations.
-
-        Returns:
-            JSON-compatible features plus explicit missing-data labels.
-
-        Raises:
-            ValueError: If required identity or calculation columns are absent.
+        Comparable growth uses the nearest same-form fiscal period within 45
+        days of one calendar year earlier. This accommodates 52/53-week fiscal
+        calendars without mixing annual and quarterly observations.
         """
 
-        required = {
-            "fiscal_period_end",
-            "report_type",
-            "revenue",
-            "net_income",
-            *_LATEST_FIELDS,
-        }
+        required = {"fiscal_period_end", "report_type", "revenue", "net_income"}
         missing_columns = sorted(required - set(fundamentals.columns))
         if missing_columns:
             raise ValueError(
@@ -59,51 +46,129 @@ class FundamentalFeatureOperator:
                 "missing_data": ["fundamentals"],
             }
 
-        ordered = fundamentals.loc[:, sorted(required)].copy()
+        ordered = fundamentals.copy()
         ordered["fiscal_period_end"] = pd.to_datetime(
-            ordered["fiscal_period_end"],
-            errors="coerce",
+            ordered["fiscal_period_end"], errors="coerce"
         )
-        numeric_columns = {"revenue", "net_income", *_LATEST_FIELDS}
-        for column in numeric_columns:
-            ordered[column] = pd.to_numeric(ordered[column], errors="coerce")
+        numeric_names = set(_OUTPUT_KEYS) | {
+            "revenue",
+            "gross_profit",
+            "operating_income",
+            "net_income",
+            "total_assets",
+            "shareholders_equity",
+            "total_debt",
+            "current_assets",
+            "current_liabilities",
+        }
+        for name in numeric_names & set(ordered.columns):
+            ordered[name] = pd.to_numeric(ordered[name], errors="coerce")
         ordered = ordered.dropna(subset=["fiscal_period_end", "report_type"])
         ordered = ordered.sort_values("fiscal_period_end", kind="stable")
-        if ordered.empty:
+        operating_rows = ordered[ordered[["revenue", "net_income"]].notna().any(axis=1)]
+        if operating_rows.empty:
             return {
                 **{key: None for key in _OUTPUT_KEYS},
-                "missing_data": ["valid_fundamental_periods"],
+                "missing_data": ["complete_fundamental_period"],
             }
 
-        latest = ordered.iloc[-1]
-        prior_period = latest["fiscal_period_end"] - pd.DateOffset(years=1)
-        comparable = ordered[
-            (ordered["report_type"] == latest["report_type"])
-            & (ordered["fiscal_period_end"] == prior_period)
+        latest = operating_rows.iloc[-1]
+        prior = _comparable_period(operating_rows, latest)
+        annual_rows = operating_rows[
+            operating_rows["report_type"].isin(("annual", "10-K"))
         ]
-        prior = None if comparable.empty else comparable.iloc[-1]
-
+        annual = None if annual_rows.empty else annual_rows.iloc[-1]
         features: dict[str, float | None] = {
             "revenue_yoy": _growth(
-                latest["revenue"],
-                None if prior is None else prior["revenue"],
+                latest.get("revenue"), None if prior is None else prior.get("revenue")
             ),
             "net_income_yoy": _growth(
-                latest["net_income"],
-                None if prior is None else prior["net_income"],
+                latest.get("net_income"),
+                None if prior is None else prior.get("net_income"),
+            ),
+            "gross_margin": _ratio_or_existing(
+                latest, "gross_profit", "revenue", "gross_margin"
+            ),
+            "operating_margin": _ratio_or_existing(
+                latest, "operating_income", "revenue", "operating_margin"
+            ),
+            "net_margin": _ratio_or_existing(
+                latest, "net_income", "revenue", "net_margin"
+            ),
+            "roe": _annual_ratio_or_existing(
+                annual, latest, "net_income", "shareholders_equity", "roe"
+            ),
+            "roa": _annual_ratio_or_existing(
+                annual, latest, "net_income", "total_assets", "roa"
+            ),
+            "debt_to_equity": _latest_ratio_or_existing(
+                ordered, "total_debt", "shareholders_equity", "debt_to_equity"
+            ),
+            "current_ratio": _latest_ratio_or_existing(
+                ordered, "current_assets", "current_liabilities", "current_ratio"
             ),
         }
-        features.update(
-            {field: _finite_or_none(latest[field]) for field in _LATEST_FIELDS}
-        )
-        missing_data = [key for key, value in features.items() if value is None]
         return cast(
             JsonObject,
             {
                 **features,
-                "missing_data": missing_data,
+                "missing_data": [
+                    key for key, value in features.items() if value is None
+                ],
             },
         )
+
+
+def _comparable_period(records: pd.DataFrame, latest: pd.Series) -> pd.Series | None:
+    target = latest["fiscal_period_end"] - pd.DateOffset(years=1)
+    candidates = records[
+        (records["report_type"] == latest["report_type"])
+        & (records["fiscal_period_end"] < latest["fiscal_period_end"])
+    ].copy()
+    if candidates.empty:
+        return None
+    candidates["distance"] = (candidates["fiscal_period_end"] - target).abs()
+    candidates = candidates[candidates["distance"] <= pd.Timedelta(days=45)]
+    return None if candidates.empty else candidates.sort_values("distance").iloc[0]
+
+
+def _ratio_or_existing(
+    row: pd.Series, numerator: str, denominator: str, existing: str
+) -> float | None:
+    ratio = _ratio(row.get(numerator), row.get(denominator))
+    return ratio if ratio is not None else _finite_or_none(row.get(existing))
+
+
+def _annual_ratio_or_existing(
+    row: pd.Series | None,
+    latest: pd.Series,
+    numerator: str,
+    denominator: str,
+    existing: str,
+) -> float | None:
+    if row is not None:
+        return _ratio_or_existing(row, numerator, denominator, existing)
+    # A Provider-supplied normalized ratio remains usable, but an interim
+    # income statement is never silently annualized by this operator.
+    return _finite_or_none(latest.get(existing))
+
+
+def _latest_ratio_or_existing(
+    records: pd.DataFrame, numerator: str, denominator: str, existing: str
+) -> float | None:
+    for _, row in records.iloc[::-1].iterrows():
+        result = _ratio_or_existing(row, numerator, denominator, existing)
+        if result is not None:
+            return result
+    return None
+
+
+def _ratio(numerator: object, denominator: object) -> float | None:
+    top = _finite_or_none(numerator)
+    bottom = _finite_or_none(denominator)
+    if top is None or bottom is None or bottom == 0.0:
+        return None
+    return top / bottom
 
 
 def _growth(current: object, prior: object) -> float | None:

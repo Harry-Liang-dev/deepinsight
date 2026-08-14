@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+import re
 from pathlib import Path
 
 import pytest
@@ -17,6 +19,7 @@ from apps.api.offline import (
 from src.models.enums import MemoryLevel, TaskStatus
 from src.reports import STANDARD_SECTION_NAMES
 from src.repositories import (
+    AgentRunRepository,
     DuckDBDatabase,
     FaissVectorRepository,
     InstrumentRepository,
@@ -102,15 +105,105 @@ async def test_offline_api_runs_the_complete_research_workflow(
     assert restarted_vectors.count("memory_L3_v1") == 1
 
     with restarted_database.connection() as connection:
-        counts = connection.execute("""
+        durable_counts = connection.execute("""
             SELECT
                 (SELECT count(*) FROM ingestion_jobs),
                 (SELECT count(*) FROM text_documents),
                 (SELECT count(*) FROM agent_runs),
-                (SELECT count(*) FROM report_sections),
-                (SELECT count(*) FROM llm_cache)
+                (SELECT count(*) FROM report_sections)
             """).fetchone()
-    assert counts == (1, 1, 8, 10, 8)
+        agent_cache_outcomes = connection.execute("""
+            SELECT agent_name, status, cache_hit, output_payload_json
+            FROM agent_runs
+            ORDER BY agent_name
+            """).fetchall()
+        cache_rows = connection.execute("""
+            SELECT cache_key, response_json
+            FROM llm_cache
+            ORDER BY cache_key
+            """).fetchall()
+    assert durable_counts == (1, 1, 8, 10)
+
+    successful_cache_misses = [
+        row
+        for row in agent_cache_outcomes
+        if row[1] == "ok" and row[2] is False and row[3] is not None
+    ]
+    rejected_initial_responses = [
+        row for row in agent_cache_outcomes if row[1] == "error" and row[3] is None
+    ]
+    # Under agent_output_v2, invalid initial responses are rejected before
+    # valid-cache persistence; cache cardinality is not an Agent-count proxy.
+    assert rejected_initial_responses
+    assert len(cache_rows) == len(successful_cache_misses)
+
+    cache_fingerprints = [row[0] for row in cache_rows]
+    assert len(cache_fingerprints) == len(set(cache_fingerprints))
+    assert all(re.fullmatch(r"[0-9a-f]{64}", item) for item in cache_fingerprints)
+    cached_responses = [json.loads(row[1]) for row in cache_rows]
+    assert all(isinstance(response, dict) and response for response in cached_responses)
+    assert not any(
+        response.get("agent_name") == "fundamental_analyst"
+        for response in cached_responses
+    )
+    fundamental_run = AgentRunRepository(restarted_database).get(
+        "task_demo_1:fundamental_analyst"
+    )
+    assert fundamental_run is not None
+    assert fundamental_run.status == "error"
+    assert fundamental_run.output_payload is None
+    assert fundamental_run.cache_hit is False
+
+    technical_run = AgentRunRepository(restarted_database).get(
+        "task_demo_1:technical_text_analyst"
+    )
+    assert technical_run is not None
+    assert technical_run.status == "ok"
+    invocation = technical_run.input_payload["input_payload"]
+    assert isinstance(invocation, dict)
+    contract = invocation["research_contract"]
+    assert isinstance(contract, dict)
+    assert contract["schema_version"] == "agent_input_v1"
+    output = technical_run.output_payload
+    assert output is not None
+    analysis = output["analysis"]
+    assert isinstance(analysis, dict)
+    bindings = analysis["claim_evidence"]
+    assert isinstance(bindings, list)
+    assert bindings
+    dict_bindings = [binding for binding in bindings if isinstance(binding, dict)]
+    assert len(dict_bindings) == len(bindings)
+    claim_paths = [binding["claim_path"] for binding in dict_bindings]
+    assert len(claim_paths) == len(set(claim_paths))
+    manifest = invocation["input_context"]
+    assert isinstance(manifest, dict)
+    role_manifest = manifest["role_evidence_manifest"]
+    assert isinstance(role_manifest, dict)
+    entries = role_manifest["entries"]
+    assert isinstance(entries, list)
+    canonical_ids = {
+        entry["evidence_id"]
+        for entry in entries
+        if isinstance(entry, dict) and isinstance(entry.get("evidence_id"), str)
+    }
+    for binding in dict_bindings:
+        evidence_ids = binding["evidence_ids"]
+        assert isinstance(evidence_ids, list)
+        assert all(isinstance(item, str) for item in evidence_ids)
+        assert set(evidence_ids) <= canonical_ids
+        assert binding["claim_path"]
+        assert binding["claim_text"]
+        assert binding["derivation_type"] == "direct_evidence"
+    scope = contract["scope"]
+    assert isinstance(scope, dict)
+    assert scope["dataset_version"] == "offline_api_fixture_v1"
+    memory = contract["memory"]
+    assert isinstance(memory, dict)
+    metadata = memory["retrieval_metadata"]
+    assert isinstance(metadata, dict)
+    as_of = metadata["as_of"]
+    assert isinstance(as_of, str)
+    assert as_of.endswith("Z")
     assert "OPENAI_API_KEY" not in capsys.readouterr().out
 
 

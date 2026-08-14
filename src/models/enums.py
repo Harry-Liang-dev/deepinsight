@@ -82,6 +82,16 @@ class AgentStatus(StrEnum):
     ERROR = "error"
 
 
+class ClaimIntent(StrEnum):
+    """Compliance intent carried by one accepted research claim."""
+
+    FACT = "fact"
+    THIRD_PARTY_OPINION = "third_party_opinion"
+    ANALYTICAL_INFERENCE = "analytical_inference"
+    SYSTEM_RECOMMENDATION = "system_recommendation"
+    EXECUTION_INSTRUCTION = "execution_instruction"
+
+
 class TaskStatus(StrEnum):
     """Background job and report lifecycle status."""
 
@@ -106,3 +116,57 @@ class EventSeverity(StrEnum):
     MEDIUM = "medium"
     HIGH = "high"
     CRITICAL = "critical"
+
+
+class EvaluationDimension(StrEnum):
+    """Versioned research-report quality dimensions."""
+
+    STRUCTURE_COMPLETENESS = "structure_completeness"
+    FACTUAL_CORRECTNESS = "factual_correctness"
+    CITATION_COVERAGE = "citation_coverage"
+    CITATION_TRACEABILITY = "citation_traceability"
+    CONCLUSION_EVIDENCE_CONSISTENCY = "conclusion_evidence_consistency"
+    BULL_BEAR_BALANCE = "bull_bear_balance"
+    RISK_IDENTIFICATION_QUALITY = "risk_identification_quality"
+    UNCERTAINTY_EXPRESSION = "uncertainty_expression"
+    TEMPORAL_VALIDITY = "temporal_validity"
+    TRADING_INSTRUCTION_COMPLIANCE = "trading_instruction_compliance"
+    MISSING_DATA_DISCLOSURE = "missing_data_disclosure"
+    READABILITY = "readability"
+
+
+class EvaluatorKind(StrEnum):
+    """Origin of one report-quality check."""
+
+    DETERMINISTIC = "deterministic"
+    LLM_JUDGE = "llm_judge"
+
+
+class EvaluationEvidenceKind(StrEnum):
+    """Auditable locator categories used to explain evaluation scores."""
+
+    REPORT_PATH = "report_path"
+    SOURCE = "source"
+    DIAGNOSTIC = "diagnostic"
+
+
+class BenchmarkFixtureKind(StrEnum):
+    """Redistribution status of one fixed Benchmark source."""
+
+    SYNTHETIC = "synthetic"
+    PUBLIC_EXCERPT = "public_excerpt"
+    DEIDENTIFIED = "deidentified"
+
+
+class BenchmarkExpectedOutcome(StrEnum):
+    """Expected lifecycle outcome for one Benchmark case."""
+
+    REPORT = "report"
+    EXPECTED_FAILURE = "expected_failure"
+
+
+class BenchmarkRunMode(StrEnum):
+    """Network boundary selected for a Benchmark execution."""
+
+    DEFAULT = "default"
+    LIVE = "live"

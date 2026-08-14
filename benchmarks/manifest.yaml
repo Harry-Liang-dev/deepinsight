@@ -1,0 +1,4 @@
+benchmark_version: research_benchmark_v1
+case_directory: v1
+evaluation_ruleset_version: report_quality_v1
+default_generated_at: "2026-08-07T00:00:00+00:00"

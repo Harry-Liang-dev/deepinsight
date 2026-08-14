@@ -10,8 +10,9 @@ from typing import Protocol, cast
 import openai
 from openai import OpenAI
 from openai.types import CreateEmbeddingResponse
+from pydantic import SecretStr
 
-from src.core.settings import OpenAISettings
+from src.core.settings import QwenSettings
 
 
 class EmbeddingServiceError(RuntimeError):
@@ -76,15 +77,26 @@ class _OpenAIEmbeddingClient(Protocol):
         ...
 
 
+class _EmbeddingProviderSettings(Protocol):
+    """Shared settings surface for OpenAI-compatible embedding providers."""
+
+    api_key: SecretStr | None
+    embedding_model: str
+    timeout_seconds: int
+    max_retries: int
+
+
 class OpenAIEmbeddingService:
     """Official OpenAI Embeddings API implementation."""
 
     def __init__(
         self,
-        settings: OpenAISettings,
+        settings: _EmbeddingProviderSettings,
         *,
         dimension: int,
         batch_size: int | None = None,
+        base_url: str | None = None,
+        provider_label: str = "OpenAI",
         client: OpenAI | _OpenAIEmbeddingClient | None = None,
     ) -> None:
         """Initialize an independently injectable embedding service.
@@ -93,6 +105,8 @@ class OpenAIEmbeddingService:
             settings: Existing OpenAI credential, model, and timeout settings.
             dimension: Explicit output dimension expected by FAISS.
             batch_size: Optional provider request batch limit.
+            base_url: Optional OpenAI-compatible API root.
+            provider_label: Safe provider name used in public errors.
             client: Optional injected client for offline tests.
         """
 
@@ -105,6 +119,8 @@ class OpenAIEmbeddingService:
         self._settings = settings
         self._dimension = dimension
         self._batch_size = batch_size
+        self._base_url = base_url
+        self._provider_label = provider_label
         self._client = cast(_OpenAIEmbeddingClient | None, client)
 
     @property
@@ -156,25 +172,32 @@ class OpenAIEmbeddingService:
                     _validate_vector(item.embedding, self.dimension) for item in ordered
                 )
         except openai.APITimeoutError:
-            raise EmbeddingRemoteError("OpenAI embedding request timed out") from None
+            raise EmbeddingRemoteError(
+                f"{self._provider_label} embedding request timed out"
+            ) from None
         except openai.RateLimitError:
             raise EmbeddingRemoteError(
-                "OpenAI embedding request exceeded its rate limit"
+                f"{self._provider_label} embedding request exceeded its rate limit"
             ) from None
         except (openai.AuthenticationError, openai.PermissionDeniedError):
             raise EmbeddingRemoteError(
-                "OpenAI embedding credentials or permissions were rejected"
+                f"{self._provider_label} embedding credentials or permissions "
+                "were rejected"
             ) from None
         except openai.APIConnectionError:
             raise EmbeddingRemoteError(
-                "OpenAI embedding service could not be reached"
+                f"{self._provider_label} embedding service could not be reached"
             ) from None
         except (openai.APIStatusError, openai.APIError):
-            raise EmbeddingRemoteError("OpenAI embedding request failed") from None
+            raise EmbeddingRemoteError(
+                f"{self._provider_label} embedding request failed"
+            ) from None
         except EmbeddingServiceError:
             raise
         except Exception:
-            raise EmbeddingRemoteError("OpenAI embedding request failed") from None
+            raise EmbeddingRemoteError(
+                f"{self._provider_label} embedding request failed"
+            ) from None
 
         return vectors
 
@@ -183,21 +206,62 @@ class OpenAIEmbeddingService:
             return self._client
         secret = self._settings.api_key
         if secret is None or not secret.get_secret_value().strip():
-            raise EmbeddingConfigurationError("OpenAI API key is not configured")
+            raise EmbeddingConfigurationError(
+                f"{self._provider_label} API key is not configured"
+            )
         try:
-            self._client = cast(
-                _OpenAIEmbeddingClient,
-                OpenAI(
+            if self._base_url is None:
+                sdk_client = OpenAI(
                     api_key=secret.get_secret_value(),
                     timeout=float(self._settings.timeout_seconds),
                     max_retries=self._settings.max_retries,
-                ),
+                )
+            else:
+                sdk_client = OpenAI(
+                    api_key=secret.get_secret_value(),
+                    base_url=self._base_url,
+                    timeout=float(self._settings.timeout_seconds),
+                    max_retries=self._settings.max_retries,
+                )
+            self._client = cast(
+                _OpenAIEmbeddingClient,
+                sdk_client,
             )
         except Exception:
             raise EmbeddingConfigurationError(
-                "OpenAI client initialization failed"
+                f"{self._provider_label} client initialization failed"
             ) from None
         return self._client
+
+
+class QwenEmbeddingService(OpenAIEmbeddingService):
+    """DashScope embedding implementation through the compatible boundary."""
+
+    def __init__(
+        self,
+        settings: QwenSettings,
+        *,
+        dimension: int,
+        batch_size: int | None = None,
+        client: OpenAI | _OpenAIEmbeddingClient | None = None,
+    ) -> None:
+        """Initialize the configured DashScope embedding service.
+
+        Args:
+            settings: Validated DashScope embedding settings.
+            dimension: Explicit output dimension expected by FAISS.
+            batch_size: Optional provider request batch limit.
+            client: Optional injected compatible client for offline tests.
+        """
+
+        super().__init__(
+            settings,
+            dimension=dimension,
+            batch_size=batch_size,
+            base_url=settings.embedding_base_url,
+            provider_label="Qwen",
+            client=client,
+        )
 
 
 class FakeEmbeddingService:

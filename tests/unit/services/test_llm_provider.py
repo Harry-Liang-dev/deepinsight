@@ -84,7 +84,7 @@ class StubResponses:
         model: str,
         instructions: str,
         input: str,
-        text: object,
+        text: object | None = None,
         store: bool,
         timeout: float,
         extra_body: object | None,
@@ -196,7 +196,7 @@ def test_openai_provider_maps_timeout_without_leaking_cause() -> None:
         request=httpx.Request("POST", f"https://unit.test/{secret}")
     )
     provider = OpenAIProvider(
-        OpenAISettings(api_key=SecretStr(secret)),
+        OpenAISettings(api_key=SecretStr(secret), max_retries=0),
         client=StubClient(StubResponses(error=sdk_error)),
     )
 
@@ -261,7 +261,7 @@ def test_openai_provider_maps_sdk_errors_to_safe_types(
     """Provider-specific failures expose stable types and safe messages."""
 
     provider = OpenAIProvider(
-        OpenAISettings(),
+        OpenAISettings(max_retries=0),
         client=StubClient(StubResponses(error=sdk_error)),
     )
 
@@ -389,7 +389,7 @@ def test_openai_provider_requires_configured_api_key() -> None:
 def test_openai_provider_configures_sdk_retry_limit(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Configured timeout and retry values are supplied to the official SDK."""
+    """The SDK retry loop is disabled so the adapter can count retries."""
 
     captured: dict[str, object] = {}
     responses = StubResponses(response=_response('{"ok":true}'))
@@ -409,7 +409,31 @@ def test_openai_provider_configures_sdk_retry_limit(
 
     assert captured["api_key"] == "unit-test-secret"
     assert captured["timeout"] == 23.0
-    assert captured["max_retries"] == 4
+    assert captured["max_retries"] == 0
+
+
+def test_openai_provider_maps_missing_socks_transport_safely(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A proxy transport dependency error must be actionable and redacted."""
+
+    def missing_socks_factory(**kwargs: object) -> StubClient:
+        del kwargs
+        raise ValueError(
+            "Using SOCKS proxy secret-proxy-value, install the socksio package"
+        )
+
+    monkeypatch.setattr("src.services.llm_provider.OpenAI", missing_socks_factory)
+    provider = OpenAIProvider(OpenAISettings(api_key=SecretStr("unit-test-secret")))
+
+    with pytest.raises(
+        LLMConfigurationError,
+        match="client initialization requires HTTPX SOCKS support",
+    ) as raised:
+        provider.invoke_json("model", "system", {"input": "value"})
+
+    assert "secret-proxy-value" not in str(raised.value)
+    assert "unit-test-secret" not in str(raised.value)
 
 
 def test_openai_sdk_stops_after_configured_rate_limit_retries(
@@ -453,6 +477,83 @@ def test_openai_sdk_stops_after_configured_rate_limit_retries(
 
     assert attempts == settings.max_retries + 1
     http_client.close()
+
+
+def test_provider_reports_actual_retry_count_after_transient_rate_limit() -> None:
+    """A transient 429 is retried once and reported in the provider result."""
+
+    rate_limit = openai.RateLimitError(
+        "remote detail",
+        response=httpx.Response(
+            429,
+            request=httpx.Request("POST", "https://unit.test/v1/responses"),
+            headers={"retry-after-ms": "0"},
+        ),
+        body={"code": "rate_limit_exceeded", "type": "rate_limit_error"},
+    )
+
+    class SequenceResponses(StubResponses):
+        def __init__(self) -> None:
+            super().__init__(response=_response('{"ok":true}'))
+            self._attempt = 0
+
+        def create(
+            self,
+            *,
+            model: str,
+            instructions: str,
+            input: str,
+            text: object | None = None,
+            store: bool,
+            timeout: float,
+            extra_body: object | None,
+        ) -> Response:
+            self._attempt += 1
+            if self._attempt == 1:
+                raise rate_limit
+            return super().create(
+                model=model,
+                instructions=instructions,
+                input=input,
+                text=text,
+                store=store,
+                timeout=timeout,
+                extra_body=extra_body,
+            )
+
+    responses = SequenceResponses()
+    delays: list[float] = []
+    provider = OpenAIProvider(
+        OpenAISettings(max_retries=2),
+        client=StubClient(responses),
+        sleeper=delays.append,
+    )
+
+    result = provider.invoke_json("model", "system", {"input": "value"})
+
+    assert result.retry_count == 1
+    assert responses._attempt == 2
+    assert delays == [0.0]
+
+
+def test_provider_stops_after_timeout_retry_limit() -> None:
+    """Timeout retries are finite and the mapped error carries their count."""
+
+    error = openai.APITimeoutError(
+        request=httpx.Request("POST", "https://unit.test/v1/responses")
+    )
+    responses = StubResponses(error=error)
+    provider = OpenAIProvider(
+        OpenAISettings(max_retries=2),
+        client=StubClient(responses),
+        sleeper=lambda _: None,
+    )
+
+    with pytest.raises(LLMTimeoutError) as raised:
+        provider.invoke_json("model", "system", {"input": "value"})
+
+    assert raised.value.retry_count == 2
+    assert len(responses.calls) == 3
 
 
 def test_fake_provider_is_deterministic_and_captures_calls() -> None:

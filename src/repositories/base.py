@@ -16,6 +16,21 @@ from src.repositories.database import DuckDBDatabase
 class RepositoryError(RuntimeError):
     """Raised when a persistence operation cannot be completed."""
 
+    def __init__(
+        self,
+        message: str,
+        *,
+        database_error_type: str | None = None,
+    ) -> None:
+        """Retain only a safe database exception class for diagnostics."""
+
+        super().__init__(message)
+        self.database_error_type = database_error_type
+
+
+class TransientRepositoryError(RepositoryError):
+    """Raised for a narrowly classified retryable database failure."""
+
 
 class BaseRepository:
     """Base class that keeps DuckDB execution inside the Repository layer."""
@@ -34,7 +49,7 @@ class BaseRepository:
             with self._database.transaction() as connection:
                 connection.execute(sql, parameters)
         except duckdb.Error as exc:
-            raise RepositoryError("DuckDB write operation failed") from exc
+            raise _repository_error(exc, operation="write") from None
 
     def _fetch_one(
         self,
@@ -45,7 +60,7 @@ class BaseRepository:
             with self._database.connection() as connection:
                 row = connection.execute(sql, parameters).fetchone()
         except duckdb.Error as exc:
-            raise RepositoryError("DuckDB read operation failed") from exc
+            raise _repository_error(exc, operation="read") from None
         return cast(tuple[object, ...] | None, row)
 
     def _fetch_all(
@@ -57,8 +72,58 @@ class BaseRepository:
             with self._database.connection() as connection:
                 rows = connection.execute(sql, parameters).fetchall()
         except duckdb.Error as exc:
-            raise RepositoryError("DuckDB read operation failed") from exc
+            raise _repository_error(exc, operation="read") from None
         return cast(list[tuple[object, ...]], rows)
+
+
+def _repository_error(
+    exc: duckdb.Error,
+    *,
+    operation: str,
+) -> RepositoryError:
+    """Map DuckDB failures without exposing SQL, values, or raw messages."""
+
+    error_type = type(exc).__name__
+    message = f"DuckDB {operation} operation failed"
+    if _is_transient_duckdb_error(exc):
+        return TransientRepositoryError(
+            message,
+            database_error_type=error_type,
+        )
+    return RepositoryError(message, database_error_type=error_type)
+
+
+def _is_transient_duckdb_error(exc: duckdb.Error) -> bool:
+    """Recognize only bounded connection, conflict, and lock failures."""
+
+    if isinstance(exc, duckdb.SerializationException):
+        return True
+    normalized = str(exc).casefold()
+    if isinstance(exc, duckdb.ConnectionException):
+        return any(
+            marker in normalized
+            for marker in (
+                "temporary",
+                "temporarily",
+                "connection reset",
+                "connection refused",
+                "could not open",
+                "failed to open",
+            )
+        )
+    if isinstance(exc, duckdb.TransactionException):
+        return any(marker in normalized for marker in ("conflict", "serialization"))
+    if isinstance(exc, duckdb.IOException):
+        return any(
+            marker in normalized
+            for marker in (
+                "could not set lock",
+                "conflicting lock",
+                "database is locked",
+                "resource temporarily unavailable",
+            )
+        )
+    return False
 
 
 def encode_json(value: JsonValue) -> str:

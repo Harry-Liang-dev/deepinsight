@@ -1,0 +1,3222 @@
+{
+  "benchmark_version": "research_benchmark_v1",
+  "cases": [
+    {
+      "asset_id": "CN:999999.SH",
+      "case_id": "cn_financial_data_missing",
+      "case_version": "v1",
+      "check_scores": {
+        "citation_coverage": 1.0,
+        "citation_traceability": 1.0,
+        "missing_data_disclosure": 1.0,
+        "numeric_grounding": 1.0,
+        "structure_completeness": 1.0,
+        "temporal_validity": 1.0,
+        "trading_instruction_compliance": 1.0,
+        "uncertainty_presence": 1.0
+      },
+      "dimension_scores": {
+        "bull_bear_balance": 1.0,
+        "citation_coverage": 1.0,
+        "citation_traceability": 1.0,
+        "conclusion_evidence_consistency": 1.0,
+        "factual_correctness": 1.0,
+        "missing_data_disclosure": 1.0,
+        "readability": 1.0,
+        "risk_identification_quality": 1.0,
+        "structure_completeness": 1.0,
+        "temporal_validity": 1.0,
+        "trading_instruction_compliance": 1.0,
+        "uncertainty_expression": 1.0
+      },
+      "evaluation": {
+        "deterministic_checks": [
+          {
+            "check_id": "structure_completeness",
+            "dimension": "structure_completeness",
+            "evaluator": "deterministic",
+            "evidence": [
+              {
+                "excerpt": "standard section presence, schema, and order",
+                "kind": "report_path",
+                "locator": "report.report_json"
+              }
+            ],
+            "passed": true,
+            "reason": "10/10 required sections were present, 10 were schema-valid, and 10 had the expected identity and order. Exact section set: True.",
+            "score": 1.0
+          },
+          {
+            "check_id": "numeric_grounding",
+            "dimension": "factual_correctness",
+            "evaluator": "deterministic",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "numeric_claims:none"
+              }
+            ],
+            "passed": true,
+            "reason": "The report contained no numeric textual claims to verify.",
+            "score": 1.0
+          },
+          {
+            "check_id": "citation_coverage",
+            "dimension": "citation_coverage",
+            "evaluator": "deterministic",
+            "evidence": [
+              {
+                "excerpt": "facts, inferences, and risk_warnings",
+                "kind": "report_path",
+                "locator": "report.report_json"
+              }
+            ],
+            "passed": true,
+            "reason": "30/30 report statements contained citations.",
+            "score": 1.0
+          },
+          {
+            "check_id": "citation_traceability",
+            "dimension": "citation_traceability",
+            "evaluator": "deterministic",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "source",
+                "locator": "cn-missing-document|cn-missing-chunk|benchmark_fixture"
+              }
+            ],
+            "passed": true,
+            "reason": "1/1 unique citations resolved to supplied evidence.",
+            "score": 1.0
+          },
+          {
+            "check_id": "uncertainty_presence",
+            "dimension": "uncertainty_expression",
+            "evaluator": "deterministic",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_json.executive_view.uncertainties"
+              },
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_json.macro_context.uncertainties"
+              },
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_json.fundamentals.uncertainties"
+              },
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_json.technical_text.uncertainties"
+              },
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_json.sentiment.uncertainties"
+              }
+            ],
+            "passed": true,
+            "reason": "The report contained 10 explicit uncertainty statements.",
+            "score": 1.0
+          },
+          {
+            "check_id": "temporal_validity",
+            "dimension": "temporal_validity",
+            "evaluator": "deterministic",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "source",
+                "locator": "cn-missing-document|cn-missing-chunk|benchmark_fixture"
+              }
+            ],
+            "passed": true,
+            "reason": "1/1 unique citations had dated evidence between the report date and 370 days old.",
+            "score": 1.0
+          },
+          {
+            "check_id": "trading_instruction_compliance",
+            "dimension": "trading_instruction_compliance",
+            "evaluator": "deterministic",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_markdown"
+              }
+            ],
+            "passed": true,
+            "reason": "No prohibited trade, order, target-price, or position instruction was detected.",
+            "score": 1.0
+          },
+          {
+            "check_id": "missing_data_disclosure",
+            "dimension": "missing_data_disclosure",
+            "evaluator": "deterministic",
+            "evidence": [
+              {
+                "excerpt": "operating_cash_flow",
+                "kind": "diagnostic",
+                "locator": "known_missing_data"
+              },
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_markdown"
+              }
+            ],
+            "passed": true,
+            "reason": "1/1 known missing-data items were disclosed.",
+            "score": 1.0
+          }
+        ],
+        "deterministic_score": 1.0,
+        "dimensions": [
+          {
+            "component_check_ids": [
+              "structure_completeness"
+            ],
+            "dimension": "structure_completeness",
+            "evidence": [
+              {
+                "excerpt": "standard section presence, schema, and order",
+                "kind": "report_path",
+                "locator": "report.report_json"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: structure_completeness=1.000",
+            "score": 1.0
+          },
+          {
+            "component_check_ids": [
+              "numeric_grounding",
+              "semantic_factuality"
+            ],
+            "dimension": "factual_correctness",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "numeric_claims:none"
+              },
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:semantic_factuality"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: numeric_grounding=1.000, semantic_factuality=1.000",
+            "score": 1.0
+          },
+          {
+            "component_check_ids": [
+              "citation_coverage"
+            ],
+            "dimension": "citation_coverage",
+            "evidence": [
+              {
+                "excerpt": "facts, inferences, and risk_warnings",
+                "kind": "report_path",
+                "locator": "report.report_json"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: citation_coverage=1.000",
+            "score": 1.0
+          },
+          {
+            "component_check_ids": [
+              "citation_traceability"
+            ],
+            "dimension": "citation_traceability",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "source",
+                "locator": "cn-missing-document|cn-missing-chunk|benchmark_fixture"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: citation_traceability=1.000",
+            "score": 1.0
+          },
+          {
+            "component_check_ids": [
+              "conclusion_evidence_consistency"
+            ],
+            "dimension": "conclusion_evidence_consistency",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:conclusion_evidence_consistency"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: conclusion_evidence_consistency=1.000",
+            "score": 1.0
+          },
+          {
+            "component_check_ids": [
+              "bull_bear_balance"
+            ],
+            "dimension": "bull_bear_balance",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:bull_bear_balance"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: bull_bear_balance=1.000",
+            "score": 1.0
+          },
+          {
+            "component_check_ids": [
+              "risk_identification_quality"
+            ],
+            "dimension": "risk_identification_quality",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:risk_identification_quality"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: risk_identification_quality=1.000",
+            "score": 1.0
+          },
+          {
+            "component_check_ids": [
+              "uncertainty_presence",
+              "uncertainty_quality"
+            ],
+            "dimension": "uncertainty_expression",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_json.executive_view.uncertainties"
+              },
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_json.macro_context.uncertainties"
+              },
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_json.fundamentals.uncertainties"
+              },
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_json.technical_text.uncertainties"
+              },
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_json.sentiment.uncertainties"
+              },
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:uncertainty_quality"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: uncertainty_presence=1.000, uncertainty_quality=1.000",
+            "score": 1.0
+          },
+          {
+            "component_check_ids": [
+              "temporal_validity"
+            ],
+            "dimension": "temporal_validity",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "source",
+                "locator": "cn-missing-document|cn-missing-chunk|benchmark_fixture"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: temporal_validity=1.000",
+            "score": 1.0
+          },
+          {
+            "component_check_ids": [
+              "trading_instruction_compliance"
+            ],
+            "dimension": "trading_instruction_compliance",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_markdown"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: trading_instruction_compliance=1.000",
+            "score": 1.0
+          },
+          {
+            "component_check_ids": [
+              "missing_data_disclosure"
+            ],
+            "dimension": "missing_data_disclosure",
+            "evidence": [
+              {
+                "excerpt": "operating_cash_flow",
+                "kind": "diagnostic",
+                "locator": "known_missing_data"
+              },
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_markdown"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: missing_data_disclosure=1.000",
+            "score": 1.0
+          },
+          {
+            "component_check_ids": [
+              "readability"
+            ],
+            "dimension": "readability",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:readability"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: readability=1.000",
+            "score": 1.0
+          }
+        ],
+        "evaluated_at": "2026-08-07T00:00:00Z",
+        "evaluation_id": "benchmark-evaluation-cn_financial_data_missing-v1",
+        "input_fingerprint": "ef2dc295660caee4b02de06f4416e5c938171bd48bf2f65b8c998907dbef0506",
+        "judge_checks": [
+          {
+            "check_id": "semantic_factuality",
+            "dimension": "factual_correctness",
+            "evaluator": "llm_judge",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:semantic_factuality"
+              }
+            ],
+            "passed": true,
+            "reason": "Offline Fake Judge assigned the configured score for semantic_factuality.",
+            "score": 1.0
+          },
+          {
+            "check_id": "conclusion_evidence_consistency",
+            "dimension": "conclusion_evidence_consistency",
+            "evaluator": "llm_judge",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:conclusion_evidence_consistency"
+              }
+            ],
+            "passed": true,
+            "reason": "Offline Fake Judge assigned the configured score for conclusion_evidence_consistency.",
+            "score": 1.0
+          },
+          {
+            "check_id": "bull_bear_balance",
+            "dimension": "bull_bear_balance",
+            "evaluator": "llm_judge",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:bull_bear_balance"
+              }
+            ],
+            "passed": true,
+            "reason": "Offline Fake Judge assigned the configured score for bull_bear_balance.",
+            "score": 1.0
+          },
+          {
+            "check_id": "risk_identification_quality",
+            "dimension": "risk_identification_quality",
+            "evaluator": "llm_judge",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:risk_identification_quality"
+              }
+            ],
+            "passed": true,
+            "reason": "Offline Fake Judge assigned the configured score for risk_identification_quality.",
+            "score": 1.0
+          },
+          {
+            "check_id": "uncertainty_quality",
+            "dimension": "uncertainty_expression",
+            "evaluator": "llm_judge",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:uncertainty_quality"
+              }
+            ],
+            "passed": true,
+            "reason": "Offline Fake Judge assigned the configured score for uncertainty_quality.",
+            "score": 1.0
+          },
+          {
+            "check_id": "readability",
+            "dimension": "readability",
+            "evaluator": "llm_judge",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:readability"
+              }
+            ],
+            "passed": true,
+            "reason": "Offline Fake Judge assigned the configured score for readability.",
+            "score": 1.0
+          }
+        ],
+        "judge_model": "fake-report-judge",
+        "judge_run_metadata": null,
+        "judge_score": 1.0,
+        "overall_score": 1.0,
+        "report_id": "benchmark-cn_financial_data_missing-v1",
+        "ruleset_version": "report_quality_v1"
+      },
+      "expected_fact_coverage": 1.0,
+      "failures": [],
+      "forbidden_conclusion_compliance": 1.0,
+      "lifecycle_compliance": 1.0,
+      "market": "CN",
+      "observed_failure_code": null,
+      "passed": true,
+      "scenario": "financial_data_missing"
+    },
+    {
+      "asset_id": "CN:999998.SZ",
+      "case_id": "cn_provider_partial_failure",
+      "case_version": "v1",
+      "check_scores": {
+        "citation_coverage": 1.0,
+        "citation_traceability": 1.0,
+        "missing_data_disclosure": 1.0,
+        "numeric_grounding": 1.0,
+        "structure_completeness": 1.0,
+        "temporal_validity": 1.0,
+        "trading_instruction_compliance": 1.0,
+        "uncertainty_presence": 1.0
+      },
+      "dimension_scores": {
+        "bull_bear_balance": 1.0,
+        "citation_coverage": 1.0,
+        "citation_traceability": 1.0,
+        "conclusion_evidence_consistency": 1.0,
+        "factual_correctness": 1.0,
+        "missing_data_disclosure": 1.0,
+        "readability": 1.0,
+        "risk_identification_quality": 1.0,
+        "structure_completeness": 1.0,
+        "temporal_validity": 1.0,
+        "trading_instruction_compliance": 1.0,
+        "uncertainty_expression": 1.0
+      },
+      "evaluation": {
+        "deterministic_checks": [
+          {
+            "check_id": "structure_completeness",
+            "dimension": "structure_completeness",
+            "evaluator": "deterministic",
+            "evidence": [
+              {
+                "excerpt": "standard section presence, schema, and order",
+                "kind": "report_path",
+                "locator": "report.report_json"
+              }
+            ],
+            "passed": true,
+            "reason": "10/10 required sections were present, 10 were schema-valid, and 10 had the expected identity and order. Exact section set: True.",
+            "score": 1.0
+          },
+          {
+            "check_id": "numeric_grounding",
+            "dimension": "factual_correctness",
+            "evaluator": "deterministic",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "numeric_claims:none"
+              }
+            ],
+            "passed": true,
+            "reason": "The report contained no numeric textual claims to verify.",
+            "score": 1.0
+          },
+          {
+            "check_id": "citation_coverage",
+            "dimension": "citation_coverage",
+            "evaluator": "deterministic",
+            "evidence": [
+              {
+                "excerpt": "facts, inferences, and risk_warnings",
+                "kind": "report_path",
+                "locator": "report.report_json"
+              }
+            ],
+            "passed": true,
+            "reason": "30/30 report statements contained citations.",
+            "score": 1.0
+          },
+          {
+            "check_id": "citation_traceability",
+            "dimension": "citation_traceability",
+            "evaluator": "deterministic",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "source",
+                "locator": "cn-partial-document|cn-partial-chunk|benchmark_fixture"
+              }
+            ],
+            "passed": true,
+            "reason": "1/1 unique citations resolved to supplied evidence.",
+            "score": 1.0
+          },
+          {
+            "check_id": "uncertainty_presence",
+            "dimension": "uncertainty_expression",
+            "evaluator": "deterministic",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_json.executive_view.uncertainties"
+              },
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_json.macro_context.uncertainties"
+              },
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_json.fundamentals.uncertainties"
+              },
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_json.technical_text.uncertainties"
+              },
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_json.sentiment.uncertainties"
+              }
+            ],
+            "passed": true,
+            "reason": "The report contained 10 explicit uncertainty statements.",
+            "score": 1.0
+          },
+          {
+            "check_id": "temporal_validity",
+            "dimension": "temporal_validity",
+            "evaluator": "deterministic",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "source",
+                "locator": "cn-partial-document|cn-partial-chunk|benchmark_fixture"
+              }
+            ],
+            "passed": true,
+            "reason": "1/1 unique citations had dated evidence between the report date and 370 days old.",
+            "score": 1.0
+          },
+          {
+            "check_id": "trading_instruction_compliance",
+            "dimension": "trading_instruction_compliance",
+            "evaluator": "deterministic",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_markdown"
+              }
+            ],
+            "passed": true,
+            "reason": "No prohibited trade, order, target-price, or position instruction was detected.",
+            "score": 1.0
+          },
+          {
+            "check_id": "missing_data_disclosure",
+            "dimension": "missing_data_disclosure",
+            "evaluator": "deterministic",
+            "evidence": [
+              {
+                "excerpt": "market_price_history",
+                "kind": "diagnostic",
+                "locator": "known_missing_data"
+              },
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_markdown"
+              }
+            ],
+            "passed": true,
+            "reason": "1/1 known missing-data items were disclosed.",
+            "score": 1.0
+          }
+        ],
+        "deterministic_score": 1.0,
+        "dimensions": [
+          {
+            "component_check_ids": [
+              "structure_completeness"
+            ],
+            "dimension": "structure_completeness",
+            "evidence": [
+              {
+                "excerpt": "standard section presence, schema, and order",
+                "kind": "report_path",
+                "locator": "report.report_json"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: structure_completeness=1.000",
+            "score": 1.0
+          },
+          {
+            "component_check_ids": [
+              "numeric_grounding",
+              "semantic_factuality"
+            ],
+            "dimension": "factual_correctness",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "numeric_claims:none"
+              },
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:semantic_factuality"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: numeric_grounding=1.000, semantic_factuality=1.000",
+            "score": 1.0
+          },
+          {
+            "component_check_ids": [
+              "citation_coverage"
+            ],
+            "dimension": "citation_coverage",
+            "evidence": [
+              {
+                "excerpt": "facts, inferences, and risk_warnings",
+                "kind": "report_path",
+                "locator": "report.report_json"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: citation_coverage=1.000",
+            "score": 1.0
+          },
+          {
+            "component_check_ids": [
+              "citation_traceability"
+            ],
+            "dimension": "citation_traceability",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "source",
+                "locator": "cn-partial-document|cn-partial-chunk|benchmark_fixture"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: citation_traceability=1.000",
+            "score": 1.0
+          },
+          {
+            "component_check_ids": [
+              "conclusion_evidence_consistency"
+            ],
+            "dimension": "conclusion_evidence_consistency",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:conclusion_evidence_consistency"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: conclusion_evidence_consistency=1.000",
+            "score": 1.0
+          },
+          {
+            "component_check_ids": [
+              "bull_bear_balance"
+            ],
+            "dimension": "bull_bear_balance",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:bull_bear_balance"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: bull_bear_balance=1.000",
+            "score": 1.0
+          },
+          {
+            "component_check_ids": [
+              "risk_identification_quality"
+            ],
+            "dimension": "risk_identification_quality",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:risk_identification_quality"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: risk_identification_quality=1.000",
+            "score": 1.0
+          },
+          {
+            "component_check_ids": [
+              "uncertainty_presence",
+              "uncertainty_quality"
+            ],
+            "dimension": "uncertainty_expression",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_json.executive_view.uncertainties"
+              },
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_json.macro_context.uncertainties"
+              },
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_json.fundamentals.uncertainties"
+              },
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_json.technical_text.uncertainties"
+              },
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_json.sentiment.uncertainties"
+              },
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:uncertainty_quality"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: uncertainty_presence=1.000, uncertainty_quality=1.000",
+            "score": 1.0
+          },
+          {
+            "component_check_ids": [
+              "temporal_validity"
+            ],
+            "dimension": "temporal_validity",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "source",
+                "locator": "cn-partial-document|cn-partial-chunk|benchmark_fixture"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: temporal_validity=1.000",
+            "score": 1.0
+          },
+          {
+            "component_check_ids": [
+              "trading_instruction_compliance"
+            ],
+            "dimension": "trading_instruction_compliance",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_markdown"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: trading_instruction_compliance=1.000",
+            "score": 1.0
+          },
+          {
+            "component_check_ids": [
+              "missing_data_disclosure"
+            ],
+            "dimension": "missing_data_disclosure",
+            "evidence": [
+              {
+                "excerpt": "market_price_history",
+                "kind": "diagnostic",
+                "locator": "known_missing_data"
+              },
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_markdown"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: missing_data_disclosure=1.000",
+            "score": 1.0
+          },
+          {
+            "component_check_ids": [
+              "readability"
+            ],
+            "dimension": "readability",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:readability"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: readability=1.000",
+            "score": 1.0
+          }
+        ],
+        "evaluated_at": "2026-08-07T00:00:00Z",
+        "evaluation_id": "benchmark-evaluation-cn_provider_partial_failure-v1",
+        "input_fingerprint": "d7f194e2bd29647544d2678dd6dccb9992fc4839d72cdb64639f50f4feab518b",
+        "judge_checks": [
+          {
+            "check_id": "semantic_factuality",
+            "dimension": "factual_correctness",
+            "evaluator": "llm_judge",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:semantic_factuality"
+              }
+            ],
+            "passed": true,
+            "reason": "Offline Fake Judge assigned the configured score for semantic_factuality.",
+            "score": 1.0
+          },
+          {
+            "check_id": "conclusion_evidence_consistency",
+            "dimension": "conclusion_evidence_consistency",
+            "evaluator": "llm_judge",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:conclusion_evidence_consistency"
+              }
+            ],
+            "passed": true,
+            "reason": "Offline Fake Judge assigned the configured score for conclusion_evidence_consistency.",
+            "score": 1.0
+          },
+          {
+            "check_id": "bull_bear_balance",
+            "dimension": "bull_bear_balance",
+            "evaluator": "llm_judge",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:bull_bear_balance"
+              }
+            ],
+            "passed": true,
+            "reason": "Offline Fake Judge assigned the configured score for bull_bear_balance.",
+            "score": 1.0
+          },
+          {
+            "check_id": "risk_identification_quality",
+            "dimension": "risk_identification_quality",
+            "evaluator": "llm_judge",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:risk_identification_quality"
+              }
+            ],
+            "passed": true,
+            "reason": "Offline Fake Judge assigned the configured score for risk_identification_quality.",
+            "score": 1.0
+          },
+          {
+            "check_id": "uncertainty_quality",
+            "dimension": "uncertainty_expression",
+            "evaluator": "llm_judge",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:uncertainty_quality"
+              }
+            ],
+            "passed": true,
+            "reason": "Offline Fake Judge assigned the configured score for uncertainty_quality.",
+            "score": 1.0
+          },
+          {
+            "check_id": "readability",
+            "dimension": "readability",
+            "evaluator": "llm_judge",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:readability"
+              }
+            ],
+            "passed": true,
+            "reason": "Offline Fake Judge assigned the configured score for readability.",
+            "score": 1.0
+          }
+        ],
+        "judge_model": "fake-report-judge",
+        "judge_run_metadata": null,
+        "judge_score": 1.0,
+        "overall_score": 1.0,
+        "report_id": "benchmark-cn_provider_partial_failure-v1",
+        "ruleset_version": "report_quality_v1"
+      },
+      "expected_fact_coverage": 1.0,
+      "failures": [],
+      "forbidden_conclusion_compliance": 1.0,
+      "lifecycle_compliance": 1.0,
+      "market": "CN",
+      "observed_failure_code": null,
+      "passed": true,
+      "scenario": "provider_partial_failure"
+    },
+    {
+      "asset_id": "HK:9998.HK",
+      "case_id": "hk_memory_empty",
+      "case_version": "v1",
+      "check_scores": {
+        "citation_coverage": 1.0,
+        "citation_traceability": 1.0,
+        "missing_data_disclosure": 1.0,
+        "numeric_grounding": 1.0,
+        "structure_completeness": 1.0,
+        "temporal_validity": 1.0,
+        "trading_instruction_compliance": 1.0,
+        "uncertainty_presence": 1.0
+      },
+      "dimension_scores": {
+        "bull_bear_balance": 1.0,
+        "citation_coverage": 1.0,
+        "citation_traceability": 1.0,
+        "conclusion_evidence_consistency": 1.0,
+        "factual_correctness": 1.0,
+        "missing_data_disclosure": 1.0,
+        "readability": 1.0,
+        "risk_identification_quality": 1.0,
+        "structure_completeness": 1.0,
+        "temporal_validity": 1.0,
+        "trading_instruction_compliance": 1.0,
+        "uncertainty_expression": 1.0
+      },
+      "evaluation": {
+        "deterministic_checks": [
+          {
+            "check_id": "structure_completeness",
+            "dimension": "structure_completeness",
+            "evaluator": "deterministic",
+            "evidence": [
+              {
+                "excerpt": "standard section presence, schema, and order",
+                "kind": "report_path",
+                "locator": "report.report_json"
+              }
+            ],
+            "passed": true,
+            "reason": "10/10 required sections were present, 10 were schema-valid, and 10 had the expected identity and order. Exact section set: True.",
+            "score": 1.0
+          },
+          {
+            "check_id": "numeric_grounding",
+            "dimension": "factual_correctness",
+            "evaluator": "deterministic",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "numeric_claims:none"
+              }
+            ],
+            "passed": true,
+            "reason": "The report contained no numeric textual claims to verify.",
+            "score": 1.0
+          },
+          {
+            "check_id": "citation_coverage",
+            "dimension": "citation_coverage",
+            "evaluator": "deterministic",
+            "evidence": [
+              {
+                "excerpt": "facts, inferences, and risk_warnings",
+                "kind": "report_path",
+                "locator": "report.report_json"
+              }
+            ],
+            "passed": true,
+            "reason": "30/30 report statements contained citations.",
+            "score": 1.0
+          },
+          {
+            "check_id": "citation_traceability",
+            "dimension": "citation_traceability",
+            "evaluator": "deterministic",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "source",
+                "locator": "hk-memory-empty-document|hk-memory-empty-chunk|benchmark_fixture"
+              }
+            ],
+            "passed": true,
+            "reason": "1/1 unique citations resolved to supplied evidence.",
+            "score": 1.0
+          },
+          {
+            "check_id": "uncertainty_presence",
+            "dimension": "uncertainty_expression",
+            "evaluator": "deterministic",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_json.executive_view.uncertainties"
+              },
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_json.macro_context.uncertainties"
+              },
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_json.fundamentals.uncertainties"
+              },
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_json.technical_text.uncertainties"
+              },
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_json.sentiment.uncertainties"
+              }
+            ],
+            "passed": true,
+            "reason": "The report contained 10 explicit uncertainty statements.",
+            "score": 1.0
+          },
+          {
+            "check_id": "temporal_validity",
+            "dimension": "temporal_validity",
+            "evaluator": "deterministic",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "source",
+                "locator": "hk-memory-empty-document|hk-memory-empty-chunk|benchmark_fixture"
+              }
+            ],
+            "passed": true,
+            "reason": "1/1 unique citations had dated evidence between the report date and 370 days old.",
+            "score": 1.0
+          },
+          {
+            "check_id": "trading_instruction_compliance",
+            "dimension": "trading_instruction_compliance",
+            "evaluator": "deterministic",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_markdown"
+              }
+            ],
+            "passed": true,
+            "reason": "No prohibited trade, order, target-price, or position instruction was detected.",
+            "score": 1.0
+          },
+          {
+            "check_id": "missing_data_disclosure",
+            "dimension": "missing_data_disclosure",
+            "evaluator": "deterministic",
+            "evidence": [
+              {
+                "excerpt": "retrieved_memories",
+                "kind": "diagnostic",
+                "locator": "known_missing_data"
+              },
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_markdown"
+              }
+            ],
+            "passed": true,
+            "reason": "1/1 known missing-data items were disclosed.",
+            "score": 1.0
+          }
+        ],
+        "deterministic_score": 1.0,
+        "dimensions": [
+          {
+            "component_check_ids": [
+              "structure_completeness"
+            ],
+            "dimension": "structure_completeness",
+            "evidence": [
+              {
+                "excerpt": "standard section presence, schema, and order",
+                "kind": "report_path",
+                "locator": "report.report_json"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: structure_completeness=1.000",
+            "score": 1.0
+          },
+          {
+            "component_check_ids": [
+              "numeric_grounding",
+              "semantic_factuality"
+            ],
+            "dimension": "factual_correctness",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "numeric_claims:none"
+              },
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:semantic_factuality"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: numeric_grounding=1.000, semantic_factuality=1.000",
+            "score": 1.0
+          },
+          {
+            "component_check_ids": [
+              "citation_coverage"
+            ],
+            "dimension": "citation_coverage",
+            "evidence": [
+              {
+                "excerpt": "facts, inferences, and risk_warnings",
+                "kind": "report_path",
+                "locator": "report.report_json"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: citation_coverage=1.000",
+            "score": 1.0
+          },
+          {
+            "component_check_ids": [
+              "citation_traceability"
+            ],
+            "dimension": "citation_traceability",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "source",
+                "locator": "hk-memory-empty-document|hk-memory-empty-chunk|benchmark_fixture"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: citation_traceability=1.000",
+            "score": 1.0
+          },
+          {
+            "component_check_ids": [
+              "conclusion_evidence_consistency"
+            ],
+            "dimension": "conclusion_evidence_consistency",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:conclusion_evidence_consistency"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: conclusion_evidence_consistency=1.000",
+            "score": 1.0
+          },
+          {
+            "component_check_ids": [
+              "bull_bear_balance"
+            ],
+            "dimension": "bull_bear_balance",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:bull_bear_balance"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: bull_bear_balance=1.000",
+            "score": 1.0
+          },
+          {
+            "component_check_ids": [
+              "risk_identification_quality"
+            ],
+            "dimension": "risk_identification_quality",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:risk_identification_quality"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: risk_identification_quality=1.000",
+            "score": 1.0
+          },
+          {
+            "component_check_ids": [
+              "uncertainty_presence",
+              "uncertainty_quality"
+            ],
+            "dimension": "uncertainty_expression",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_json.executive_view.uncertainties"
+              },
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_json.macro_context.uncertainties"
+              },
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_json.fundamentals.uncertainties"
+              },
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_json.technical_text.uncertainties"
+              },
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_json.sentiment.uncertainties"
+              },
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:uncertainty_quality"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: uncertainty_presence=1.000, uncertainty_quality=1.000",
+            "score": 1.0
+          },
+          {
+            "component_check_ids": [
+              "temporal_validity"
+            ],
+            "dimension": "temporal_validity",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "source",
+                "locator": "hk-memory-empty-document|hk-memory-empty-chunk|benchmark_fixture"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: temporal_validity=1.000",
+            "score": 1.0
+          },
+          {
+            "component_check_ids": [
+              "trading_instruction_compliance"
+            ],
+            "dimension": "trading_instruction_compliance",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_markdown"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: trading_instruction_compliance=1.000",
+            "score": 1.0
+          },
+          {
+            "component_check_ids": [
+              "missing_data_disclosure"
+            ],
+            "dimension": "missing_data_disclosure",
+            "evidence": [
+              {
+                "excerpt": "retrieved_memories",
+                "kind": "diagnostic",
+                "locator": "known_missing_data"
+              },
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_markdown"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: missing_data_disclosure=1.000",
+            "score": 1.0
+          },
+          {
+            "component_check_ids": [
+              "readability"
+            ],
+            "dimension": "readability",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:readability"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: readability=1.000",
+            "score": 1.0
+          }
+        ],
+        "evaluated_at": "2026-08-07T00:00:00Z",
+        "evaluation_id": "benchmark-evaluation-hk_memory_empty-v1",
+        "input_fingerprint": "e78d589cc9a6763522be0f028c2a94f13664503d6b38795f854dd3ee641b2166",
+        "judge_checks": [
+          {
+            "check_id": "semantic_factuality",
+            "dimension": "factual_correctness",
+            "evaluator": "llm_judge",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:semantic_factuality"
+              }
+            ],
+            "passed": true,
+            "reason": "Offline Fake Judge assigned the configured score for semantic_factuality.",
+            "score": 1.0
+          },
+          {
+            "check_id": "conclusion_evidence_consistency",
+            "dimension": "conclusion_evidence_consistency",
+            "evaluator": "llm_judge",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:conclusion_evidence_consistency"
+              }
+            ],
+            "passed": true,
+            "reason": "Offline Fake Judge assigned the configured score for conclusion_evidence_consistency.",
+            "score": 1.0
+          },
+          {
+            "check_id": "bull_bear_balance",
+            "dimension": "bull_bear_balance",
+            "evaluator": "llm_judge",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:bull_bear_balance"
+              }
+            ],
+            "passed": true,
+            "reason": "Offline Fake Judge assigned the configured score for bull_bear_balance.",
+            "score": 1.0
+          },
+          {
+            "check_id": "risk_identification_quality",
+            "dimension": "risk_identification_quality",
+            "evaluator": "llm_judge",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:risk_identification_quality"
+              }
+            ],
+            "passed": true,
+            "reason": "Offline Fake Judge assigned the configured score for risk_identification_quality.",
+            "score": 1.0
+          },
+          {
+            "check_id": "uncertainty_quality",
+            "dimension": "uncertainty_expression",
+            "evaluator": "llm_judge",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:uncertainty_quality"
+              }
+            ],
+            "passed": true,
+            "reason": "Offline Fake Judge assigned the configured score for uncertainty_quality.",
+            "score": 1.0
+          },
+          {
+            "check_id": "readability",
+            "dimension": "readability",
+            "evaluator": "llm_judge",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:readability"
+              }
+            ],
+            "passed": true,
+            "reason": "Offline Fake Judge assigned the configured score for readability.",
+            "score": 1.0
+          }
+        ],
+        "judge_model": "fake-report-judge",
+        "judge_run_metadata": null,
+        "judge_score": 1.0,
+        "overall_score": 1.0,
+        "report_id": "benchmark-hk_memory_empty-v1",
+        "ruleset_version": "report_quality_v1"
+      },
+      "expected_fact_coverage": 1.0,
+      "failures": [],
+      "forbidden_conclusion_compliance": 1.0,
+      "lifecycle_compliance": 1.0,
+      "market": "HK",
+      "observed_failure_code": null,
+      "passed": true,
+      "scenario": "memory_empty"
+    },
+    {
+      "asset_id": "HK:9999.HK",
+      "case_id": "hk_news_fundamental_conflict",
+      "case_version": "v1",
+      "check_scores": {
+        "citation_coverage": 1.0,
+        "citation_traceability": 1.0,
+        "missing_data_disclosure": 1.0,
+        "numeric_grounding": 1.0,
+        "structure_completeness": 1.0,
+        "temporal_validity": 1.0,
+        "trading_instruction_compliance": 1.0,
+        "uncertainty_presence": 1.0
+      },
+      "dimension_scores": {
+        "bull_bear_balance": 1.0,
+        "citation_coverage": 1.0,
+        "citation_traceability": 1.0,
+        "conclusion_evidence_consistency": 1.0,
+        "factual_correctness": 1.0,
+        "missing_data_disclosure": 1.0,
+        "readability": 1.0,
+        "risk_identification_quality": 1.0,
+        "structure_completeness": 1.0,
+        "temporal_validity": 1.0,
+        "trading_instruction_compliance": 1.0,
+        "uncertainty_expression": 1.0
+      },
+      "evaluation": {
+        "deterministic_checks": [
+          {
+            "check_id": "structure_completeness",
+            "dimension": "structure_completeness",
+            "evaluator": "deterministic",
+            "evidence": [
+              {
+                "excerpt": "standard section presence, schema, and order",
+                "kind": "report_path",
+                "locator": "report.report_json"
+              }
+            ],
+            "passed": true,
+            "reason": "10/10 required sections were present, 10 were schema-valid, and 10 had the expected identity and order. Exact section set: True.",
+            "score": 1.0
+          },
+          {
+            "check_id": "numeric_grounding",
+            "dimension": "factual_correctness",
+            "evaluator": "deterministic",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "numeric_claims:none"
+              }
+            ],
+            "passed": true,
+            "reason": "The report contained no numeric textual claims to verify.",
+            "score": 1.0
+          },
+          {
+            "check_id": "citation_coverage",
+            "dimension": "citation_coverage",
+            "evaluator": "deterministic",
+            "evidence": [
+              {
+                "excerpt": "facts, inferences, and risk_warnings",
+                "kind": "report_path",
+                "locator": "report.report_json"
+              }
+            ],
+            "passed": true,
+            "reason": "30/30 report statements contained citations.",
+            "score": 1.0
+          },
+          {
+            "check_id": "citation_traceability",
+            "dimension": "citation_traceability",
+            "evaluator": "deterministic",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "source",
+                "locator": "hk-conflict-fundamental-document|hk-conflict-fundamental-chunk|benchmark_fixture"
+              },
+              {
+                "excerpt": null,
+                "kind": "source",
+                "locator": "hk-conflict-news-document|hk-conflict-news-chunk|benchmark_fixture"
+              }
+            ],
+            "passed": true,
+            "reason": "2/2 unique citations resolved to supplied evidence.",
+            "score": 1.0
+          },
+          {
+            "check_id": "uncertainty_presence",
+            "dimension": "uncertainty_expression",
+            "evaluator": "deterministic",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_json.executive_view.uncertainties"
+              },
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_json.macro_context.uncertainties"
+              },
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_json.fundamentals.uncertainties"
+              },
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_json.technical_text.uncertainties"
+              },
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_json.sentiment.uncertainties"
+              }
+            ],
+            "passed": true,
+            "reason": "The report contained 10 explicit uncertainty statements.",
+            "score": 1.0
+          },
+          {
+            "check_id": "temporal_validity",
+            "dimension": "temporal_validity",
+            "evaluator": "deterministic",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "source",
+                "locator": "hk-conflict-fundamental-document|hk-conflict-fundamental-chunk|benchmark_fixture"
+              },
+              {
+                "excerpt": null,
+                "kind": "source",
+                "locator": "hk-conflict-news-document|hk-conflict-news-chunk|benchmark_fixture"
+              }
+            ],
+            "passed": true,
+            "reason": "2/2 unique citations had dated evidence between the report date and 370 days old.",
+            "score": 1.0
+          },
+          {
+            "check_id": "trading_instruction_compliance",
+            "dimension": "trading_instruction_compliance",
+            "evaluator": "deterministic",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_markdown"
+              }
+            ],
+            "passed": true,
+            "reason": "No prohibited trade, order, target-price, or position instruction was detected.",
+            "score": 1.0
+          },
+          {
+            "check_id": "missing_data_disclosure",
+            "dimension": "missing_data_disclosure",
+            "evaluator": "deterministic",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "known_missing_data:none"
+              }
+            ],
+            "passed": true,
+            "reason": "No upstream missing-data items were supplied for disclosure.",
+            "score": 1.0
+          }
+        ],
+        "deterministic_score": 1.0,
+        "dimensions": [
+          {
+            "component_check_ids": [
+              "structure_completeness"
+            ],
+            "dimension": "structure_completeness",
+            "evidence": [
+              {
+                "excerpt": "standard section presence, schema, and order",
+                "kind": "report_path",
+                "locator": "report.report_json"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: structure_completeness=1.000",
+            "score": 1.0
+          },
+          {
+            "component_check_ids": [
+              "numeric_grounding",
+              "semantic_factuality"
+            ],
+            "dimension": "factual_correctness",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "numeric_claims:none"
+              },
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:semantic_factuality"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: numeric_grounding=1.000, semantic_factuality=1.000",
+            "score": 1.0
+          },
+          {
+            "component_check_ids": [
+              "citation_coverage"
+            ],
+            "dimension": "citation_coverage",
+            "evidence": [
+              {
+                "excerpt": "facts, inferences, and risk_warnings",
+                "kind": "report_path",
+                "locator": "report.report_json"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: citation_coverage=1.000",
+            "score": 1.0
+          },
+          {
+            "component_check_ids": [
+              "citation_traceability"
+            ],
+            "dimension": "citation_traceability",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "source",
+                "locator": "hk-conflict-fundamental-document|hk-conflict-fundamental-chunk|benchmark_fixture"
+              },
+              {
+                "excerpt": null,
+                "kind": "source",
+                "locator": "hk-conflict-news-document|hk-conflict-news-chunk|benchmark_fixture"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: citation_traceability=1.000",
+            "score": 1.0
+          },
+          {
+            "component_check_ids": [
+              "conclusion_evidence_consistency"
+            ],
+            "dimension": "conclusion_evidence_consistency",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:conclusion_evidence_consistency"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: conclusion_evidence_consistency=1.000",
+            "score": 1.0
+          },
+          {
+            "component_check_ids": [
+              "bull_bear_balance"
+            ],
+            "dimension": "bull_bear_balance",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:bull_bear_balance"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: bull_bear_balance=1.000",
+            "score": 1.0
+          },
+          {
+            "component_check_ids": [
+              "risk_identification_quality"
+            ],
+            "dimension": "risk_identification_quality",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:risk_identification_quality"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: risk_identification_quality=1.000",
+            "score": 1.0
+          },
+          {
+            "component_check_ids": [
+              "uncertainty_presence",
+              "uncertainty_quality"
+            ],
+            "dimension": "uncertainty_expression",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_json.executive_view.uncertainties"
+              },
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_json.macro_context.uncertainties"
+              },
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_json.fundamentals.uncertainties"
+              },
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_json.technical_text.uncertainties"
+              },
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_json.sentiment.uncertainties"
+              },
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:uncertainty_quality"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: uncertainty_presence=1.000, uncertainty_quality=1.000",
+            "score": 1.0
+          },
+          {
+            "component_check_ids": [
+              "temporal_validity"
+            ],
+            "dimension": "temporal_validity",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "source",
+                "locator": "hk-conflict-fundamental-document|hk-conflict-fundamental-chunk|benchmark_fixture"
+              },
+              {
+                "excerpt": null,
+                "kind": "source",
+                "locator": "hk-conflict-news-document|hk-conflict-news-chunk|benchmark_fixture"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: temporal_validity=1.000",
+            "score": 1.0
+          },
+          {
+            "component_check_ids": [
+              "trading_instruction_compliance"
+            ],
+            "dimension": "trading_instruction_compliance",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_markdown"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: trading_instruction_compliance=1.000",
+            "score": 1.0
+          },
+          {
+            "component_check_ids": [
+              "missing_data_disclosure"
+            ],
+            "dimension": "missing_data_disclosure",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "known_missing_data:none"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: missing_data_disclosure=1.000",
+            "score": 1.0
+          },
+          {
+            "component_check_ids": [
+              "readability"
+            ],
+            "dimension": "readability",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:readability"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: readability=1.000",
+            "score": 1.0
+          }
+        ],
+        "evaluated_at": "2026-08-07T00:00:00Z",
+        "evaluation_id": "benchmark-evaluation-hk_news_fundamental_conflict-v1",
+        "input_fingerprint": "c9be71e5672ff763ae8c4a1275f285fc6eae94dfec94b62c81d786ddd91f5634",
+        "judge_checks": [
+          {
+            "check_id": "semantic_factuality",
+            "dimension": "factual_correctness",
+            "evaluator": "llm_judge",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:semantic_factuality"
+              }
+            ],
+            "passed": true,
+            "reason": "Offline Fake Judge assigned the configured score for semantic_factuality.",
+            "score": 1.0
+          },
+          {
+            "check_id": "conclusion_evidence_consistency",
+            "dimension": "conclusion_evidence_consistency",
+            "evaluator": "llm_judge",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:conclusion_evidence_consistency"
+              }
+            ],
+            "passed": true,
+            "reason": "Offline Fake Judge assigned the configured score for conclusion_evidence_consistency.",
+            "score": 1.0
+          },
+          {
+            "check_id": "bull_bear_balance",
+            "dimension": "bull_bear_balance",
+            "evaluator": "llm_judge",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:bull_bear_balance"
+              }
+            ],
+            "passed": true,
+            "reason": "Offline Fake Judge assigned the configured score for bull_bear_balance.",
+            "score": 1.0
+          },
+          {
+            "check_id": "risk_identification_quality",
+            "dimension": "risk_identification_quality",
+            "evaluator": "llm_judge",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:risk_identification_quality"
+              }
+            ],
+            "passed": true,
+            "reason": "Offline Fake Judge assigned the configured score for risk_identification_quality.",
+            "score": 1.0
+          },
+          {
+            "check_id": "uncertainty_quality",
+            "dimension": "uncertainty_expression",
+            "evaluator": "llm_judge",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:uncertainty_quality"
+              }
+            ],
+            "passed": true,
+            "reason": "Offline Fake Judge assigned the configured score for uncertainty_quality.",
+            "score": 1.0
+          },
+          {
+            "check_id": "readability",
+            "dimension": "readability",
+            "evaluator": "llm_judge",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:readability"
+              }
+            ],
+            "passed": true,
+            "reason": "Offline Fake Judge assigned the configured score for readability.",
+            "score": 1.0
+          }
+        ],
+        "judge_model": "fake-report-judge",
+        "judge_run_metadata": null,
+        "judge_score": 1.0,
+        "overall_score": 1.0,
+        "report_id": "benchmark-hk_news_fundamental_conflict-v1",
+        "ruleset_version": "report_quality_v1"
+      },
+      "expected_fact_coverage": 1.0,
+      "failures": [],
+      "forbidden_conclusion_compliance": 1.0,
+      "lifecycle_compliance": 1.0,
+      "market": "HK",
+      "observed_failure_code": null,
+      "passed": true,
+      "scenario": "news_fundamental_conflict"
+    },
+    {
+      "asset_id": "US:FAIL",
+      "case_id": "us_analyst_failure",
+      "case_version": "v1",
+      "check_scores": {},
+      "dimension_scores": {},
+      "evaluation": null,
+      "expected_fact_coverage": 1.0,
+      "failures": [],
+      "forbidden_conclusion_compliance": 1.0,
+      "lifecycle_compliance": 1.0,
+      "market": "US",
+      "observed_failure_code": "agent_execution_failed",
+      "passed": true,
+      "scenario": "analyst_failure"
+    },
+    {
+      "asset_id": "US:BENCH",
+      "case_id": "us_complete_company",
+      "case_version": "v1",
+      "check_scores": {
+        "citation_coverage": 1.0,
+        "citation_traceability": 1.0,
+        "missing_data_disclosure": 1.0,
+        "numeric_grounding": 1.0,
+        "structure_completeness": 1.0,
+        "temporal_validity": 1.0,
+        "trading_instruction_compliance": 1.0,
+        "uncertainty_presence": 1.0
+      },
+      "dimension_scores": {
+        "bull_bear_balance": 1.0,
+        "citation_coverage": 1.0,
+        "citation_traceability": 1.0,
+        "conclusion_evidence_consistency": 1.0,
+        "factual_correctness": 1.0,
+        "missing_data_disclosure": 1.0,
+        "readability": 1.0,
+        "risk_identification_quality": 1.0,
+        "structure_completeness": 1.0,
+        "temporal_validity": 1.0,
+        "trading_instruction_compliance": 1.0,
+        "uncertainty_expression": 1.0
+      },
+      "evaluation": {
+        "deterministic_checks": [
+          {
+            "check_id": "structure_completeness",
+            "dimension": "structure_completeness",
+            "evaluator": "deterministic",
+            "evidence": [
+              {
+                "excerpt": "standard section presence, schema, and order",
+                "kind": "report_path",
+                "locator": "report.report_json"
+              }
+            ],
+            "passed": true,
+            "reason": "10/10 required sections were present, 10 were schema-valid, and 10 had the expected identity and order. Exact section set: True.",
+            "score": 1.0
+          },
+          {
+            "check_id": "numeric_grounding",
+            "dimension": "factual_correctness",
+            "evaluator": "deterministic",
+            "evidence": [
+              {
+                "excerpt": "Revenue increased 8%.",
+                "kind": "report_path",
+                "locator": "report.report_json.executive_view.facts[0]"
+              },
+              {
+                "excerpt": "Gross margin was 42%.",
+                "kind": "report_path",
+                "locator": "report.report_json.macro_context.facts[0]"
+              },
+              {
+                "excerpt": "Revenue increased 8%, which supports a measured growth interpretation.",
+                "kind": "report_path",
+                "locator": "report.report_json.macro_context.inferences[0]"
+              },
+              {
+                "excerpt": "Revenue increased 8%.",
+                "kind": "report_path",
+                "locator": "report.report_json.technical_text.facts[0]"
+              },
+              {
+                "excerpt": "Revenue increased 8%, which supports a measured growth interpretation.",
+                "kind": "report_path",
+                "locator": "report.report_json.technical_text.inferences[0]"
+              }
+            ],
+            "passed": true,
+            "reason": "12/12 numeric claims copied every numeric token from their cited evidence.",
+            "score": 1.0
+          },
+          {
+            "check_id": "citation_coverage",
+            "dimension": "citation_coverage",
+            "evaluator": "deterministic",
+            "evidence": [
+              {
+                "excerpt": "facts, inferences, and risk_warnings",
+                "kind": "report_path",
+                "locator": "report.report_json"
+              }
+            ],
+            "passed": true,
+            "reason": "30/30 report statements contained citations.",
+            "score": 1.0
+          },
+          {
+            "check_id": "citation_traceability",
+            "dimension": "citation_traceability",
+            "evaluator": "deterministic",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "source",
+                "locator": "us-complete-document|us-complete-chunk|benchmark_fixture"
+              }
+            ],
+            "passed": true,
+            "reason": "1/1 unique citations resolved to supplied evidence.",
+            "score": 1.0
+          },
+          {
+            "check_id": "uncertainty_presence",
+            "dimension": "uncertainty_expression",
+            "evaluator": "deterministic",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_json.executive_view.uncertainties"
+              },
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_json.macro_context.uncertainties"
+              },
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_json.fundamentals.uncertainties"
+              },
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_json.technical_text.uncertainties"
+              },
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_json.sentiment.uncertainties"
+              }
+            ],
+            "passed": true,
+            "reason": "The report contained 10 explicit uncertainty statements.",
+            "score": 1.0
+          },
+          {
+            "check_id": "temporal_validity",
+            "dimension": "temporal_validity",
+            "evaluator": "deterministic",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "source",
+                "locator": "us-complete-document|us-complete-chunk|benchmark_fixture"
+              }
+            ],
+            "passed": true,
+            "reason": "1/1 unique citations had dated evidence between the report date and 370 days old.",
+            "score": 1.0
+          },
+          {
+            "check_id": "trading_instruction_compliance",
+            "dimension": "trading_instruction_compliance",
+            "evaluator": "deterministic",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_markdown"
+              }
+            ],
+            "passed": true,
+            "reason": "No prohibited trade, order, target-price, or position instruction was detected.",
+            "score": 1.0
+          },
+          {
+            "check_id": "missing_data_disclosure",
+            "dimension": "missing_data_disclosure",
+            "evaluator": "deterministic",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "known_missing_data:none"
+              }
+            ],
+            "passed": true,
+            "reason": "No upstream missing-data items were supplied for disclosure.",
+            "score": 1.0
+          }
+        ],
+        "deterministic_score": 1.0,
+        "dimensions": [
+          {
+            "component_check_ids": [
+              "structure_completeness"
+            ],
+            "dimension": "structure_completeness",
+            "evidence": [
+              {
+                "excerpt": "standard section presence, schema, and order",
+                "kind": "report_path",
+                "locator": "report.report_json"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: structure_completeness=1.000",
+            "score": 1.0
+          },
+          {
+            "component_check_ids": [
+              "numeric_grounding",
+              "semantic_factuality"
+            ],
+            "dimension": "factual_correctness",
+            "evidence": [
+              {
+                "excerpt": "Revenue increased 8%.",
+                "kind": "report_path",
+                "locator": "report.report_json.executive_view.facts[0]"
+              },
+              {
+                "excerpt": "Gross margin was 42%.",
+                "kind": "report_path",
+                "locator": "report.report_json.macro_context.facts[0]"
+              },
+              {
+                "excerpt": "Revenue increased 8%, which supports a measured growth interpretation.",
+                "kind": "report_path",
+                "locator": "report.report_json.macro_context.inferences[0]"
+              },
+              {
+                "excerpt": "Revenue increased 8%.",
+                "kind": "report_path",
+                "locator": "report.report_json.technical_text.facts[0]"
+              },
+              {
+                "excerpt": "Revenue increased 8%, which supports a measured growth interpretation.",
+                "kind": "report_path",
+                "locator": "report.report_json.technical_text.inferences[0]"
+              },
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:semantic_factuality"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: numeric_grounding=1.000, semantic_factuality=1.000",
+            "score": 1.0
+          },
+          {
+            "component_check_ids": [
+              "citation_coverage"
+            ],
+            "dimension": "citation_coverage",
+            "evidence": [
+              {
+                "excerpt": "facts, inferences, and risk_warnings",
+                "kind": "report_path",
+                "locator": "report.report_json"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: citation_coverage=1.000",
+            "score": 1.0
+          },
+          {
+            "component_check_ids": [
+              "citation_traceability"
+            ],
+            "dimension": "citation_traceability",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "source",
+                "locator": "us-complete-document|us-complete-chunk|benchmark_fixture"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: citation_traceability=1.000",
+            "score": 1.0
+          },
+          {
+            "component_check_ids": [
+              "conclusion_evidence_consistency"
+            ],
+            "dimension": "conclusion_evidence_consistency",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:conclusion_evidence_consistency"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: conclusion_evidence_consistency=1.000",
+            "score": 1.0
+          },
+          {
+            "component_check_ids": [
+              "bull_bear_balance"
+            ],
+            "dimension": "bull_bear_balance",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:bull_bear_balance"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: bull_bear_balance=1.000",
+            "score": 1.0
+          },
+          {
+            "component_check_ids": [
+              "risk_identification_quality"
+            ],
+            "dimension": "risk_identification_quality",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:risk_identification_quality"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: risk_identification_quality=1.000",
+            "score": 1.0
+          },
+          {
+            "component_check_ids": [
+              "uncertainty_presence",
+              "uncertainty_quality"
+            ],
+            "dimension": "uncertainty_expression",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_json.executive_view.uncertainties"
+              },
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_json.macro_context.uncertainties"
+              },
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_json.fundamentals.uncertainties"
+              },
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_json.technical_text.uncertainties"
+              },
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_json.sentiment.uncertainties"
+              },
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:uncertainty_quality"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: uncertainty_presence=1.000, uncertainty_quality=1.000",
+            "score": 1.0
+          },
+          {
+            "component_check_ids": [
+              "temporal_validity"
+            ],
+            "dimension": "temporal_validity",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "source",
+                "locator": "us-complete-document|us-complete-chunk|benchmark_fixture"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: temporal_validity=1.000",
+            "score": 1.0
+          },
+          {
+            "component_check_ids": [
+              "trading_instruction_compliance"
+            ],
+            "dimension": "trading_instruction_compliance",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_markdown"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: trading_instruction_compliance=1.000",
+            "score": 1.0
+          },
+          {
+            "component_check_ids": [
+              "missing_data_disclosure"
+            ],
+            "dimension": "missing_data_disclosure",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "known_missing_data:none"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: missing_data_disclosure=1.000",
+            "score": 1.0
+          },
+          {
+            "component_check_ids": [
+              "readability"
+            ],
+            "dimension": "readability",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:readability"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: readability=1.000",
+            "score": 1.0
+          }
+        ],
+        "evaluated_at": "2026-08-07T00:00:00Z",
+        "evaluation_id": "benchmark-evaluation-us_complete_company-v1",
+        "input_fingerprint": "b251a7c1f8f8fe77d90eaeed13070a81eb5fa81d2f5fcedda0015539b44faf8f",
+        "judge_checks": [
+          {
+            "check_id": "semantic_factuality",
+            "dimension": "factual_correctness",
+            "evaluator": "llm_judge",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:semantic_factuality"
+              }
+            ],
+            "passed": true,
+            "reason": "Offline Fake Judge assigned the configured score for semantic_factuality.",
+            "score": 1.0
+          },
+          {
+            "check_id": "conclusion_evidence_consistency",
+            "dimension": "conclusion_evidence_consistency",
+            "evaluator": "llm_judge",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:conclusion_evidence_consistency"
+              }
+            ],
+            "passed": true,
+            "reason": "Offline Fake Judge assigned the configured score for conclusion_evidence_consistency.",
+            "score": 1.0
+          },
+          {
+            "check_id": "bull_bear_balance",
+            "dimension": "bull_bear_balance",
+            "evaluator": "llm_judge",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:bull_bear_balance"
+              }
+            ],
+            "passed": true,
+            "reason": "Offline Fake Judge assigned the configured score for bull_bear_balance.",
+            "score": 1.0
+          },
+          {
+            "check_id": "risk_identification_quality",
+            "dimension": "risk_identification_quality",
+            "evaluator": "llm_judge",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:risk_identification_quality"
+              }
+            ],
+            "passed": true,
+            "reason": "Offline Fake Judge assigned the configured score for risk_identification_quality.",
+            "score": 1.0
+          },
+          {
+            "check_id": "uncertainty_quality",
+            "dimension": "uncertainty_expression",
+            "evaluator": "llm_judge",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:uncertainty_quality"
+              }
+            ],
+            "passed": true,
+            "reason": "Offline Fake Judge assigned the configured score for uncertainty_quality.",
+            "score": 1.0
+          },
+          {
+            "check_id": "readability",
+            "dimension": "readability",
+            "evaluator": "llm_judge",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:readability"
+              }
+            ],
+            "passed": true,
+            "reason": "Offline Fake Judge assigned the configured score for readability.",
+            "score": 1.0
+          }
+        ],
+        "judge_model": "fake-report-judge",
+        "judge_run_metadata": null,
+        "judge_score": 1.0,
+        "overall_score": 1.0,
+        "report_id": "benchmark-us_complete_company-v1",
+        "ruleset_version": "report_quality_v1"
+      },
+      "expected_fact_coverage": 1.0,
+      "failures": [],
+      "forbidden_conclusion_compliance": 1.0,
+      "lifecycle_compliance": 1.0,
+      "market": "US",
+      "observed_failure_code": null,
+      "passed": true,
+      "scenario": "complete_company"
+    },
+    {
+      "asset_id": "US:EVENT",
+      "case_id": "us_high_volatility_major_event",
+      "case_version": "v1",
+      "check_scores": {
+        "citation_coverage": 1.0,
+        "citation_traceability": 1.0,
+        "missing_data_disclosure": 1.0,
+        "numeric_grounding": 1.0,
+        "structure_completeness": 1.0,
+        "temporal_validity": 1.0,
+        "trading_instruction_compliance": 1.0,
+        "uncertainty_presence": 1.0
+      },
+      "dimension_scores": {
+        "bull_bear_balance": 1.0,
+        "citation_coverage": 1.0,
+        "citation_traceability": 1.0,
+        "conclusion_evidence_consistency": 1.0,
+        "factual_correctness": 1.0,
+        "missing_data_disclosure": 1.0,
+        "readability": 1.0,
+        "risk_identification_quality": 1.0,
+        "structure_completeness": 1.0,
+        "temporal_validity": 1.0,
+        "trading_instruction_compliance": 1.0,
+        "uncertainty_expression": 1.0
+      },
+      "evaluation": {
+        "deterministic_checks": [
+          {
+            "check_id": "structure_completeness",
+            "dimension": "structure_completeness",
+            "evaluator": "deterministic",
+            "evidence": [
+              {
+                "excerpt": "standard section presence, schema, and order",
+                "kind": "report_path",
+                "locator": "report.report_json"
+              }
+            ],
+            "passed": true,
+            "reason": "10/10 required sections were present, 10 were schema-valid, and 10 had the expected identity and order. Exact section set: True.",
+            "score": 1.0
+          },
+          {
+            "check_id": "numeric_grounding",
+            "dimension": "factual_correctness",
+            "evaluator": "deterministic",
+            "evidence": [
+              {
+                "excerpt": "The production halt and 18% daily range indicate elevated event risk.",
+                "kind": "report_path",
+                "locator": "report.report_json.executive_view.risk_warnings[0]"
+              },
+              {
+                "excerpt": "The observed daily price range reached 18%.",
+                "kind": "report_path",
+                "locator": "report.report_json.macro_context.facts[0]"
+              },
+              {
+                "excerpt": "The production halt and 18% daily range indicate elevated event risk.",
+                "kind": "report_path",
+                "locator": "report.report_json.macro_context.risk_warnings[0]"
+              },
+              {
+                "excerpt": "The production halt and 18% daily range indicate elevated event risk.",
+                "kind": "report_path",
+                "locator": "report.report_json.fundamentals.risk_warnings[0]"
+              },
+              {
+                "excerpt": "The production halt and 18% daily range indicate elevated event risk.",
+                "kind": "report_path",
+                "locator": "report.report_json.technical_text.risk_warnings[0]"
+              }
+            ],
+            "passed": true,
+            "reason": "13/13 numeric claims copied every numeric token from their cited evidence.",
+            "score": 1.0
+          },
+          {
+            "check_id": "citation_coverage",
+            "dimension": "citation_coverage",
+            "evaluator": "deterministic",
+            "evidence": [
+              {
+                "excerpt": "facts, inferences, and risk_warnings",
+                "kind": "report_path",
+                "locator": "report.report_json"
+              }
+            ],
+            "passed": true,
+            "reason": "30/30 report statements contained citations.",
+            "score": 1.0
+          },
+          {
+            "check_id": "citation_traceability",
+            "dimension": "citation_traceability",
+            "evaluator": "deterministic",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "source",
+                "locator": "us-event-document|us-event-chunk|benchmark_fixture"
+              }
+            ],
+            "passed": true,
+            "reason": "1/1 unique citations resolved to supplied evidence.",
+            "score": 1.0
+          },
+          {
+            "check_id": "uncertainty_presence",
+            "dimension": "uncertainty_expression",
+            "evaluator": "deterministic",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_json.executive_view.uncertainties"
+              },
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_json.macro_context.uncertainties"
+              },
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_json.fundamentals.uncertainties"
+              },
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_json.technical_text.uncertainties"
+              },
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_json.sentiment.uncertainties"
+              }
+            ],
+            "passed": true,
+            "reason": "The report contained 10 explicit uncertainty statements.",
+            "score": 1.0
+          },
+          {
+            "check_id": "temporal_validity",
+            "dimension": "temporal_validity",
+            "evaluator": "deterministic",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "source",
+                "locator": "us-event-document|us-event-chunk|benchmark_fixture"
+              }
+            ],
+            "passed": true,
+            "reason": "1/1 unique citations had dated evidence between the report date and 370 days old.",
+            "score": 1.0
+          },
+          {
+            "check_id": "trading_instruction_compliance",
+            "dimension": "trading_instruction_compliance",
+            "evaluator": "deterministic",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_markdown"
+              }
+            ],
+            "passed": true,
+            "reason": "No prohibited trade, order, target-price, or position instruction was detected.",
+            "score": 1.0
+          },
+          {
+            "check_id": "missing_data_disclosure",
+            "dimension": "missing_data_disclosure",
+            "evaluator": "deterministic",
+            "evidence": [
+              {
+                "excerpt": "restart_date",
+                "kind": "diagnostic",
+                "locator": "known_missing_data"
+              },
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_markdown"
+              }
+            ],
+            "passed": true,
+            "reason": "1/1 known missing-data items were disclosed.",
+            "score": 1.0
+          }
+        ],
+        "deterministic_score": 1.0,
+        "dimensions": [
+          {
+            "component_check_ids": [
+              "structure_completeness"
+            ],
+            "dimension": "structure_completeness",
+            "evidence": [
+              {
+                "excerpt": "standard section presence, schema, and order",
+                "kind": "report_path",
+                "locator": "report.report_json"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: structure_completeness=1.000",
+            "score": 1.0
+          },
+          {
+            "component_check_ids": [
+              "numeric_grounding",
+              "semantic_factuality"
+            ],
+            "dimension": "factual_correctness",
+            "evidence": [
+              {
+                "excerpt": "The production halt and 18% daily range indicate elevated event risk.",
+                "kind": "report_path",
+                "locator": "report.report_json.executive_view.risk_warnings[0]"
+              },
+              {
+                "excerpt": "The observed daily price range reached 18%.",
+                "kind": "report_path",
+                "locator": "report.report_json.macro_context.facts[0]"
+              },
+              {
+                "excerpt": "The production halt and 18% daily range indicate elevated event risk.",
+                "kind": "report_path",
+                "locator": "report.report_json.macro_context.risk_warnings[0]"
+              },
+              {
+                "excerpt": "The production halt and 18% daily range indicate elevated event risk.",
+                "kind": "report_path",
+                "locator": "report.report_json.fundamentals.risk_warnings[0]"
+              },
+              {
+                "excerpt": "The production halt and 18% daily range indicate elevated event risk.",
+                "kind": "report_path",
+                "locator": "report.report_json.technical_text.risk_warnings[0]"
+              },
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:semantic_factuality"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: numeric_grounding=1.000, semantic_factuality=1.000",
+            "score": 1.0
+          },
+          {
+            "component_check_ids": [
+              "citation_coverage"
+            ],
+            "dimension": "citation_coverage",
+            "evidence": [
+              {
+                "excerpt": "facts, inferences, and risk_warnings",
+                "kind": "report_path",
+                "locator": "report.report_json"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: citation_coverage=1.000",
+            "score": 1.0
+          },
+          {
+            "component_check_ids": [
+              "citation_traceability"
+            ],
+            "dimension": "citation_traceability",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "source",
+                "locator": "us-event-document|us-event-chunk|benchmark_fixture"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: citation_traceability=1.000",
+            "score": 1.0
+          },
+          {
+            "component_check_ids": [
+              "conclusion_evidence_consistency"
+            ],
+            "dimension": "conclusion_evidence_consistency",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:conclusion_evidence_consistency"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: conclusion_evidence_consistency=1.000",
+            "score": 1.0
+          },
+          {
+            "component_check_ids": [
+              "bull_bear_balance"
+            ],
+            "dimension": "bull_bear_balance",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:bull_bear_balance"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: bull_bear_balance=1.000",
+            "score": 1.0
+          },
+          {
+            "component_check_ids": [
+              "risk_identification_quality"
+            ],
+            "dimension": "risk_identification_quality",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:risk_identification_quality"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: risk_identification_quality=1.000",
+            "score": 1.0
+          },
+          {
+            "component_check_ids": [
+              "uncertainty_presence",
+              "uncertainty_quality"
+            ],
+            "dimension": "uncertainty_expression",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_json.executive_view.uncertainties"
+              },
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_json.macro_context.uncertainties"
+              },
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_json.fundamentals.uncertainties"
+              },
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_json.technical_text.uncertainties"
+              },
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_json.sentiment.uncertainties"
+              },
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:uncertainty_quality"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: uncertainty_presence=1.000, uncertainty_quality=1.000",
+            "score": 1.0
+          },
+          {
+            "component_check_ids": [
+              "temporal_validity"
+            ],
+            "dimension": "temporal_validity",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "source",
+                "locator": "us-event-document|us-event-chunk|benchmark_fixture"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: temporal_validity=1.000",
+            "score": 1.0
+          },
+          {
+            "component_check_ids": [
+              "trading_instruction_compliance"
+            ],
+            "dimension": "trading_instruction_compliance",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_markdown"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: trading_instruction_compliance=1.000",
+            "score": 1.0
+          },
+          {
+            "component_check_ids": [
+              "missing_data_disclosure"
+            ],
+            "dimension": "missing_data_disclosure",
+            "evidence": [
+              {
+                "excerpt": "restart_date",
+                "kind": "diagnostic",
+                "locator": "known_missing_data"
+              },
+              {
+                "excerpt": null,
+                "kind": "report_path",
+                "locator": "report.report_markdown"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: missing_data_disclosure=1.000",
+            "score": 1.0
+          },
+          {
+            "component_check_ids": [
+              "readability"
+            ],
+            "dimension": "readability",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:readability"
+              }
+            ],
+            "passed": true,
+            "reason": "Weighted components: readability=1.000",
+            "score": 1.0
+          }
+        ],
+        "evaluated_at": "2026-08-07T00:00:00Z",
+        "evaluation_id": "benchmark-evaluation-us_high_volatility_major_event-v1",
+        "input_fingerprint": "30b64a8004e4125ea229e86228775761d5e6bdecc93b77c119dd215f714a91a4",
+        "judge_checks": [
+          {
+            "check_id": "semantic_factuality",
+            "dimension": "factual_correctness",
+            "evaluator": "llm_judge",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:semantic_factuality"
+              }
+            ],
+            "passed": true,
+            "reason": "Offline Fake Judge assigned the configured score for semantic_factuality.",
+            "score": 1.0
+          },
+          {
+            "check_id": "conclusion_evidence_consistency",
+            "dimension": "conclusion_evidence_consistency",
+            "evaluator": "llm_judge",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:conclusion_evidence_consistency"
+              }
+            ],
+            "passed": true,
+            "reason": "Offline Fake Judge assigned the configured score for conclusion_evidence_consistency.",
+            "score": 1.0
+          },
+          {
+            "check_id": "bull_bear_balance",
+            "dimension": "bull_bear_balance",
+            "evaluator": "llm_judge",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:bull_bear_balance"
+              }
+            ],
+            "passed": true,
+            "reason": "Offline Fake Judge assigned the configured score for bull_bear_balance.",
+            "score": 1.0
+          },
+          {
+            "check_id": "risk_identification_quality",
+            "dimension": "risk_identification_quality",
+            "evaluator": "llm_judge",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:risk_identification_quality"
+              }
+            ],
+            "passed": true,
+            "reason": "Offline Fake Judge assigned the configured score for risk_identification_quality.",
+            "score": 1.0
+          },
+          {
+            "check_id": "uncertainty_quality",
+            "dimension": "uncertainty_expression",
+            "evaluator": "llm_judge",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:uncertainty_quality"
+              }
+            ],
+            "passed": true,
+            "reason": "Offline Fake Judge assigned the configured score for uncertainty_quality.",
+            "score": 1.0
+          },
+          {
+            "check_id": "readability",
+            "dimension": "readability",
+            "evaluator": "llm_judge",
+            "evidence": [
+              {
+                "excerpt": null,
+                "kind": "diagnostic",
+                "locator": "fake_judge:readability"
+              }
+            ],
+            "passed": true,
+            "reason": "Offline Fake Judge assigned the configured score for readability.",
+            "score": 1.0
+          }
+        ],
+        "judge_model": "fake-report-judge",
+        "judge_run_metadata": null,
+        "judge_score": 1.0,
+        "overall_score": 1.0,
+        "report_id": "benchmark-us_high_volatility_major_event-v1",
+        "ruleset_version": "report_quality_v1"
+      },
+      "expected_fact_coverage": 1.0,
+      "failures": [],
+      "forbidden_conclusion_compliance": 1.0,
+      "lifecycle_compliance": 1.0,
+      "market": "US",
+      "observed_failure_code": null,
+      "passed": true,
+      "scenario": "high_volatility_major_event"
+    }
+  ],
+  "evaluation_ruleset_version": "report_quality_v1",
+  "failed_cases": 0,
+  "generated_at": "2026-08-07T00:00:00Z",
+  "judge_model": "fake-report-judge",
+  "mode": "default",
+  "passed_cases": 7,
+  "total_cases": 7
+}

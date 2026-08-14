@@ -6,6 +6,19 @@ from src.adapters.base import (
     ProviderRecord,
     ProviderUnavailableError,
 )
+from src.adapters.fmp import FinancialModelingPrepAdapter
+from src.adapters.mcp import (
+    FakeMCPTransport,
+    LocalFileMCPTokenStorage,
+    MCPAuthorizationRequiredError,
+    MCPInitializationError,
+    MCPTokenStorage,
+    MCPToolError,
+    MCPToolResult,
+    MCPTransport,
+    MCPTransportError,
+    StreamableHTTPMCPTransport,
+)
 from src.adapters.providers import (
     AlpacaAdapter,
     BloombergLicensedAdapter,
@@ -18,6 +31,12 @@ from src.adapters.providers import (
     WindAdapter,
     XSearchAdapter,
 )
+from src.adapters.stocktwits import StocktwitsSentimentProvider
+from src.adapters.stocktwits_runtime import (
+    build_stocktwits_mcp_transport,
+    build_stocktwits_provider,
+    stocktwits_authorization_configured,
+)
 
 __all__ = [
     "AlpacaAdapter",
@@ -25,13 +44,28 @@ __all__ = [
     "BloombergLicensedAdapter",
     "CNINFOAdapter",
     "FakeProviderAdapter",
+    "FinancialModelingPrepAdapter",
     "FREDAdapter",
+    "FakeMCPTransport",
     "HKEXNewsAdapter",
     "LSEGLicensedAdapter",
+    "LocalFileMCPTokenStorage",
+    "MCPAuthorizationRequiredError",
+    "MCPInitializationError",
+    "MCPTokenStorage",
+    "MCPToolError",
+    "MCPToolResult",
+    "MCPTransport",
+    "MCPTransportError",
     "ProviderAdapterError",
     "ProviderRecord",
     "ProviderUnavailableError",
     "SECEDGARAdapter",
+    "StocktwitsSentimentProvider",
+    "StreamableHTTPMCPTransport",
     "WindAdapter",
     "XSearchAdapter",
+    "build_stocktwits_mcp_transport",
+    "build_stocktwits_provider",
+    "stocktwits_authorization_configured",
 ]

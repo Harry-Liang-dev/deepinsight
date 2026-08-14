@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Self
+from typing import Literal, Self
 
 from pydantic import Field, model_validator
 
@@ -73,6 +73,8 @@ class EodBarRecord(DomainModel):
     volume: float | None = None
     turnover: float | None = None
     vwap: float | None = None
+    feed_identity: str | None = None
+    coverage_scope: str | None = None
     source_id: str = Field(min_length=1)
     ingestion_ts: datetime
     p2_feature_blob_json: JsonObject | None = None
@@ -90,10 +92,16 @@ class FundamentalRecord(DomainModel):
     net_income: float | None = None
     eps_basic: float | None = None
     total_assets: float | None = None
+    current_assets: float | None = None
     total_liabilities: float | None = None
+    current_liabilities: float | None = None
+    total_debt: float | None = None
     shareholders_equity: float | None = None
     operating_cash_flow: float | None = None
+    shares_outstanding: float | None = None
     free_cash_flow: float | None = None
+    revenue_yoy: float | None = None
+    net_income_yoy: float | None = None
     gross_margin: float | None = None
     operating_margin: float | None = None
     net_margin: float | None = None
@@ -101,9 +109,17 @@ class FundamentalRecord(DomainModel):
     roa: float | None = None
     debt_to_equity: float | None = None
     current_ratio: float | None = None
+    eps_ttm: float | None = None
+    book_value_per_share: float | None = None
+    market_cap: float | None = None
     pe_ttm: float | None = None
     pb: float | None = None
+    earnings_yield: float | None = None
+    source_locator: str | None = None
+    quality: str | None = None
     filing_url: str | None = None
+    filing_date: date | None = None
+    accepted_at: datetime | None = None
     source_id: str = Field(min_length=1)
     ingestion_ts: datetime
     p2_factor_blob_json: JsonObject | None = None
@@ -121,6 +137,7 @@ class MacroObservationRecord(DomainModel):
     frequency: str | None = None
     realtime_start: date | None = None
     realtime_end: date | None = None
+    source_locator: str | None = None
     source_id: str = Field(min_length=1)
     ingestion_ts: datetime
     p2_regime_feature_json: JsonObject | None = None
@@ -151,3 +168,68 @@ class CorporateEventRecord(DomainModel):
         if self.asset_id is not None and self.asset_id.market is not self.market:
             raise ValueError("asset_id market does not match event market")
         return self
+
+
+class SentimentSnapshotRecord(DomainModel):
+    """Canonical community sentiment or attention observation."""
+
+    asset_id: AssetId
+    as_of: datetime
+    provider: str = Field(min_length=1)
+    score: float | None = Field(default=None, ge=0.0, le=100.0)
+    label: str | None = None
+    bullish_pct: float | None = Field(default=None, ge=0.0, le=100.0)
+    bearish_pct: float | None = Field(default=None, ge=0.0, le=100.0)
+    message_volume_score: float | None = Field(default=None, ge=0.0, le=100.0)
+    message_volume_label: str | None = None
+    source_timestamp: datetime
+    quality: str = Field(min_length=1)
+    source_locator: str = Field(min_length=1)
+    evidence_class: Literal["community_sentiment"] = "community_sentiment"
+    ingestion_ts: datetime
+
+    @model_validator(mode="after")
+    def validate_observation(self) -> Self:
+        """Require at least one measured sentiment or attention field."""
+
+        values = (
+            self.score,
+            self.bullish_pct,
+            self.bearish_pct,
+            self.message_volume_score,
+        )
+        if all(value is None for value in values):
+            raise ValueError("sentiment snapshot requires a measured value")
+        return self
+
+
+class SentimentEvidenceRecord(DomainModel):
+    """One attributable community post, never a verified financial fact."""
+
+    message_id: str = Field(min_length=1)
+    asset_id: AssetId
+    created_at: datetime
+    text: str = Field(min_length=1)
+    declared_sentiment: str | None = None
+    source: str = Field(min_length=1)
+    source_locator: str = Field(min_length=1)
+    evidence_class: Literal["community_sentiment"] = "community_sentiment"
+    ingestion_ts: datetime
+
+
+class NewsEvidenceRecord(DomainModel):
+    """Canonical news metadata retaining original publication attribution."""
+
+    news_id: str = Field(min_length=1)
+    asset_id: AssetId
+    headline: str = Field(min_length=1)
+    summary: str | None = None
+    content: str | None = None
+    author: str | None = None
+    created_at: datetime
+    updated_at: datetime | None = None
+    source_url: str = Field(min_length=1)
+    provider: str = Field(min_length=1)
+    original_source: str = Field(min_length=1)
+    source_locator: str = Field(min_length=1)
+    ingestion_ts: datetime

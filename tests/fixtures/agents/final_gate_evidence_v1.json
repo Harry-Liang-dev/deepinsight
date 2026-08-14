@@ -1,0 +1,42 @@
+{
+  "schema_version": "fixed_agent_evidence_fixture_v1",
+  "source_snapshot": "20260812T170421Z",
+  "entries": {
+    "stocktwits_label": {
+      "evidence_id": "ev_e61734c80cd0cee06736187e",
+      "document_id": "US:AAPL|2026-08-13T01:06:59.881169",
+      "provider": "stocktwits_mcp",
+      "description": "sentiment_evidence.community_label BULLISH"
+    },
+    "stocktwits_score": {
+      "evidence_id": "ev_17f095a63d6934f27d85bc9a",
+      "document_id": "US:AAPL|2026-08-13T01:06:59.881169",
+      "provider": "stocktwits_mcp",
+      "description": "sentiment_evidence.community_score 64.0 score"
+    },
+    "stocktwits_bullish_score": {
+      "evidence_id": "ev_65e02d14d14ce3cca1485ba6",
+      "document_id": "US:AAPL|2026-08-13T01:06:59.881169",
+      "provider": "stocktwits_mcp",
+      "description": "sentiment_evidence.community_bullish_pct 74.01 score"
+    },
+    "news_target": {
+      "evidence_id": "ev_fe62df0878d244d10fcfa73f",
+      "document_id": "61072938-detail",
+      "provider": "alpaca_market_data",
+      "description": "An attributed report reduced a stated value to $263.66 from $285.56."
+    },
+    "derived_return": {
+      "evidence_id": "ev_a82b8c9bc06c3f22a27ae3fd",
+      "document_id": "derived-return-record",
+      "provider": "deterministic_operator",
+      "description": "market_context.asset_return_20d -0.07756883814640692 ratio"
+    },
+    "rounded_valuation_source": {
+      "evidence_id": "ev_1ea8af6fd33b2ea8543b6205",
+      "document_id": "derived-valuation-record",
+      "provider": "deterministic_operator",
+      "description": "valuation.price_to_earnings 48.192982456140356 ratio"
+    }
+  }
+}

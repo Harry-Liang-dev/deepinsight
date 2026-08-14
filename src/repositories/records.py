@@ -16,6 +16,7 @@ from src.models.enums import (
 from src.models.identifiers import AssetId
 from src.models.types import JsonObject
 from src.schemas.common import ErrorInfo, SourceReference
+from src.schemas.evaluation import EvaluationResult
 from src.schemas.reports import GenerateReportRequest
 
 
@@ -124,3 +125,18 @@ class ReportJobRecord(PersistenceRecord):
     created_at: datetime | None = None
     started_at: datetime | None = None
     finished_at: datetime | None = None
+
+
+class EvaluationRecord(PersistenceRecord):
+    """Repository-owned row mapping for one complete evaluation."""
+
+    evaluation_id: str = Field(min_length=1)
+    report_id: str = Field(min_length=1)
+    ruleset_version: str = Field(min_length=1)
+    judge_model: str = Field(min_length=1)
+    input_fingerprint: str = Field(pattern=r"^[0-9a-f]{64}$")
+    overall_score: float = Field(ge=0.0, le=1.0)
+    deterministic_score: float = Field(ge=0.0, le=1.0)
+    judge_score: float = Field(ge=0.0, le=1.0)
+    result: EvaluationResult
+    created_at: datetime

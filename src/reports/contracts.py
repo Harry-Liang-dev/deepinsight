@@ -8,7 +8,7 @@ from typing import Self
 from pydantic import Field, model_validator
 
 from src.agents.contracts import ResearchTaskResult
-from src.models.enums import ReportType
+from src.models.enums import ClaimIntent, ReportType
 from src.models.types import DomainModel
 from src.schemas.agents import AgentContext
 from src.schemas.common import SourceReference
@@ -33,6 +33,11 @@ class ReportStatement(DomainModel):
 
     text: str = Field(min_length=1)
     citations: list[SourceReference] = Field(min_length=1)
+    claim_intent: ClaimIntent = ClaimIntent.FACT
+    claim_id: str = Field(min_length=1)
+    upstream_claim_ids: tuple[str, ...] = ()
+    numeric_literals: tuple[str, ...] = ()
+    claim_status: str = "accepted"
 
 
 class StandardReportSection(DomainModel):

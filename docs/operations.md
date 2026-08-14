@@ -76,17 +76,18 @@ Configuration precedence is:
 
 1. Explicit values supplied while constructing a settings object
 2. Process environment variables
-3. A local `.env` file
-4. Typed defaults
+3. Typed defaults
 
-Create a local file from the committed example:
+Credentials are loaded into the parent shell from a private file outside the
+repository before starting DeepInsight or Codex:
 
 ```bash
-cp .env.example .env
+chmod 600 ~/.local/bin/load_deepinsight_keys.sh
+source ~/.local/bin/load_deepinsight_keys.sh
 ```
 
-Never put a real key in `.env.example`. The local `.env` file is ignored by
-Git.
+Never display, commit, attach, or copy that private file into the repository.
+Application Settings do not load `.env` files.
 
 Important environment variables:
 
@@ -94,6 +95,7 @@ Important environment variables:
 |---|---|
 | `DEEPINSIGHT_ENV` | `development`, `test`, or `production` |
 | `DEEPINSIGHT_TIMEZONE` | Application timezone |
+| `DEEPINSIGHT_LLM_PROVIDER` | Live selection: `openai` or `qwen` |
 | `DEEPINSIGHT_DUCKDB_PATH` | DuckDB file path |
 | `DEEPINSIGHT_FAISS_ROOT` | FAISS index root |
 | `DEEPINSIGHT_RAW_ROOT` | Original source-document root |
@@ -102,10 +104,28 @@ Important environment variables:
 | `DEEPINSIGHT_REDIS_URL` | Durable report job ID queue |
 | `DEEPINSIGHT_PROVIDER_SEC_USER_AGENT` | SEC Fair Access identity |
 | `DEEPINSIGHT_PROVIDER_SEC_CIK_MAP` | Canonical asset-to-CIK JSON mapping |
+| `DEEPINSIGHT_PROVIDER_SEC_REQUEST_TIMEOUT_SECONDS` | SEC request timeout |
+| `DEEPINSIGHT_PROVIDER_SEC_MAX_RETRIES` | Additional transient SEC attempts |
+| `DEEPINSIGHT_PROVIDER_SEC_REQUESTS_PER_SECOND` | SEC per-process request ceiling, maximum 10 |
+| `DEEPINSIGHT_PROVIDER_SEC_BACKOFF_BASE_SECONDS` | Initial SEC retry delay |
+| `DEEPINSIGHT_PROVIDER_SEC_MAX_BACKOFF_SECONDS` | Maximum SEC retry delay |
+| `DEEPINSIGHT_PROVIDER_SEC_MAX_DOCUMENTS` | Filing limit per ingestion request |
+| `APCA_API_KEY_ID` | Alpaca Market Data key ID; environment-only secret |
+| `APCA_API_SECRET_KEY` | Alpaca Market Data secret; environment-only secret |
+| `APCA_API_BASE_URL` | Alpaca Market Data API origin |
+| `FMP_API_KEY` | Optional Financial Modeling Prep secret; environment-only |
+| `FMP_ENABLED` | Explicitly enable the optional FMP standardized-metrics Provider |
+| `DEEPINSIGHT_PROVIDER_ALPACA_REQUEST_TIMEOUT_SECONDS` | Alpaca request timeout |
+| `DEEPINSIGHT_PROVIDER_ALPACA_MAX_RETRIES` | Additional transient Alpaca attempts |
+| `DEEPINSIGHT_PROVIDER_ALPACA_REQUESTS_PER_MINUTE` | Alpaca request ceiling, maximum 200 |
+| `DEEPINSIGHT_PROVIDER_ALPACA_FEED` | Historical stock feed: `iex` or `sip` |
+| `DEEPINSIGHT_PROVIDER_ALPACA_ADJUSTMENT` | Official historical-bar adjustment |
 | `DEEPINSIGHT_SCHEDULER_ENABLED` | Explicit daily Scheduler switch |
 | `DEEPINSIGHT_WEB_API_BASE_URL` | FastAPI address used by Scheduler/Web |
 | `DEEPINSIGHT_LOG_LEVEL` | Validated stdlib/structlog level |
-| `OPENAI_API_KEY` | OpenAI secret; may be empty before LLM work starts |
+| `OPENAI_API_KEY` | Required only when OpenAI is selected |
+| `QWEN_API_KEY` | Required only when Qwen is selected |
+| `QWEN_MODEL_NAME` | Qwen inference model |
 | `OPENAI_MODEL_DEFAULT` | Default reasoning model |
 | `OPENAI_MODEL_FAST` | Faster model |
 | `OPENAI_EMBEDDING_MODEL` | Embedding model |
@@ -271,13 +291,15 @@ Repository/Worker tests and the Compose topology below.
 Validate and start the single-node topology:
 
 ```bash
-cp .env.example .env
+chmod 600 ~/.local/bin/load_deepinsight_keys.sh
+source ~/.local/bin/load_deepinsight_keys.sh
 docker compose config --quiet
 docker compose up --build
 ```
 
-The local `.env` is optional for Compose parsing but the Worker fails
-explicitly until SEC and OpenAI credentials are configured. The services are:
+Compose receives only variables inherited from the prepared parent shell. The
+Worker fails explicitly until the selected LLM and data Provider credentials
+are configured. The services are:
 
 - `api`: request persistence, Redis dispatch, task/report/snapshot reads
 - `worker`: the only full report-workflow executor
@@ -321,10 +343,11 @@ multi-machine distributed lock.
 
 Provider source metadata lives in `config/providers.yaml`; it contains no
 credentials. All production credential values remain environment-owned.
-Wind, CNINFO, HKEXnews, SEC EDGAR, FRED, Alpaca, X, LSEG, and Bloomberg are
-explicit connector boundaries in the first release. They do not make network
-requests until a separately authorized implementation and credentials are
-configured.
+Wind, CNINFO, HKEXnews, FRED, X, LSEG, and Bloomberg remain explicit connector
+boundaries. SEC EDGAR and Alpaca have opt-in official implementations and do
+not make network requests during import or default tests. Alpaca credentials
+must be supplied only through `APCA_API_KEY_ID` and
+`APCA_API_SECRET_KEY`.
 
 Offline development and tests use `FakeProviderAdapter`. Construct the
 ingestion service by injecting the DuckDB Repositories, `DataNormalizer`, a
@@ -452,11 +475,13 @@ make a real OpenAI request, or consume API quota.
 
 ### Manual live LLM smoke check
 
-The live check is an independent opt-in script and is never collected by
-pytest. Run it from the repository root after installing the project:
+The live check is an independent opt-in script. The corresponding `live`
+pytest marker is excluded by default. Run it from the repository root after
+installing the project:
 
 ```bash
-export OPENAI_API_KEY="inject-from-a-secure-source"
+source ~/.local/bin/load_deepinsight_keys.sh
+DEEPINSIGHT_LLM_PROVIDER=openai \
 OPENAI_MAX_RETRIES=0 OPENAI_STORE_REMOTE=false \
   "$CONDA_PREFIX/bin/python" -m scripts.smoke_llm
 ```
@@ -491,27 +516,25 @@ Exit code `0` means the live response passed schema, cache, and safe-metadata
 checks. Exit code `1` means a mapped provider/cache or validation failure.
 Exit code `2` means the required safe live configuration was not supplied.
 
-### Temporary DashScope Qwen compatibility smoke check
+### DashScope Qwen live smoke check
 
-When OpenAI account quota is unavailable, an independent manual script can
-verify the OpenAI SDK's Responses-compatible transport against DashScope:
+When OpenAI account quota is unavailable, select the production Qwen Provider
+and run the same Gateway smoke:
 
 ```bash
-export DASHSCOPE_API_KEY="inject-from-a-secure-source"
-DASHSCOPE_MODEL=qwen3.8-max \
-  "$CONDA_PREFIX/bin/python" -m scripts.smoke_qwen --diagnostic
+source ~/.local/bin/load_deepinsight_keys.sh
+"$CONDA_PREFIX/bin/python" -m scripts.smoke_qwen --diagnostic
 ```
 
-The script makes exactly one request with SDK retries disabled, enables Qwen
-thinking through `extra_body`, validates the final JSON with the existing
-`RiskManagerResponse`, and prints only bounded reasoning summaries in
-diagnostic mode. The API key and full final answer are never printed.
+`smoke_qwen` only validates the configured selection and delegates to
+`smoke_llm`; it contains no SDK request implementation. The selected
+`QwenProvider` enters the existing `LLMGateway`, validates final JSON with
+`RiskManagerResponse`, writes only the temporary cache, and emits safe request
+metadata. The API key and full final answer are never printed.
 
-`DASHSCOPE_BASE_URL` may override the default legacy compatible endpoint when
-the account has a workspace-specific endpoint. `DASHSCOPE_MODEL` must identify
-a Responses-compatible model enabled for that account. This is an operational
-compatibility check only: it does not add Qwen to the production Gateway and
-does not prove the OpenAI production provider itself is available.
+`QWEN_MODEL_NAME` must identify a Responses-compatible model enabled for that
+account. This Qwen
+result does not prove the OpenAI Provider itself is available.
 
 Default pytest remains offline. Its Qwen smoke tests inject a client stub and
 never read credentials or access the network.
@@ -521,29 +544,28 @@ never read credentials or access the network.
 Run the complete opt-in acceptance from the repository root:
 
 ```bash
-export SEC_USER_AGENT="DeepInsight monitored-contact@example.com"
-export DASHSCOPE_API_KEY="inject-from-a-secure-source"
+source ~/.local/bin/load_deepinsight_keys.sh
 env -u ALL_PROXY -u all_proxy \
-  DASHSCOPE_MODEL=qwen3.6-flash \
-  DASHSCOPE_ENABLE_THINKING=false \
   "$CONDA_PREFIX/bin/python" -m scripts.live_report
 ```
 
 The SEC adapter reads official submissions metadata and at most one recent
 10-Q/10-K primary document for `US:AAPL`. It declares the configured
-`SEC_USER_AGENT`, performs no scraping of commercial feeds, and makes no price
-request. The full extracted filing text is retained in the raw store and fully
+`DEEPINSIGHT_PROVIDER_SEC_USER_AGENT`, performs no scraping of commercial
+feeds, and makes no price request. The full extracted filing text is retained
+in the raw store and fully
 chunked/indexed; at most two deterministically distributed chunks per document
 enter the Agent context to bound live LLM cost without selecting only filing
 headers. Missing prices, deterministic technical history,
 structured fundamentals, macro Memory, and broad sentiment samples remain
 explicit report uncertainties.
 
-The Qwen Responses client is injected behind the existing
-`LLMGateway → OpenAIProvider` interface. The embedding client is injected into
-the existing `OpenAIEmbeddingService`, using `text-embedding-v4`, 256
-dimensions, and provider batches of at most ten inputs. Qwen requests use the
-standard compatible base URL. The live default is `qwen3.6-flash` with
+Qwen is selected by configuration and enters the existing
+`LLMGateway → LLMProvider` interface as `QwenProvider`. Embeddings remain
+behind `EmbeddingService` as `QwenEmbeddingService`, using
+`text-embedding-v4`, 256 dimensions, and provider batches of at most ten
+inputs. Qwen requests use the standard compatible base URL. The live default
+is `qwen3.7-flash` with
 `enable_thinking=false`, because the eight schema-bound evidence tasks do not
 require long-form reasoning. SDK retries are zero. The fixed eight-Agent
 topology therefore makes exactly eight LLM requests.
@@ -556,6 +578,94 @@ It never falls back to Fake data or Fake models.
 On failure it also reports DuckDB stage counts, ingestion/Agent state, and
 credential-redacted provider status, type, parameter, message, endpoint, and
 request ID when available.
+
+### SEC EDGAR Provider-only live smoke
+
+The independent Provider smoke performs no Agent, LLM, Memory, FAISS, or report
+work and is excluded from default pytest by the `live` marker:
+
+```bash
+source ~/.local/bin/load_deepinsight_keys.sh
+"$CONDA_PREFIX/bin/python" -m scripts.smoke_sec_edgar \
+  --asset-id US:AAPL \
+  --lookback-days 370
+```
+
+The command uses only official SEC submissions and archive URLs. It prints
+safe source metadata, the stable accession locator, text length, and SHA-256;
+it never prints filing text. Exit code `0` means one instrument and filing
+were returned, `1` means the bounded Provider request failed, and `2` means
+required local configuration is missing.
+
+Production SEC access defaults to five requests per second and rejects
+configuration above SEC's published ten-request-per-second Fair Access
+ceiling. Every request has an explicit timeout and identified User-Agent.
+Only `429`, `500`, `502`, `503`, and `504`, plus transient connection/timeout
+failures, receive bounded retries. Numeric `Retry-After` is honored within the
+configured maximum delay; permanent `4xx` responses are surfaced immediately.
+
+The requested date window first checks `filings.recent`, then only historical
+`filings.files` pages whose declared range overlaps the window. Accession
+number remains the idempotent document locator. Submissions JSON is transient
+adapter input and is cached only for the adapter lifetime; selected CIK,
+accession, form, dates, and primary-document locator enter canonical metadata.
+Complete extracted filing text continues through `RawTextStore`, which retains
+the checksum, raw path, SEC URL, and timestamps under the existing ingestion
+design.
+
+Run the complete offline SEC Provider regression independently with:
+
+```bash
+"$CONDA_PREFIX/bin/python" -m pytest \
+  tests/unit/adapters/test_provider_adapters.py \
+  tests/integration/services/test_sec_edgar_ingestion.py \
+  tests/unit/test_smoke_sec_edgar.py
+```
+
+### Alpaca US EOD Provider-only live smoke
+
+The Alpaca Adapter uses only the official historical stock-bars endpoint:
+
+```text
+GET https://data.alpaca.markets/v2/stocks/bars
+```
+
+The default configuration requests `1Day`, `feed=iex`, `adjustment=raw`, and
+ascending results. `iex` is intentionally compatible with the Basic market
+data plan but is not full SIP market coverage. Raw Alpaca close is stored as
+`close`; unavailable `adj_close` and `turnover` remain null. Every external
+symbol is mapped back to a requested canonical `US:<ticker>` identifier before
+normalization.
+
+Alpaca access is proactively limited to 180 requests per minute, below the
+Basic 200-per-minute ceiling. HTTP 429 honors `X-RateLimit-Reset` when present;
+otherwise the shared bounded exponential retry policy applies. Historical
+pagination follows opaque `next_page_token` values and has a configured page
+safety bound.
+
+Run the independent live smoke only after injecting both credentials:
+
+```bash
+source ~/.local/bin/load_deepinsight_keys.sh
+"$CONDA_PREFIX/bin/python" -m scripts.smoke_alpaca \
+  --start-date 2026-05-01 \
+  --end-date 2026-08-07
+```
+
+The command is fixed to `US:AAPL`, normalizes every returned bar, and prints
+only `bar_count`, `first_date`, `last_date`, and `source_id`. It does not write
+or print credentials, raw responses, Agents, prompts, reports, orders, or
+backtests. Exit code `0` means bars were returned, `1` means the Provider or
+normalization failed, and `2` means credentials or dates are not configured.
+
+Run the complete offline Alpaca regression independently with:
+
+```bash
+"$CONDA_PREFIX/bin/python" -m pytest \
+  tests/unit/adapters/test_provider_adapters.py \
+  tests/integration/services/test_alpaca_ingestion.py \
+  tests/unit/test_smoke_alpaca.py
+```
 
 ## Phase One Agents
 

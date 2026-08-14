@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, date, datetime, time, timedelta
 from typing import Protocol, cast
 from uuid import uuid4
 
@@ -11,6 +11,10 @@ import pandas as pd  # type: ignore[import-untyped]
 
 from src.adapters import BaseProviderAdapter
 from src.agents import ResearchTaskRequest, ResearchTaskResult
+from src.memory.contracts import (
+    ResearchContextBundle,
+    ResearchContextRequest,
+)
 from src.models.enums import AgentStatus, IngestionJobType, MemoryLevel, ReportType
 from src.models.identifiers import AssetId
 from src.models.types import JsonObject
@@ -23,9 +27,19 @@ from src.schemas.documents import (
     TextDocumentRecord,
 )
 from src.schemas.market_data import EodBarRecord, FundamentalRecord
-from src.schemas.memory import MemorySearchRequest, MemorySearchResponse
+from src.schemas.memory import (
+    MemorySearchRequest,
+    MemorySearchResponse,
+    MemorySearchResult,
+)
 from src.schemas.reports import GenerateReportRequest, ResearchReport
+from src.schemas.research_data import (
+    DataCapability,
+    ResearchDataBundle,
+    ResearchDataBundleRequest,
+)
 from src.services import IngestionRequest
+from src.services.data_ingestion import FundamentalRangeProvider
 
 _FUNDAMENTAL_COLUMNS = (
     "fiscal_period_end",
@@ -128,6 +142,21 @@ class ResearchMemory(Protocol):
         """Return ranked Memory results."""
         ...
 
+    def retrieve_context(
+        self,
+        request: ResearchContextRequest,
+    ) -> ResearchContextBundle:
+        """Return one point-in-time, sectioned Memory context bundle."""
+        ...
+
+
+class ResearchDataBundleBuilder(Protocol):
+    """Build provider-independent structured research evidence."""
+
+    def build(self, request: ResearchDataBundleRequest) -> ResearchDataBundle:
+        """Return one point-in-time structured Data bundle."""
+        ...
+
 
 class FeatureOperator(Protocol):
     """Compute deterministic JSON features from normalized rows."""
@@ -170,6 +199,8 @@ class ResearchWorkflowService:
         coordinator: AgentCoordinator,
         report_pipeline: ReportFinalizer,
         model_name: str,
+        data_bundle_builder: ResearchDataBundleBuilder | None = None,
+        dataset_version: str = "runtime_research_v1",
         document_lookback_days: int = 370,
         evidence_chunks_per_document: int = 4,
         clock: Callable[[], datetime] | None = None,
@@ -184,6 +215,8 @@ class ResearchWorkflowService:
             raise ValueError("document lookback cannot be negative")
         if evidence_chunks_per_document <= 0:
             raise ValueError("evidence chunk limit must be positive")
+        if not dataset_version.strip():
+            raise ValueError("dataset_version cannot be empty")
         self._provider = provider
         self._ingestion = ingestion
         self._market_data = market_data
@@ -195,6 +228,8 @@ class ResearchWorkflowService:
         self._coordinator = coordinator
         self._report_pipeline = report_pipeline
         self._model_name = model_name
+        self._data_bundle_builder = data_bundle_builder
+        self._dataset_version = dataset_version
         self._document_lookback_days = document_lookback_days
         self._evidence_chunks_per_document = evidence_chunks_per_document
         self._clock = clock or (lambda: datetime.now(UTC))
@@ -216,16 +251,24 @@ class ResearchWorkflowService:
         """
 
         asset_id = _single_asset(request)
+        window_start = request.report_date - timedelta(
+            days=self._document_lookback_days
+        )
+        supports_fundamentals = isinstance(self._provider, FundamentalRangeProvider)
         self._ingestion.run(
             self._provider,
             IngestionRequest(
                 job_type=IngestionJobType.INCREMENTAL,
                 asset_ids=(str(asset_id),),
                 target_date=request.report_date,
-                document_start_date=(
-                    request.report_date - timedelta(days=self._document_lookback_days)
-                ),
+                document_start_date=window_start,
                 document_end_date=request.report_date,
+                fundamental_start_date=(
+                    window_start if supports_fundamentals else None
+                ),
+                fundamental_end_date=(
+                    request.report_date if supports_fundamentals else None
+                ),
             ),
         )
 
@@ -239,29 +282,63 @@ class ResearchWorkflowService:
                 "No attributable document evidence was available."
             )
 
-        features = self._build_features(asset_id, request.report_date)
-        memory_query = _memory_query(asset_id, request.report_date)
-        memories = self._memory.search(memory_query).results
-        context = AgentContext(
-            report_date=request.report_date,
-            market_scope=request.market_scope,
-            asset_id=asset_id,
-            structured_features=features,
-            retrieved_documents=retrieved_documents,
-            retrieved_memories=memories,
-        )
-
         report_id = _required_identifier(
             self._report_id_factory(),
             "report ID",
         )
         task_id = _required_identifier(self._task_id_factory(), "task ID")
+        features = self._build_features(asset_id, request.report_date)
+        as_of = datetime.combine(request.report_date, time.max, tzinfo=UTC)
+        data_bundle: ResearchDataBundle | None = None
+        context_bundle: ResearchContextBundle | None = None
+        if self._data_bundle_builder is None:
+            memories = self._memory.search(
+                _memory_query(asset_id, request.report_date)
+            ).results
+            structured_evidence = []
+        else:
+            data_bundle = self._data_bundle_builder.build(
+                ResearchDataBundleRequest(
+                    asset_id=asset_id,
+                    as_of=as_of,
+                    window_start=window_start,
+                    window_end=request.report_date,
+                    dataset_version=self._dataset_version,
+                    requested_capabilities=tuple(DataCapability),
+                )
+            )
+            features = _project_bundle_features(data_bundle, features)
+            context_bundle = self._memory.retrieve_context(
+                _context_request(
+                    asset_id=asset_id,
+                    as_of=as_of,
+                    report_id=report_id,
+                )
+            )
+            memories = _legacy_memories(context_bundle)
+            structured_evidence = [
+                item.to_source_reference()
+                for capability in DataCapability
+                for item in getattr(data_bundle, capability.value).items
+            ]
+        context = AgentContext(
+            report_date=request.report_date,
+            market_scope=request.market_scope,
+            asset_id=asset_id,
+            structured_features=features,
+            structured_evidence=structured_evidence,
+            retrieved_documents=retrieved_documents,
+            retrieved_memories=memories,
+        )
+
         agent_result = self._coordinator.run(
             ResearchTaskRequest(
                 task_id=task_id,
                 report_id=report_id,
                 model_name=self._model_name,
                 input_context=context,
+                data_bundle=data_bundle,
+                context_bundle=context_bundle,
             )
         )
         if agent_result.status is not AgentStatus.OK:
@@ -330,6 +407,35 @@ class ResearchWorkflowService:
         )
 
 
+def _project_bundle_features(
+    bundle: ResearchDataBundle,
+    legacy_features: JsonObject,
+) -> JsonObject:
+    """Overlay canonical Bundle metrics and derive missing flags from it.
+
+    The legacy deterministic operators remain available for workflows without
+    a Bundle. Once a Bundle exists, its provider-priority and point-in-time
+    decisions are authoritative for Agent-visible values and availability.
+    """
+
+    projected = dict(legacy_features)
+    for section_name in ("fundamentals", "valuation", "technical_features"):
+        section = getattr(bundle, section_name)
+        for item in section.items:
+            projected[item.field_path.rsplit(".", 1)[-1]] = item.value
+
+    projected["fundamental_missing_data"] = [
+        item.field_path.rsplit(".", 1)[-1]
+        for section_name in ("fundamentals", "valuation")
+        for item in getattr(bundle, section_name).missing_data
+    ]
+    projected["technical_missing_data"] = [
+        item.field_path.rsplit(".", 1)[-1]
+        for item in bundle.technical_features.missing_data
+    ]
+    return projected
+
+
 def _single_asset(request: GenerateReportRequest) -> AssetId:
     if request.report_type is not ReportType.SINGLE_ASSET:
         raise UnsupportedResearchRequestError(
@@ -362,6 +468,61 @@ def _memory_query(
         top_k=8,
         min_importance_score=0.0,
     )
+
+
+def _context_request(
+    *,
+    asset_id: AssetId,
+    as_of: datetime,
+    report_id: str,
+) -> ResearchContextRequest:
+    market = asset_id.market
+    return ResearchContextRequest(
+        query_text=(
+            f"Research evidence for {asset_id} through " f"{as_of.date().isoformat()}"
+        ),
+        as_of=as_of,
+        market=market,
+        namespace_keys=["GLOBAL", market.value, str(asset_id)],
+        asset_id=asset_id,
+        memory_levels=list(MemoryLevel),
+        top_k_per_section=4,
+        min_importance_score=0.0,
+        include_prior_reports=True,
+        current_report_id=report_id,
+    )
+
+
+def _legacy_memories(bundle: ResearchContextBundle) -> list[MemorySearchResult]:
+    """Project the canonical bundle into the unchanged Prompt input shape."""
+
+    return [
+        MemorySearchResult(
+            memory_id=item.memory_id,
+            memory_level=item.memory_level,
+            namespace_key=item.namespace_key,
+            summary_text=item.summary_text,
+            score=item.retrieval_score,
+            effective_ts=item.effective_ts,
+            asset_id=item.asset_id,
+            memory_type=item.memory_type,
+            importance_score=item.importance_score,
+            source_ref_json=item.source,
+            created_by=item.created_by,
+        )
+        for section in bundle.__class__.model_fields
+        if section
+        in {
+            "current_snapshot",
+            "macro_events",
+            "asset_events",
+            "prior_research",
+            "prior_risk",
+            "historical_analogs",
+            "regime_context",
+        }
+        for item in getattr(bundle, section)
+    ]
 
 
 def _frame(

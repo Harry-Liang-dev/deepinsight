@@ -13,6 +13,8 @@ dependencies = [
     "duckdb>=1,<2",
     "faiss-cpu>=1,<2",
     "fastapi>=0.115,<1",
+    "httpx[socks]>=0.27,<1",
+    "mcp>=1.28,<2",
     "numpy>=2,<3",
     "openai>=1,<3",
     "pandas>=2,<4",
@@ -29,7 +31,6 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "black>=24,<27",
-    "httpx>=0.27,<1",
     "mypy>=1.15,<2",
     "pytest>=8,<10",
     "pytest-asyncio>=0.24,<2",
@@ -63,10 +64,11 @@ module = ["apscheduler.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
-addopts = "-ra --strict-config --strict-markers"
+addopts = "-ra --strict-config --strict-markers -m 'not live'"
 asyncio_mode = "auto"
 testpaths = ["tests"]
 markers = [
     "integration: marks integration tests",
     "network: marks tests that require explicit network access",
+    "live: marks opt-in tests that call real external services",
 ]

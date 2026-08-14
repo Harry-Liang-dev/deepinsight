@@ -1,0 +1,39 @@
+benchmark_version: research_benchmark_v1
+case_id: us_analyst_failure
+case_version: v1
+scenario: analyst_failure
+market: US
+asset_id: US:FAIL
+report_date: 2026-08-01
+expected_outcome: expected_failure
+sources:
+  - evidence_id: us-analyst-failure-input
+    fixture_kind: synthetic
+    provider: benchmark_fixture
+    document_id: us-analyst-failure-document
+    excerpt_ref: us-analyst-failure-chunk
+    source_locator: benchmarks/cases/v1/us_analyst_failure.yaml
+    collected_at: 2026-08-01
+    published_at: "2026-07-30T12:00:00+00:00"
+    usage_basis: Synthetic redistribution-safe Analyst failure input.
+    text: Input evidence was available before the Analyst failure.
+known_missing_data: []
+simulated_failures: [sentiment_analyst]
+report: null
+observed_failure_code: agent_execution_failed
+expected:
+  required_facts:
+    - Input evidence was available before the Analyst failure.
+  allowed_missing_items: []
+  forbidden_conclusions:
+    - buy the stock
+    - sell the shares
+    - guaranteed return
+  expected_failure_code: agent_execution_failed
+thresholds:
+  lifecycle_compliance_min: 1.0
+  deterministic_score_min: null
+  expected_fact_coverage_min: 1.0
+  forbidden_conclusion_compliance_min: 1.0
+  check_minimums: {}
+  live_dimension_minimums: {}

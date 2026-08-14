@@ -126,7 +126,7 @@ def test_fake_provider_ingests_normalized_records_idempotently(
     second = service.run(_provider(), _request())
 
     assert first.status == TaskStatus.COMPLETED.value
-    assert first.rows_written == 6
+    assert first.rows_written == 7
     assert second.rows_written == first.rows_written
 
     instrument = InstrumentRepository(database).get(AssetId("US:AAPL"))
@@ -158,9 +158,10 @@ def test_fake_provider_ingests_normalized_records_idempotently(
                 (SELECT count(*) FROM instruments),
                 (SELECT count(*) FROM eod_bars),
                 (SELECT count(*) FROM text_documents),
-                (SELECT count(*) FROM document_chunks)
+                (SELECT count(*) FROM document_chunks),
+                (SELECT count(*) FROM corporate_events)
             """).fetchone()
-    assert counts == (2, 1, 1, 2)
+    assert counts == (2, 1, 1, 2, 1)
 
 
 def test_partial_provider_failure_records_failed_job_and_committed_rows(

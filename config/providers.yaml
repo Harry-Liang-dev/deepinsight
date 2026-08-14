@@ -34,8 +34,8 @@ providers:
     auth_mode: internal
     enabled: false
     credential_env:
-      - SEC_USER_AGENT
-    notes: Official connector boundary; no network implementation in this release.
+      - DEEPINSIGHT_PROVIDER_SEC_USER_AGENT
+    notes: Opt-in official submissions, filing, and Company Facts/XBRL adapter; SEC Fair Access applies.
   - source_id: fred
     source_name: FRED
     market_scope: US
@@ -44,7 +44,16 @@ providers:
     enabled: false
     credential_env:
       - FRED_API_KEY
-    notes: Macro Adapter method remains pending specification.
+    notes: Opt-in official FRED/ALFRED vintage-aware US Macro Pack adapter.
+  - source_id: financial_modeling_prep
+    source_name: Financial Modeling Prep
+    market_scope: US
+    source_type: standardized_fundamentals
+    auth_mode: api_key
+    enabled: false
+    credential_env:
+      - FMP_API_KEY
+    notes: Opt-in Stable API standardized TTM metrics; SEC remains authoritative for filings and raw XBRL facts.
   - source_id: alpaca_market_data
     source_name: Alpaca Market Data
     market_scope: US
@@ -54,7 +63,15 @@ providers:
     credential_env:
       - APCA_API_KEY_ID
       - APCA_API_SECRET_KEY
-    notes: Official connector boundary; no network implementation in this release.
+    notes: Opt-in official US daily bars and attributed news; Basic-safe IEX feed and rate limit by default.
+  - source_id: stocktwits_mcp
+    source_name: Stocktwits MCP
+    market_scope: US
+    source_type: social
+    auth_mode: oauth_account
+    enabled: false
+    credential_env: []
+    notes: Official remote MCP over Streamable HTTP; local OAuth token store; community sentiment and attention only, never verified financial facts.
   - source_id: x_search_posts
     source_name: X Search Posts
     market_scope: US

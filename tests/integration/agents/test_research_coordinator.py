@@ -23,7 +23,7 @@ from src.agents import (
 from src.agents.base import BaseAgent
 from src.models.enums import AgentName, AgentStatus, ReportMarketScope
 from src.models.identifiers import AssetId
-from src.models.types import JsonObject, JsonValue
+from src.models.types import DomainModel, JsonObject, JsonValue
 from src.repositories import AgentRunRepository, DuckDBDatabase
 from src.schemas.agents import AgentContext
 from src.schemas.documents import RetrievedDocument
@@ -52,7 +52,13 @@ class SequencedGateway:
         model: str,
         system_prompt: str,
         input_payload: JsonObject,
+        *,
+        prompt_version: str,
+        schema_version: str,
+        response_model: type[DomainModel],
     ) -> JsonObject:
+        del model, system_prompt, input_payload
+        del prompt_version, schema_version, response_model
         self._calls.append(self._agent_name)
         return self._response
 
@@ -87,6 +93,24 @@ def _context() -> AgentContext:
 
 def _responses() -> dict[AgentName, JsonObject]:
     citation: list[JsonValue] = [{"document_id": "doc-1", "excerpt_ref": "chunk-1"}]
+
+    def binding(path: str, text: str, claim_id: str) -> JsonObject:
+        return {
+            "claim_id": claim_id,
+            "claim_path": path,
+            "claim_text": text,
+            "evidence_ids": ["chunk-1"],
+            "source_references": citation,
+        }
+
+    def manager_claim(path: str, text: str, claim_id: str, upstream: str) -> JsonObject:
+        return {
+            "claim_id": claim_id,
+            "claim_path": path,
+            "claim_text": text,
+            "upstream_claim_ids": [upstream],
+        }
+
     return {
         AgentName.FUNDAMENTAL_ANALYST: {
             "agent_name": "fundamental_analyst",
@@ -99,6 +123,18 @@ def _responses() -> dict[AgentName, JsonObject]:
                 "risk_points": ["Valuation remained elevated."],
                 "uncertainties": [],
                 "supporting_citations": citation,
+                "claim_evidence": [
+                    binding(
+                        "analysis.key_points[0]",
+                        "Revenue increased.",
+                        "fundamental:revenue",
+                    ),
+                    binding(
+                        "analysis.risk_points[0]",
+                        "Valuation remained elevated.",
+                        "fundamental:valuation",
+                    ),
+                ],
             },
         },
         AgentName.TECHNICAL_TEXT_ANALYST: _analyst_response(
@@ -117,28 +153,60 @@ def _responses() -> dict[AgentName, JsonObject]:
             "agent_name": "research_manager",
             "status": "ok",
             "analysis": {
-                "summary_points": ["Growth was positive."],
-                "conflicts": ["Valuation offsets growth quality."],
+                "claims": [
+                    manager_claim(
+                        "analysis.summary_points[0]",
+                        "Growth was positive.",
+                        "research:growth",
+                        "fundamental:revenue",
+                    ),
+                    manager_claim(
+                        "analysis.conflicts[0]",
+                        "Valuation offsets growth quality.",
+                        "research:conflict",
+                        "fundamental:valuation",
+                    ),
+                ],
                 "uncertainties": [],
-                "supporting_citations": citation,
             },
         },
         AgentName.BULL_MANAGER: {
-            "bull_thesis": ["Growth remained positive."],
-            "conditions_required": ["Demand remains stable."],
-            "invalidators": ["Revenue contracts."],
+            "claims": [
+                manager_claim(
+                    "bull_thesis[0]",
+                    "Growth remained positive.",
+                    "bull:growth",
+                    "research:growth",
+                )
+            ],
             "confidence": 0.6,
         },
         AgentName.BEAR_MANAGER: {
-            "bear_thesis": ["Valuation remained elevated."],
-            "conditions_required": ["Growth slows."],
-            "invalidators": ["Growth accelerates."],
+            "claims": [
+                manager_claim(
+                    "bear_thesis[0]",
+                    "Valuation remained elevated.",
+                    "bear:valuation",
+                    "research:conflict",
+                ),
+                manager_claim(
+                    "invalidators[0]",
+                    "Growth accelerates.",
+                    "bear:invalidator",
+                    "research:growth",
+                ),
+            ],
             "confidence": 0.5,
         },
         AgentName.RISK_MANAGER: {
-            "confirmed_risks": ["Valuation remained elevated."],
-            "scenario_risks": ["Demand may slow."],
-            "watch_items": ["Revenue growth."],
+            "claims": [
+                manager_claim(
+                    "confirmed_risks[0]",
+                    "Valuation remained elevated.",
+                    "risk:valuation",
+                    "bear:valuation",
+                )
+            ],
             "narrative_risk_score": 0.5,
         },
     }
@@ -156,6 +224,22 @@ def _analyst_response(
             "risk_points": ["Evidence-backed limitation."],
             "uncertainties": [],
             "supporting_citations": citation,
+            "claim_evidence": [
+                {
+                    "claim_id": f"{agent_name}:point",
+                    "claim_path": "analysis.key_points[0]",
+                    "claim_text": "Evidence-backed observation.",
+                    "evidence_ids": ["chunk-1"],
+                    "source_references": citation,
+                },
+                {
+                    "claim_id": f"{agent_name}:risk",
+                    "claim_path": "analysis.risk_points[0]",
+                    "claim_text": "Evidence-backed limitation.",
+                    "evidence_ids": ["chunk-1"],
+                    "source_references": citation,
+                },
+            ],
         },
     }
 
@@ -236,14 +320,14 @@ def test_full_research_chain_is_ordered_cited_and_audited(tmp_path: Path) -> Non
         assert record.status == "ok"
         assert record.model_name == "fake-model"
         expected_version = {
-            AgentName.FUNDAMENTAL_ANALYST: "v5",
-            AgentName.TECHNICAL_TEXT_ANALYST: "v4",
-            AgentName.SENTIMENT_ANALYST: "v4",
-            AgentName.NEWS_EVENT_ANALYST: "v4",
-            AgentName.RESEARCH_MANAGER: "v3",
-            AgentName.BULL_MANAGER: "v4",
-            AgentName.BEAR_MANAGER: "v4",
-            AgentName.RISK_MANAGER: "v4",
+            AgentName.FUNDAMENTAL_ANALYST: "v10",
+            AgentName.TECHNICAL_TEXT_ANALYST: "v9",
+            AgentName.SENTIMENT_ANALYST: "v8",
+            AgentName.NEWS_EVENT_ANALYST: "v9",
+            AgentName.RESEARCH_MANAGER: "v6",
+            AgentName.BULL_MANAGER: "v8",
+            AgentName.BEAR_MANAGER: "v10",
+            AgentName.RISK_MANAGER: "v7",
         }[agent_name]
         assert record.prompt_template_ver == expected_version
         assert record.output_payload is not None

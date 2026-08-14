@@ -2,14 +2,20 @@
 
 from __future__ import annotations
 
-import re
 from collections.abc import Iterable, Sequence
 from typing import cast
 
 from pydantic import BaseModel, ValidationError
 
 from src.agents.contracts import AgentExecutionResult
-from src.models.enums import AgentName, AgentStatus, MemoryLevel, TaskStatus
+from src.models.compliance import claim_intent_is_allowed, infer_claim_intent
+from src.models.enums import (
+    AgentName,
+    AgentStatus,
+    ClaimIntent,
+    MemoryLevel,
+    TaskStatus,
+)
 from src.models.types import JsonObject, JsonValue
 from src.reports.contracts import (
     STANDARD_SECTION_NAMES,
@@ -83,9 +89,8 @@ class ReportAssembler:
         """
 
         self._validate_sections(payload.request.include_sections)
-        allowed_citations = _allowed_citations(payload)
         outputs = _parse_outputs(payload)
-        sections = self._build_sections(payload, outputs, allowed_citations)
+        sections = self._build_sections(payload, outputs)
         source_trace = _section_citations(sections)
         if not source_trace:
             raise ReportCitationError("report has no attributable source trace")
@@ -113,15 +118,14 @@ class ReportAssembler:
             for section in sections
         ]
 
-        research = outputs.research_manager.analysis
         bull = outputs.bull_manager
         bear = outputs.bear_manager
         risk = outputs.risk_manager
-        final_recommendation = _final_recommendation(
-            research.summary_points,
-            risk.narrative_risk_score,
+        final_recommendation = _final_recommendation()
+        _reject_prohibited_intent(
+            final_recommendation,
+            infer_claim_intent(final_recommendation, analytical=True),
         )
-        _reject_trading_text(final_recommendation)
 
         return ResearchReport(
             report_id=payload.report_id,
@@ -191,7 +195,6 @@ class ReportAssembler:
         self,
         payload: ReportAssemblyInput,
         outputs: _ParsedOutputs,
-        allowed: set[tuple[str, str, str, str]],
     ) -> list[StandardReportSection]:
         result = payload.agent_result
         analysts = result.analyst_results
@@ -204,58 +207,42 @@ class ReportAssembler:
         bear_result = _manager_result(result.bear_manager)
         risk_result = _manager_result(result.risk_manager)
 
-        document_facts = [
-            ReportStatement(
-                text=f"Evidence source reviewed: {document.title}.",
-                citations=[
-                    SourceReference(
-                        document_id=document.document_id,
-                        excerpt_ref=document.chunk_id,
-                    )
-                ],
-            )
-            for document in payload.input_context.retrieved_documents
-        ]
-        macro_facts = [
-            ReportStatement(
-                text=memory.summary_text,
-                citations=[memory.source_ref_json],
-            )
-            for memory in payload.input_context.retrieved_memories
-            if memory.memory_level in {MemoryLevel.L1, MemoryLevel.L4}
-        ]
-        macro_uncertainties = (
-            []
-            if macro_facts
-            else ["No attributable L1 or L4 macro Memory evidence was supplied."]
-        )
-
-        fundamental = outputs.fundamental.analysis
-        technical = outputs.technical.analysis
-        sentiment = outputs.sentiment.analysis
-        news = outputs.news.analysis
         research = outputs.research_manager.analysis
         bull = outputs.bull_manager
         bear = outputs.bear_manager
         risk = outputs.risk_manager
+        news_section = _analyst_section_from_output(
+            "news_events", 5, news_result, outputs.news
+        )
+        macro_statements = [
+            statement
+            for statement in (
+                *news_section.facts,
+                *news_section.inferences,
+                *news_section.risk_warnings,
+            )
+            if any(citation.provider == "fred" for citation in statement.citations)
+        ]
+        sentiment_section = _prefer_aggregate_sentiment(
+            _analyst_section_from_output(
+                "sentiment", 4, sentiment_result, outputs.sentiment
+            )
+        )
 
         sections = [
             StandardReportSection(
                 section_name="executive_view",
                 title=_SECTION_TITLES["executive_view"],
                 section_order=0,
-                facts=_validated_statements(document_facts, allowed),
                 inferences=_claims(
                     research_result,
                     "analysis.summary_points",
                     research.summary_points,
-                    allowed,
                 ),
                 risk_warnings=_claims(
                     research_result,
                     "analysis.conflicts",
                     research.conflicts,
-                    allowed,
                 ),
                 uncertainties=_unique(
                     [
@@ -269,49 +256,30 @@ class ReportAssembler:
                 section_name="macro_context",
                 title=_SECTION_TITLES["macro_context"],
                 section_order=1,
-                facts=_validated_statements(macro_facts, allowed),
-                uncertainties=macro_uncertainties,
+                facts=macro_statements,
+                uncertainties=(
+                    []
+                    if macro_statements
+                    else [
+                        "No accepted Agent claim addressed macro context in "
+                        "this report."
+                    ]
+                ),
             ),
-            _analyst_section(
+            _analyst_section_from_output(
                 "fundamentals",
                 2,
                 fundamental_result,
-                fundamental.facts,
-                fundamental.key_points,
-                fundamental.risk_points,
-                [*fundamental.uncertainties, *fundamental_result.uncertainties],
-                allowed,
+                outputs.fundamental,
             ),
-            _analyst_section(
+            _analyst_section_from_output(
                 "technical_text",
                 3,
                 technical_result,
-                technical.facts,
-                technical.key_points,
-                technical.risk_points,
-                [*technical.uncertainties, *technical_result.uncertainties],
-                allowed,
+                outputs.technical,
             ),
-            _analyst_section(
-                "sentiment",
-                4,
-                sentiment_result,
-                sentiment.facts,
-                sentiment.key_points,
-                sentiment.risk_points,
-                [*sentiment.uncertainties, *sentiment_result.uncertainties],
-                allowed,
-            ),
-            _analyst_section(
-                "news_events",
-                5,
-                news_result,
-                news.facts,
-                news.key_points,
-                news.risk_points,
-                [*news.uncertainties, *news_result.uncertainties],
-                allowed,
-            ),
+            sentiment_section,
+            news_section,
             StandardReportSection(
                 section_name="bull_case",
                 title=_SECTION_TITLES["bull_case"],
@@ -321,22 +289,19 @@ class ReportAssembler:
                         bull_result,
                         "bull_thesis",
                         bull.bull_thesis,
-                        allowed,
                     ),
                     *_claims(
                         bull_result,
                         "conditions_required",
                         bull.conditions_required,
-                        allowed,
                     ),
                 ],
                 risk_warnings=_claims(
                     bull_result,
                     "invalidators",
                     bull.invalidators,
-                    allowed,
                 ),
-                uncertainties=_result_uncertainties(bull_result),
+                uncertainties=_result_uncertainties(bull_result, include_missing=False),
             ),
             StandardReportSection(
                 section_name="bear_case",
@@ -347,22 +312,19 @@ class ReportAssembler:
                         bear_result,
                         "bear_thesis",
                         bear.bear_thesis,
-                        allowed,
                     ),
                     *_claims(
                         bear_result,
                         "conditions_required",
                         bear.conditions_required,
-                        allowed,
                     ),
                 ],
                 risk_warnings=_claims(
                     bear_result,
                     "invalidators",
                     bear.invalidators,
-                    allowed,
                 ),
-                uncertainties=_result_uncertainties(bear_result),
+                uncertainties=_result_uncertainties(bear_result, include_missing=False),
             ),
             StandardReportSection(
                 section_name="risk_review",
@@ -373,22 +335,19 @@ class ReportAssembler:
                         risk_result,
                         "scenario_risks",
                         risk.scenario_risks,
-                        allowed,
                     ),
                     *_claims(
                         risk_result,
                         "watch_items",
                         risk.watch_items,
-                        allowed,
                     ),
                 ],
                 risk_warnings=_claims(
                     risk_result,
                     "confirmed_risks",
                     risk.confirmed_risks,
-                    allowed,
                 ),
-                uncertainties=_result_uncertainties(risk_result),
+                uncertainties=_result_uncertainties(risk_result, include_missing=False),
             ),
             StandardReportSection(
                 section_name="final_synthesis",
@@ -398,20 +357,17 @@ class ReportAssembler:
                     research_result,
                     "analysis.summary_points",
                     research.summary_points,
-                    allowed,
                 ),
                 risk_warnings=[
                     *_claims(
                         research_result,
                         "analysis.conflicts",
                         research.conflicts,
-                        allowed,
                     ),
                     *_claims(
                         risk_result,
                         "confirmed_risks",
                         risk.confirmed_risks,
-                        allowed,
                     ),
                 ],
                 uncertainties=_unique(
@@ -429,10 +385,10 @@ class _ParsedOutputs:
     def __init__(
         self,
         *,
-        fundamental: FundamentalAnalystResponse,
-        technical: AnalystResponse,
-        sentiment: AnalystResponse,
-        news: AnalystResponse,
+        fundamental: FundamentalAnalystResponse | None,
+        technical: AnalystResponse | None,
+        sentiment: AnalystResponse | None,
+        news: AnalystResponse | None,
         research_manager: ResearchManagerResponse,
         bull_manager: BullManagerResponse,
         bear_manager: BearManagerResponse,
@@ -462,22 +418,22 @@ def _parse_outputs(payload: ReportAssemblyInput) -> _ParsedOutputs:
         raise ReportAssemblyError("report requires all four Analyst results")
 
     try:
-        fundamental = _parse_result(
+        fundamental = _parse_optional_analyst_result(
             result.analyst_results[AgentName.FUNDAMENTAL_ANALYST],
             AgentName.FUNDAMENTAL_ANALYST,
             FundamentalAnalystResponse,
         )
-        technical = _parse_result(
+        technical = _parse_optional_analyst_result(
             result.analyst_results[AgentName.TECHNICAL_TEXT_ANALYST],
             AgentName.TECHNICAL_TEXT_ANALYST,
             AnalystResponse,
         )
-        sentiment = _parse_result(
+        sentiment = _parse_optional_analyst_result(
             result.analyst_results[AgentName.SENTIMENT_ANALYST],
             AgentName.SENTIMENT_ANALYST,
             AnalystResponse,
         )
-        news = _parse_result(
+        news = _parse_optional_analyst_result(
             result.analyst_results[AgentName.NEWS_EVENT_ANALYST],
             AgentName.NEWS_EVENT_ANALYST,
             AnalystResponse,
@@ -507,30 +463,19 @@ def _parse_outputs(payload: ReportAssemblyInput) -> _ParsedOutputs:
             "Agent output failed report schema validation"
         ) from exc
 
-    _require_content(
-        "fundamental_analyst",
-        fundamental.analysis.facts,
-        fundamental.analysis.key_points,
-        fundamental.analysis.risk_points,
-    )
-    _require_content(
-        "technical_text_analyst",
-        technical.analysis.facts,
-        technical.analysis.key_points,
-        technical.analysis.risk_points,
-    )
-    _require_content(
-        "sentiment_analyst",
-        sentiment.analysis.facts,
-        sentiment.analysis.key_points,
-        sentiment.analysis.risk_points,
-    )
-    _require_content(
-        "news_event_analyst",
-        news.analysis.facts,
-        news.analysis.key_points,
-        news.analysis.risk_points,
-    )
+    for name, analyst in (
+        ("fundamental_analyst", fundamental),
+        ("technical_text_analyst", technical),
+        ("sentiment_analyst", sentiment),
+        ("news_event_analyst", news),
+    ):
+        if analyst is not None:
+            _require_content(
+                name,
+                analyst.analysis.facts,
+                analyst.analysis.key_points,
+                analyst.analysis.risk_points,
+            )
     _require_content(
         "research_manager",
         research.analysis.summary_points,
@@ -583,6 +528,20 @@ def _parse_result[OutputT: BaseModel](
     return parsed
 
 
+def _parse_optional_analyst_result[OutputT: BaseModel](
+    result: AgentExecutionResult,
+    expected_name: AgentName,
+    model_type: type[OutputT],
+) -> OutputT | None:
+    """Parse a successful Analyst or retain an explicit failed result."""
+
+    if result.agent_name is not expected_name:
+        raise ReportAssemblyError("Agent result role does not match report section")
+    if result.status is AgentStatus.ERROR:
+        return None
+    return _parse_result(result, expected_name, model_type)
+
+
 def _manager_result(
     result: AgentExecutionResult | None,
 ) -> AgentExecutionResult:
@@ -604,7 +563,6 @@ def _analyst_section(
     key_points: list[str],
     risk_points: list[str],
     uncertainties: list[str],
-    allowed: set[tuple[str, str, str, str]],
 ) -> StandardReportSection:
     return StandardReportSection(
         section_name=section_name,
@@ -614,21 +572,50 @@ def _analyst_section(
             result,
             "analysis.facts",
             facts,
-            allowed,
         ),
         inferences=_claims(
             result,
             "analysis.key_points",
             key_points,
-            allowed,
         ),
         risk_warnings=_claims(
             result,
             "analysis.risk_points",
             risk_points,
-            allowed,
         ),
         uncertainties=_unique([*uncertainties, *_result_uncertainties(result)]),
+    )
+
+
+def _analyst_section_from_output(
+    section_name: str,
+    order: int,
+    result: AgentExecutionResult,
+    output: FundamentalAnalystResponse | AnalystResponse | None,
+) -> StandardReportSection:
+    """Build an attributed Analyst section or an explicit unavailable section."""
+
+    if output is None:
+        return StandardReportSection(
+            section_name=section_name,
+            title=_SECTION_TITLES[section_name],
+            section_order=order,
+            uncertainties=_unique(
+                [
+                    f"{result.agent_name.value} output was unavailable.",
+                    *_result_uncertainties(result),
+                ]
+            ),
+        )
+    analysis = output.analysis
+    return _analyst_section(
+        section_name,
+        order,
+        result,
+        analysis.facts,
+        analysis.key_points,
+        analysis.risk_points,
+        [*analysis.uncertainties, *result.uncertainties],
     )
 
 
@@ -636,87 +623,32 @@ def _claims(
     result: AgentExecutionResult,
     claim_path: str,
     texts: Sequence[str],
-    allowed: set[tuple[str, str, str, str]],
 ) -> list[ReportStatement]:
     statements: list[ReportStatement] = []
     for index, text in enumerate(texts):
-        _reject_trading_text(text)
         path = f"{claim_path}[{index}]"
-        citations = [
-            citation
-            for evidence in result.evidence
-            if evidence.claim_path == path
-            for citation in evidence.citations
+        links = [
+            evidence for evidence in result.evidence if evidence.claim_path == path
         ]
+        citations = [citation for evidence in links for citation in evidence.citations]
         if not citations:
-            raise ReportCitationError(f"report claim has no evidence: {path}")
+            raise ReportCitationError(f"report claim provenance is missing: {path}")
+        intents = {link.claim_intent for link in links}
+        if len(intents) != 1:
+            raise ReportAssemblyError("report claim has inconsistent intent")
+        intent = intents.pop()
+        _reject_prohibited_intent(text, intent)
         statements.append(
             ReportStatement(
                 text=text,
-                citations=_validate_citations(citations, allowed),
+                citations=_deduplicate_citations(citations),
+                claim_intent=intent,
+                claim_id=links[0].claim_id or f"{result.agent_name.value}:{path}",
+                upstream_claim_ids=links[0].upstream_claim_ids,
+                numeric_literals=links[0].numeric_literals,
             )
         )
     return statements
-
-
-def _validated_statements(
-    statements: Sequence[ReportStatement],
-    allowed: set[tuple[str, str, str, str]],
-) -> list[ReportStatement]:
-    validated: list[ReportStatement] = []
-    for statement in statements:
-        _reject_trading_text(statement.text)
-        validated.append(
-            statement.model_copy(
-                update={
-                    "citations": _validate_citations(
-                        statement.citations,
-                        allowed,
-                    )
-                }
-            )
-        )
-    return validated
-
-
-def _allowed_citations(
-    payload: ReportAssemblyInput,
-) -> set[tuple[str, str, str, str]]:
-    allowed: set[tuple[str, str, str, str]] = set()
-    for document in payload.input_context.retrieved_documents:
-        citation = SourceReference(
-            document_id=document.document_id,
-            excerpt_ref=document.chunk_id,
-        )
-        allowed.add(_citation_key(citation))
-    for memory in payload.input_context.retrieved_memories:
-        citation = memory.source_ref_json
-        allowed.add(_citation_key(citation))
-        if citation.document_id is not None:
-            allowed.add(
-                _citation_key(
-                    SourceReference(
-                        document_id=citation.document_id,
-                        excerpt_ref=citation.excerpt_ref,
-                    )
-                )
-            )
-    return allowed
-
-
-def _validate_citations(
-    citations: Iterable[SourceReference],
-    allowed: set[tuple[str, str, str, str]],
-) -> list[SourceReference]:
-    unique: dict[tuple[str, str, str, str], SourceReference] = {}
-    for citation in citations:
-        key = _citation_key(citation)
-        if key not in allowed:
-            raise ReportCitationError("report cited evidence absent from its input")
-        unique.setdefault(key, citation)
-    if not unique:
-        raise ReportCitationError("report statement requires a citation")
-    return list(unique.values())
 
 
 def _citation_key(citation: SourceReference) -> tuple[str, str, str, str]:
@@ -728,9 +660,45 @@ def _citation_key(citation: SourceReference) -> tuple[str, str, str, str]:
     )
 
 
-def _result_uncertainties(result: AgentExecutionResult) -> list[str]:
-    missing = [f"Missing data: {item}." for item in result.missing_data]
+def _result_uncertainties(
+    result: AgentExecutionResult, *, include_missing: bool = True
+) -> list[str]:
+    missing = (
+        [f"Missing data: {item}." for item in result.missing_data]
+        if include_missing
+        else []
+    )
     return _unique([*result.uncertainties, *missing])
+
+
+def _prefer_aggregate_sentiment(
+    section: StandardReportSection,
+) -> StandardReportSection:
+    """Keep raw community posts as Evidence but not primary report prose."""
+
+    def keep(statement: ReportStatement) -> bool:
+        stocktwits = [
+            citation
+            for citation in statement.citations
+            if citation.provider == "stocktwits_mcp"
+        ]
+        if not stocktwits:
+            return True
+        return any(
+            (citation.document_id or "").startswith("US:") for citation in stocktwits
+        )
+
+    return section.model_copy(
+        update={
+            "facts": [statement for statement in section.facts if keep(statement)],
+            "inferences": [
+                statement for statement in section.inferences if keep(statement)
+            ],
+            "risk_warnings": [
+                statement for statement in section.risk_warnings if keep(statement)
+            ],
+        }
+    )
 
 
 def _section_citations(
@@ -808,11 +776,18 @@ def _render_statements(
         [
             f"### {title}",
             *(
-                f"- {statement.text} {_render_citations(statement.citations)}"
+                f"- {_render_intent(statement.claim_intent)}{statement.text} "
+                f"{_render_citations(statement.citations)}"
                 for statement in statements
             ),
         ]
     )
+
+
+def _render_intent(intent: ClaimIntent) -> str:
+    """Label third-party opinion without changing the accepted claim text."""
+
+    return "[Third-party opinion] " if intent is ClaimIntent.THIRD_PARTY_OPINION else ""
 
 
 def _render_citations(citations: Sequence[SourceReference]) -> str:
@@ -830,15 +805,12 @@ def _render_citations(citations: Sequence[SourceReference]) -> str:
     return f"[Sources: {', '.join(labels)}]"
 
 
-def _final_recommendation(
-    summary_points: Sequence[str],
-    risk_score: float,
-) -> str:
-    summary = summary_points[0]
+def _final_recommendation() -> str:
+    """Return presentation-only scope text without creating a new claim."""
+
     return (
-        f"Research synthesis: {summary} "
-        f"Narrative risk score: {risk_score:.2f}. "
-        "This conclusion is research analysis only."
+        "This report contains research analysis only and does not issue a system "
+        "recommendation or execution instruction."
     )
 
 
@@ -846,25 +818,14 @@ def _join_statements(statements: Sequence[str]) -> str | None:
     return " ".join(statements) if statements else None
 
 
-def _reject_trading_text(text: str) -> None:
-    normalized = text.casefold()
-    forbidden_phrases = (
-        "price target",
-        "target price",
-        "position size",
-        "place an order",
-        "execute an order",
-        "买入",
-        "卖出",
-        "目标价",
-        "仓位",
-        "下单",
+def _reject_prohibited_intent(text: str, intent: ClaimIntent) -> None:
+    if not claim_intent_is_allowed(intent):
+        raise ReportAssemblyError("report content contained a trading instruction")
+    inferred = infer_claim_intent(
+        text,
+        analytical=intent is ClaimIntent.ANALYTICAL_INFERENCE,
     )
-    if re.search(
-        r"\b(?:buy|sell)\s+(?:the\s+)?"
-        r"(?:shares?|stocks?|securit(?:y|ies)|position)\b",
-        normalized,
-    ) is not None or any(phrase in normalized for phrase in forbidden_phrases):
+    if not claim_intent_is_allowed(inferred):
         raise ReportAssemblyError("report content contained a trading instruction")
 
 

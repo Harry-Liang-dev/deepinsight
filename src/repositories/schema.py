@@ -13,12 +13,17 @@ CORE_TABLES = frozenset(
         "instruments",
         "llm_cache",
         "macro_series",
+        "macro_series_vintages",
         "memory_items",
+        "news_evidence",
         "phase2_registry",
+        "report_evaluations",
         "report_jobs",
         "report_sections",
         "reports",
         "source_registry",
+        "sentiment_evidence",
+        "sentiment_snapshots",
         "text_documents",
     }
 )
@@ -30,11 +35,15 @@ CORE_INDEXES = frozenset(
         "idx_eod_bars_asset_date",
         "idx_fundamentals_asset_period",
         "idx_macro_series_key_date",
+        "idx_macro_vintages_key_date",
         "idx_memory_items_faiss_mapping",
         "idx_memory_items_level_namespace_ts",
         "idx_reports_date_market",
+        "idx_report_evaluations_report_created",
         "idx_report_jobs_status_created",
         "idx_text_documents_asset_publish",
+        "idx_news_evidence_asset_created",
+        "idx_sentiment_snapshots_asset_time",
     }
 )
 
@@ -89,6 +98,8 @@ TABLE_DDL = (
         volume               DOUBLE,
         turnover             DOUBLE,
         vwap                 DOUBLE,
+        feed_identity        VARCHAR,
+        coverage_scope       VARCHAR,
         source_id            VARCHAR NOT NULL,
         ingestion_ts         TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         p2_feature_blob_json VARCHAR,
@@ -106,10 +117,16 @@ TABLE_DDL = (
         net_income             DOUBLE,
         eps_basic              DOUBLE,
         total_assets           DOUBLE,
+        current_assets         DOUBLE,
         total_liabilities      DOUBLE,
+        current_liabilities    DOUBLE,
+        total_debt             DOUBLE,
         shareholders_equity    DOUBLE,
         operating_cash_flow    DOUBLE,
+        shares_outstanding     DOUBLE,
         free_cash_flow         DOUBLE,
+        revenue_yoy            DOUBLE,
+        net_income_yoy         DOUBLE,
         gross_margin           DOUBLE,
         operating_margin       DOUBLE,
         net_margin             DOUBLE,
@@ -117,13 +134,93 @@ TABLE_DDL = (
         roa                    DOUBLE,
         debt_to_equity         DOUBLE,
         current_ratio          DOUBLE,
+        eps_ttm                DOUBLE,
+        book_value_per_share   DOUBLE,
+        market_cap             DOUBLE,
         pe_ttm                 DOUBLE,
         pb                     DOUBLE,
+        earnings_yield         DOUBLE,
+        source_locator         VARCHAR,
+        quality                VARCHAR,
         filing_url             VARCHAR,
+        filing_date            DATE,
+        accepted_at            TIMESTAMP,
         source_id              VARCHAR NOT NULL,
         ingestion_ts           TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         p2_factor_blob_json    VARCHAR,
         PRIMARY KEY (asset_id, fiscal_period_end, report_type)
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS macro_series_vintages (
+        series_key             VARCHAR NOT NULL,
+        region_code            VARCHAR NOT NULL,
+        observation_date       DATE NOT NULL,
+        indicator_name         VARCHAR NOT NULL,
+        value                  DOUBLE,
+        unit                   VARCHAR,
+        frequency              VARCHAR,
+        realtime_start         DATE NOT NULL,
+        realtime_end           DATE NOT NULL,
+        source_locator         VARCHAR,
+        source_id              VARCHAR NOT NULL,
+        ingestion_ts           TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (
+            series_key,
+            observation_date,
+            realtime_start,
+            realtime_end
+        )
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS sentiment_snapshots (
+        asset_id               VARCHAR NOT NULL,
+        as_of                  TIMESTAMP NOT NULL,
+        provider               VARCHAR NOT NULL,
+        score                  DOUBLE,
+        label                  VARCHAR,
+        bullish_pct            DOUBLE,
+        bearish_pct            DOUBLE,
+        message_volume_score   DOUBLE,
+        message_volume_label   VARCHAR,
+        source_timestamp       TIMESTAMP NOT NULL,
+        quality                VARCHAR NOT NULL,
+        source_locator         VARCHAR NOT NULL,
+        evidence_class         VARCHAR NOT NULL,
+        ingestion_ts           TIMESTAMP NOT NULL,
+        PRIMARY KEY (asset_id, source_timestamp, provider)
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS sentiment_evidence (
+        source                  VARCHAR NOT NULL,
+        message_id             VARCHAR NOT NULL,
+        asset_id               VARCHAR NOT NULL,
+        created_at             TIMESTAMP NOT NULL,
+        text                   VARCHAR NOT NULL,
+        declared_sentiment     VARCHAR,
+        source_locator         VARCHAR NOT NULL,
+        evidence_class         VARCHAR NOT NULL,
+        ingestion_ts           TIMESTAMP NOT NULL,
+        PRIMARY KEY (source, message_id)
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS news_evidence (
+        news_id                VARCHAR PRIMARY KEY,
+        asset_id               VARCHAR NOT NULL,
+        headline               VARCHAR NOT NULL,
+        summary                VARCHAR,
+        content                VARCHAR,
+        author                 VARCHAR,
+        created_at             TIMESTAMP NOT NULL,
+        updated_at             TIMESTAMP,
+        source_url             VARCHAR NOT NULL,
+        provider               VARCHAR NOT NULL,
+        original_source        VARCHAR NOT NULL,
+        source_locator         VARCHAR NOT NULL,
+        ingestion_ts           TIMESTAMP NOT NULL
     )
     """,
     """
@@ -137,6 +234,7 @@ TABLE_DDL = (
         frequency              VARCHAR,
         realtime_start         DATE,
         realtime_end           DATE,
+        source_locator         VARCHAR,
         source_id              VARCHAR NOT NULL,
         ingestion_ts           TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         p2_regime_feature_json VARCHAR,
@@ -269,6 +367,20 @@ TABLE_DDL = (
     )
     """,
     """
+    CREATE TABLE IF NOT EXISTS report_evaluations (
+        evaluation_id          VARCHAR PRIMARY KEY,
+        report_id              VARCHAR NOT NULL,
+        ruleset_version        VARCHAR NOT NULL,
+        judge_model            VARCHAR NOT NULL,
+        input_fingerprint      VARCHAR NOT NULL,
+        overall_score          DOUBLE NOT NULL,
+        deterministic_score    DOUBLE NOT NULL,
+        judge_score            DOUBLE NOT NULL,
+        result_json            VARCHAR NOT NULL,
+        created_at             TIMESTAMP NOT NULL
+    )
+    """,
+    """
     CREATE TABLE IF NOT EXISTS report_jobs (
         job_id                 VARCHAR PRIMARY KEY,
         request_json           VARCHAR NOT NULL,
@@ -327,6 +439,27 @@ TABLE_DDL = (
         created_at             TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
     """,
+    "ALTER TABLE eod_bars ADD COLUMN IF NOT EXISTS feed_identity VARCHAR",
+    "ALTER TABLE eod_bars ADD COLUMN IF NOT EXISTS coverage_scope VARCHAR",
+    "ALTER TABLE fundamentals ADD COLUMN IF NOT EXISTS shares_outstanding DOUBLE",
+    "ALTER TABLE fundamentals ADD COLUMN IF NOT EXISTS filing_date DATE",
+    "ALTER TABLE fundamentals ADD COLUMN IF NOT EXISTS accepted_at TIMESTAMP",
+    "ALTER TABLE fundamentals ADD COLUMN IF NOT EXISTS current_assets DOUBLE",
+    "ALTER TABLE fundamentals ADD COLUMN IF NOT EXISTS current_liabilities DOUBLE",
+    "ALTER TABLE fundamentals ADD COLUMN IF NOT EXISTS total_debt DOUBLE",
+    "ALTER TABLE fundamentals ADD COLUMN IF NOT EXISTS revenue_yoy DOUBLE",
+    "ALTER TABLE fundamentals ADD COLUMN IF NOT EXISTS net_income_yoy DOUBLE",
+    "ALTER TABLE fundamentals ADD COLUMN IF NOT EXISTS eps_ttm DOUBLE",
+    "ALTER TABLE fundamentals ADD COLUMN IF NOT EXISTS book_value_per_share DOUBLE",
+    "ALTER TABLE fundamentals ADD COLUMN IF NOT EXISTS market_cap DOUBLE",
+    "ALTER TABLE fundamentals ADD COLUMN IF NOT EXISTS earnings_yield DOUBLE",
+    "ALTER TABLE fundamentals ADD COLUMN IF NOT EXISTS source_locator VARCHAR",
+    "ALTER TABLE fundamentals ADD COLUMN IF NOT EXISTS quality VARCHAR",
+    "ALTER TABLE macro_series ADD COLUMN IF NOT EXISTS source_locator VARCHAR",
+    """
+    ALTER TABLE macro_series_vintages
+    ADD COLUMN IF NOT EXISTS source_locator VARCHAR
+    """,
 )
 
 INDEX_DDL = (
@@ -343,12 +476,24 @@ INDEX_DDL = (
     ON macro_series (series_key, observation_date)
     """,
     """
+    CREATE INDEX IF NOT EXISTS idx_macro_vintages_key_date
+    ON macro_series_vintages (series_key, observation_date, realtime_start)
+    """,
+    """
     CREATE INDEX IF NOT EXISTS idx_corporate_events_asset_date
     ON corporate_events (asset_id, event_date)
     """,
     """
     CREATE INDEX IF NOT EXISTS idx_text_documents_asset_publish
     ON text_documents (asset_id, publish_ts)
+    """,
+    """
+    CREATE INDEX IF NOT EXISTS idx_news_evidence_asset_created
+    ON news_evidence (asset_id, created_at)
+    """,
+    """
+    CREATE INDEX IF NOT EXISTS idx_sentiment_snapshots_asset_time
+    ON sentiment_snapshots (asset_id, source_timestamp)
     """,
     """
     CREATE INDEX IF NOT EXISTS idx_memory_items_level_namespace_ts
@@ -365,6 +510,10 @@ INDEX_DDL = (
     """
     CREATE INDEX IF NOT EXISTS idx_reports_date_market
     ON reports (report_date, market_scope)
+    """,
+    """
+    CREATE INDEX IF NOT EXISTS idx_report_evaluations_report_created
+    ON report_evaluations (report_id, created_at)
     """,
     """
     CREATE INDEX IF NOT EXISTS idx_report_jobs_status_created

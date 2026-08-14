@@ -7,7 +7,7 @@ from typing import cast
 import pytest
 
 from src.agents import EvidenceLink
-from src.models.enums import AgentName, AgentStatus, TaskStatus
+from src.models.enums import AgentName, AgentStatus, ClaimIntent, TaskStatus
 from src.models.types import JsonObject
 from src.reports import (
     STANDARD_SECTION_NAMES,
@@ -15,11 +15,10 @@ from src.reports import (
     MissingReportSectionError,
     ReportAssembler,
     ReportAssemblyError,
-    ReportCitationError,
     StandardReportSection,
 )
 from src.schemas.agents import BullManagerResponse
-from src.schemas.common import SourceReference
+from src.schemas.common import ErrorInfo, SourceReference
 from tests.fixtures.report_data import make_report_input
 
 
@@ -68,6 +67,133 @@ def test_report_allows_sell_through_operating_metric() -> None:
     report = ReportAssembler().assemble(payload)
 
     assert "sell-through rates" in report.report_markdown
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Jefferies lowered its price target for Apple to $250.",
+        "Goldman Sachs reiterated its Buy rating on Apple.",
+        "Morgan Stanley raised its target price from $220 to $240.",
+    ],
+)
+def test_report_allows_attributed_third_party_opinion(text: str) -> None:
+    """Attributed ratings and targets remain cited research evidence."""
+
+    payload = make_report_input()
+    result = payload.agent_result.analyst_results[AgentName.NEWS_EVENT_ANALYST]
+    assert result.output is not None
+    analysis = result.output["analysis"]
+    assert isinstance(analysis, dict)
+    analysis["key_points"] = [text]
+    result.evidence[0] = result.evidence[0].model_copy(
+        update={"claim_intent": ClaimIntent.THIRD_PARTY_OPINION}
+    )
+
+    report = ReportAssembler().assemble(payload)
+    section = StandardReportSection.model_validate(report.report_json["news_events"])
+
+    assert section.inferences[0].text == text
+    assert section.inferences[0].claim_intent is ClaimIntent.THIRD_PARTY_OPINION
+    assert section.inferences[0].citations == [result.evidence[0].citations[0]]
+    assert f"[Third-party opinion] {text}" in report.report_markdown
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "DeepInsight recommends buying AAPL.",
+        "Our price target for AAPL is $320.",
+        "Buy AAPL at $300.",
+        "Allocate 20% of the portfolio to AAPL.",
+        "Short AAPL with a stop loss at $330.",
+    ],
+)
+def test_report_rejects_system_recommendation_or_execution(text: str) -> None:
+    """The report boundary rejects system advice and executable actions."""
+
+    payload = make_report_input()
+    result = payload.agent_result.analyst_results[AgentName.NEWS_EVENT_ANALYST]
+    assert result.output is not None
+    analysis = result.output["analysis"]
+    assert isinstance(analysis, dict)
+    analysis["key_points"] = [text]
+
+    with pytest.raises(ReportAssemblyError, match="trading instruction"):
+        ReportAssembler().assemble(payload)
+
+
+def test_report_does_not_create_new_claim_or_render_rejected_claim() -> None:
+    """Report prose is limited to accepted claims plus presentation labels."""
+
+    payload = make_report_input()
+    bear = payload.agent_result.bear_manager
+    assert bear is not None
+    assert bear.output is not None
+    bear.output["metadata"] = {
+        "rejected_claims": [
+            {
+                "claim_path": "bear_thesis[9]",
+                "claim_text": "Rejected claim must never render.",
+                "reason": "unknown_or_cross_role_evidence_id",
+            }
+        ]
+    }
+
+    report = ReportAssembler().assemble(payload)
+    accepted = {
+        statement
+        for result in (
+            *payload.agent_result.analyst_results.values(),
+            payload.agent_result.research_manager,
+            payload.agent_result.bull_manager,
+            payload.agent_result.bear_manager,
+            payload.agent_result.risk_manager,
+        )
+        if result is not None and result.output is not None
+        for statement in _claim_texts(result.output)
+    }
+    rendered_claims = {
+        statement.text
+        for value in report.report_json.values()
+        for section in [StandardReportSection.model_validate(value)]
+        for group in (section.facts, section.inferences, section.risk_warnings)
+        for statement in group
+    }
+
+    assert rendered_claims <= accepted
+    assert "Rejected claim must never render." not in report.report_markdown
+
+
+def _claim_texts(value: object) -> list[str]:
+    """Return business prose fields from one fixture output."""
+
+    if not isinstance(value, dict):
+        return []
+    analysis = value.get("analysis")
+    root = analysis if isinstance(analysis, dict) else value
+    fields = (
+        "facts",
+        "key_points",
+        "risk_points",
+        "summary_points",
+        "conflicts",
+        "bull_thesis",
+        "bear_thesis",
+        "conditions_required",
+        "invalidators",
+        "confirmed_risks",
+        "scenario_risks",
+        "watch_items",
+    )
+    return [
+        item
+        for field in fields
+        for items in [root.get(field)]
+        if isinstance(items, list)
+        for item in items
+        if isinstance(item, str)
+    ]
 
 
 def test_missing_or_duplicate_standard_section_is_rejected() -> None:
@@ -135,8 +261,63 @@ def test_failed_agent_collaboration_cannot_become_a_report() -> None:
         ReportAssembler().assemble(payload)
 
 
-def test_unknown_agent_citation_is_rejected() -> None:
-    """The assembler must not pass through evidence absent from input context."""
+def test_failed_analyst_becomes_explicit_unavailable_section() -> None:
+    """A degraded collaboration must disclose, not fabricate, Analyst content."""
+
+    payload = make_report_input()
+    failed_name = AgentName.TECHNICAL_TEXT_ANALYST
+    successful = payload.agent_result.analyst_results[failed_name]
+    payload.agent_result.analyst_results[failed_name] = successful.model_copy(
+        update={
+            "status": AgentStatus.ERROR,
+            "output": None,
+            "evidence": [],
+            "missing_data": ["validated technical evidence"],
+            "error": ErrorInfo(
+                code="schema_validation",
+                message="Agent input or output failed schema validation.",
+            ),
+        }
+    )
+    payload.agent_result.missing_agents = [failed_name]
+    payload.agent_result.uncertainties = ["technical_text_analyst was unavailable."]
+
+    report = ReportAssembler().assemble(payload)
+
+    section = StandardReportSection.model_validate(report.report_json["technical_text"])
+    assert section.facts == []
+    assert section.inferences == []
+    assert section.risk_warnings == []
+    assert "technical_text_analyst output was unavailable." in section.uncertainties
+    assert "Missing data: validated technical evidence." in section.uncertainties
+    assert "technical_text_analyst output was unavailable." in report.report_markdown
+
+
+def test_manager_sections_do_not_repeat_global_missing_data() -> None:
+    """Coverage gaps belong to their owning Analyst or global limitations view."""
+
+    payload = make_report_input()
+    for name in ("bull_manager", "bear_manager", "risk_manager"):
+        result = getattr(payload.agent_result, name)
+        assert result is not None
+        setattr(
+            payload.agent_result,
+            name,
+            result.model_copy(
+                update={"missing_data": ["fundamentals.roe", "ohlcv.adj_close"]}
+            ),
+        )
+
+    report = ReportAssembler().assemble(payload)
+
+    for section_name in ("bull_case", "bear_case", "risk_review"):
+        section = StandardReportSection.model_validate(report.report_json[section_name])
+        assert not any("fundamentals.roe" in item for item in section.uncertainties)
+        assert not any("ohlcv.adj_close" in item for item in section.uncertainties)
+
+
+def test_report_does_not_revalidate_accepted_claim_citation() -> None:
+    """Report preserves accepted Claim provenance without raw re-grounding."""
 
     payload = make_report_input()
     result = payload.agent_result.analyst_results[AgentName.FUNDAMENTAL_ANALYST]
@@ -154,5 +335,8 @@ def test_unknown_agent_citation_is_rejected() -> None:
         citations=[fabricated],
     )
 
-    with pytest.raises(ReportCitationError, match="absent"):
-        ReportAssembler().assemble(payload)
+    report = ReportAssembler().assemble(payload)
+
+    section = StandardReportSection.model_validate(report.report_json["fundamentals"])
+    assert section.inferences[0].citations == [fabricated]
+    assert section.inferences[0].claim_status == "accepted"

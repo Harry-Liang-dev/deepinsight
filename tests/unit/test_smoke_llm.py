@@ -2,10 +2,18 @@
 
 from __future__ import annotations
 
+from typing import cast
+
 from pydantic import SecretStr
 
-from scripts.smoke_llm import _diagnostic_request
-from src.core import AppSettings, OpenAISettings
+from scripts.smoke_llm import _diagnostic_request, _validate_response
+from src.core import (
+    AppSettings,
+    LLMProviderName,
+    LLMSettings,
+    OpenAISettings,
+    QwenSettings,
+)
 
 
 def test_diagnostic_request_matches_provider_request_without_credentials() -> None:
@@ -24,6 +32,7 @@ def test_diagnostic_request_matches_provider_request_without_credentials() -> No
     diagnostic = _diagnostic_request(settings)
 
     assert diagnostic["endpoint"] == "https://api.openai.com/v1/responses"
+    assert diagnostic["provider"] == "openai"
     assert diagnostic["request_body"] == {
         "model": "gpt-5.6-luna",
         "instructions": (
@@ -39,3 +48,46 @@ def test_diagnostic_request_matches_provider_request_without_credentials() -> No
     }
     assert "api_key" not in repr(diagnostic)
     assert "must-not-appear" not in repr(diagnostic)
+
+
+def test_qwen_diagnostic_uses_selected_provider_without_credentials() -> None:
+    """Qwen diagnostics should describe the same unified request boundary."""
+
+    settings = AppSettings(
+        llm=LLMSettings(provider=LLMProviderName.QWEN),
+        qwen=QwenSettings(
+            api_key=SecretStr("qwen-must-not-appear"),
+            model_fast="qwen3.7-flash",
+            base_url="https://example.invalid/compatible-mode/v1",
+            timeout_seconds=19,
+            max_retries=0,
+            store_remote=False,
+            enable_thinking=False,
+        ),
+    )
+
+    diagnostic = _diagnostic_request(settings)
+    request_body = cast(dict[str, object], diagnostic["request_body"])
+
+    assert diagnostic["provider"] == "qwen"
+    assert diagnostic["endpoint"] == (
+        "https://example.invalid/compatible-mode/v1/responses"
+    )
+    assert request_body["model"] == "qwen3.7-flash"
+    assert request_body["enable_thinking"] is False
+    assert "qwen-must-not-appear" not in repr(diagnostic)
+
+
+def test_smoke_accepts_schema_valid_nonempty_provider_lists() -> None:
+    """Smoke must not add a stricter list cardinality than the Agent schema."""
+
+    response = _validate_response(
+        {
+            "confirmed_risks": ["first", "second"],
+            "scenario_risks": ["scenario"],
+            "watch_items": ["watch"],
+            "narrative_risk_score": 0.25,
+        }
+    )
+
+    assert response.confirmed_risks == ["first", "second"]

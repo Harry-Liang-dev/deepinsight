@@ -39,6 +39,7 @@ def test_gateway_round_trips_fake_response_through_duckdb(tmp_path: Path) -> Non
         "configured-model",
         "Return structured research JSON.",
         {"asset_id": "US:AAPL"},
+        provider="fake",
     )
     stored = cache.get(key)
     assert stored is not None

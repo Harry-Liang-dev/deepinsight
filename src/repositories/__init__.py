@@ -1,11 +1,12 @@
 """Public DuckDB persistence boundary for Phase One."""
 
-from src.repositories.base import RepositoryError
+from src.repositories.base import RepositoryError, TransientRepositoryError
 from src.repositories.database import (
     DatabaseInitializationError,
     DuckDBDatabase,
 )
 from src.repositories.documents import DocumentRepository
+from src.repositories.evaluations import EvaluationRepository
 from src.repositories.llm_cache import LLMCacheRepository
 from src.repositories.market_data import (
     InstrumentRepository,
@@ -15,6 +16,7 @@ from src.repositories.market_data import (
 from src.repositories.memory import MemoryItemRepository
 from src.repositories.records import (
     AgentRunRecord,
+    EvaluationRecord,
     IngestionJobRecord,
     LLMCacheRecord,
     MemoryItemRecord,
@@ -45,6 +47,8 @@ __all__ = [
     "DatabaseInitializationError",
     "DocumentRepository",
     "DuckDBDatabase",
+    "EvaluationRecord",
+    "EvaluationRepository",
     "FaissVectorRepository",
     "IngestionJobRecord",
     "IngestionJobRepository",
@@ -58,6 +62,7 @@ __all__ = [
     "ReportJobRecord",
     "ReportJobRepository",
     "RepositoryError",
+    "TransientRepositoryError",
     "SourceRegistryRecord",
     "SourceRegistryRepository",
     "VectorDimensionError",

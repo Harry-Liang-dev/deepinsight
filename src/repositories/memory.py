@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
+
 from src.repositories.base import (
     BaseRepository,
     RepositoryError,
@@ -56,7 +58,7 @@ class MemoryItemRepository(BaseRepository):
                 record.memory_level.value,
                 record.namespace_key,
                 None if record.asset_id is None else str(record.asset_id),
-                record.effective_ts,
+                _utc_naive(record.effective_ts),
                 record.memory_type,
                 record.importance_score,
                 record.summary_text,
@@ -70,7 +72,7 @@ class MemoryItemRepository(BaseRepository):
                 record.faiss_namespace,
                 record.faiss_vector_id,
                 record.created_by,
-                record.expires_at,
+                (None if record.expires_at is None else _utc_naive(record.expires_at)),
             ),
         )
 
@@ -164,3 +166,11 @@ def _map_memory_row(row: tuple[object, ...]) -> MemoryItemRecord:
         else SourceReference.model_validate(decode_json_object(raw_source))
     )
     return MemoryItemRecord.model_validate(values)
+
+
+def _utc_naive(value: datetime) -> datetime:
+    """Encode a datetime as UTC for DuckDB's timezone-naive TIMESTAMP."""
+
+    if value.tzinfo is None:
+        return value
+    return value.astimezone(UTC).replace(tzinfo=None)

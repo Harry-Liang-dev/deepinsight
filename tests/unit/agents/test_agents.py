@@ -12,14 +12,10 @@ import pytest
 from src.agents import (
     AgentExecutionResult,
     AgentInvocation,
-    BearManagerAgent,
-    BullManagerAgent,
     FundamentalAnalystAgent,
     NewsEventAnalystAgent,
     PromptLoader,
     PromptLoadError,
-    ResearchManagerAgent,
-    RiskManagerAgent,
     SentimentAnalystAgent,
     TechnicalTextAnalystAgent,
 )
@@ -31,23 +27,21 @@ from src.models.enums import (
     ReportMarketScope,
 )
 from src.models.identifiers import AssetId
-from src.models.types import JsonObject
+from src.models.types import DomainModel, JsonObject
 from src.repositories.records import AgentRunRecord
 from src.schemas.agents import (
     AgentContext,
     AgentRequest,
     AnalystAnalysis,
+    AnalystDraftClaim,
     AnalystResponse,
-    BearManagerRequest,
-    BearManagerResponse,
-    BullManagerRequest,
-    BullManagerResponse,
     FundamentalAnalysis,
     FundamentalAnalystResponse,
-    ResearchManagerRequest,
-    ResearchManagerResponse,
-    ResearchSummary,
-    RiskManagerRequest,
+    NewsDraftResponse,
+    RoleEvidenceManifest,
+    RoleEvidenceManifestEntry,
+    SentimentDraftResponse,
+    TechnicalDraftResponse,
 )
 from src.schemas.common import SourceReference
 from src.schemas.documents import RetrievedDocument
@@ -69,7 +63,12 @@ class FixedGateway:
         model: str,
         system_prompt: str,
         input_payload: JsonObject,
+        *,
+        prompt_version: str,
+        schema_version: str,
+        response_model: type[DomainModel],
     ) -> JsonObject:
+        del model, system_prompt, prompt_version, schema_version, response_model
         self.calls.append(input_payload)
         return self.response
 
@@ -207,7 +206,7 @@ def test_fundamental_agent_validates_and_links_every_claim() -> None:
     assert len(result.evidence) == 5
     assert result.uncertainties == ["Only one filing was supplied."]
     assert len(gateway.calls) == 1
-    assert logger.records[0].prompt_template_ver == "v5"
+    assert logger.records[0].prompt_template_ver == "v10"
     assert logger.records[0].status == "ok"
 
 
@@ -225,103 +224,55 @@ def test_each_nonfundamental_analyst_runs_with_fake_gateway(
 ) -> None:
     """Each remaining Analyst should run independently and offline."""
 
-    response = _analyst_output(agent_name)
     request = _agent_request(agent_name)
+    if agent_name is AgentName.SENTIMENT_ANALYST:
+        evidence_id = "ev_sentiment_fixture"
+        request.input_context.role_evidence_manifest = RoleEvidenceManifest(
+            agent_name=agent_name,
+            entries=(
+                RoleEvidenceManifestEntry(
+                    evidence_id=evidence_id,
+                    evidence_type="document",
+                    source=_citation(),
+                    short_description="Evidence-backed sentiment point.",
+                ),
+            ),
+        )
+        raw_response: JsonObject = {
+            "agent_name": agent_name.value,
+            "status": "ok",
+            "analysis": {
+                "claims": [
+                    {
+                        "claim_path": "analysis.key_points[0]",
+                        "claim_text": "Evidence-backed sentiment point.",
+                        "numeric_literals": [],
+                        "evidence_ids": [evidence_id],
+                        "derivation_type": "direct_evidence",
+                    }
+                ],
+                "uncertainties": ["Coverage is limited."],
+            },
+        }
+    else:
+        response = _analyst_output(agent_name)
+        raw_response = cast(JsonObject, response.model_dump(mode="json"))
     result, _, logger = _run(
         agent_class,
         agent_name,
-        cast(JsonObject, response.model_dump(mode="json")),
+        raw_response,
         cast(JsonObject, request.model_dump(mode="json")),
     )
 
     assert result.status is AgentStatus.OK
-    assert len(result.evidence) == 2
+    assert len(result.evidence) == (
+        1 if agent_name is AgentName.SENTIMENT_ANALYST else 2
+    )
     assert logger.records[0].agent_name is agent_name
-    assert logger.records[0].prompt_template_ver == "v4"
-
-
-def test_research_and_thesis_and_risk_managers_run_independently() -> None:
-    """All four Managers should accept the preceding typed contracts."""
-
-    analyst = _fundamental_output()
-    summary = ResearchSummary(
-        summary_points=["Revenue increased."],
-        conflicts=[],
-        supporting_citations=[_citation()],
+    expected_prompt_version = (
+        "v8" if agent_name is AgentName.SENTIMENT_ANALYST else "v9"
     )
-    research_request = ResearchManagerRequest(
-        input_context=_context(),
-        analyst_outputs=[analyst],
-    )
-    research_response = ResearchManagerResponse(
-        status=AgentStatus.OK,
-        analysis=summary,
-    )
-    research_result, _, _ = _run(
-        ResearchManagerAgent,
-        AgentName.RESEARCH_MANAGER,
-        cast(JsonObject, research_response.model_dump(mode="json")),
-        cast(JsonObject, research_request.model_dump(mode="json")),
-    )
-
-    bull = BullManagerResponse(
-        bull_thesis=["Growth remains positive."],
-        conditions_required=["Demand remains stable."],
-        invalidators=["Revenue contracts."],
-        confidence=0.6,
-    )
-    bear = BearManagerResponse(
-        bear_thesis=["Valuation is elevated."],
-        conditions_required=["Growth slows."],
-        invalidators=["Growth accelerates."],
-        confidence=0.5,
-    )
-    bull_request = BullManagerRequest(
-        input_context=_context(),
-        analyst_outputs=[analyst],
-        research_summary=summary,
-    )
-    bear_request = BearManagerRequest(
-        input_context=_context(),
-        analyst_outputs=[analyst],
-        research_summary=summary,
-    )
-    bull_result, _, _ = _run(
-        BullManagerAgent,
-        AgentName.BULL_MANAGER,
-        cast(JsonObject, bull.model_dump(mode="json")),
-        cast(JsonObject, bull_request.model_dump(mode="json")),
-    )
-    bear_result, _, _ = _run(
-        BearManagerAgent,
-        AgentName.BEAR_MANAGER,
-        cast(JsonObject, bear.model_dump(mode="json")),
-        cast(JsonObject, bear_request.model_dump(mode="json")),
-    )
-    risk_request = RiskManagerRequest(
-        input_context=_context(),
-        analyst_outputs=[analyst],
-        research_summary=summary,
-        bull_output=bull,
-        bear_output=bear,
-    )
-    risk_result, _, _ = _run(
-        RiskManagerAgent,
-        AgentName.RISK_MANAGER,
-        {
-            "confirmed_risks": ["Valuation is elevated."],
-            "scenario_risks": ["Demand may slow."],
-            "watch_items": ["Revenue growth."],
-            "narrative_risk_score": 0.5,
-        },
-        cast(JsonObject, risk_request.model_dump(mode="json")),
-    )
-
-    assert research_result.status is AgentStatus.OK
-    assert bull_result.status is AgentStatus.OK
-    assert bear_result.status is AgentStatus.OK
-    assert risk_result.status is AgentStatus.OK
-    assert all(result.evidence for result in (bull_result, bear_result, risk_result))
+    assert logger.records[0].prompt_template_ver == expected_prompt_version
 
 
 def test_invalid_schema_and_fabricated_citation_are_rejected() -> None:
@@ -417,6 +368,102 @@ def test_sell_through_business_metric_is_not_a_trading_instruction() -> None:
     assert logger.records[0].status == "ok"
 
 
+def test_attributed_analyst_price_target_is_not_an_execution_instruction() -> None:
+    """A reported analyst target is research evidence, not an executable order."""
+
+    response = _analyst_output(AgentName.NEWS_EVENT_ANALYST)
+    response.analysis.key_points = [
+        "The cited media report states an analyst price target was reduced."
+    ]
+    request = _agent_request(AgentName.NEWS_EVENT_ANALYST)
+
+    result, _, logger = _run(
+        NewsEventAnalystAgent,
+        AgentName.NEWS_EVENT_ANALYST,
+        cast(JsonObject, response.model_dump(mode="json")),
+        cast(JsonObject, request.model_dump(mode="json")),
+    )
+
+    assert result.status is AgentStatus.OK
+    assert logger.records[0].status == "ok"
+
+
+def test_gateway_receives_compact_evidence_while_audit_keeps_full_contract() -> None:
+    """Inference de-duplicates lineage without weakening durable validation."""
+
+    response = _analyst_output(AgentName.TECHNICAL_TEXT_ANALYST)
+    request = _agent_request(AgentName.TECHNICAL_TEXT_ANALYST)
+    payload = cast(JsonObject, request.model_dump(mode="json"))
+    payload["research_contract"] = {
+        "data": {"sections": [{"capability": "technical_features", "items": [1]}]},
+        "data_evidence_index": {
+            "ev-1": {
+                "evidence_id": "ev-1",
+                "field_path": "technical_features.sma_20",
+                "effective_at": "2026-07-31T00:00:00Z",
+                "value": 205.0,
+                "unit": "USD",
+                "parent_evidence_ids": ["ev-parent"],
+                "content_hash": "sensitive-duplicate-lineage",
+                "source": {
+                    "provider_name": "fixture",
+                    "normalized_record_key": "bar-1",
+                    "provider_locator": "fixture:bar:1",
+                    "content_hash": "duplicate-source-metadata",
+                },
+            }
+        },
+    }
+    gateway = FixedGateway(cast(JsonObject, response.model_dump(mode="json")))
+    logger = CapturingRunLogger()
+    agent = TechnicalTextAnalystAgent(
+        gateway,
+        MemoryFake(),
+        PromptLoader(PROMPT_ROOT),
+        logger,
+        clock=lambda: NOW,
+    )
+
+    result = agent.run(
+        AgentInvocation(
+            run_id="run-compact-contract",
+            model_name="fake-model",
+            input_payload=payload,
+        )
+    )
+
+    assert result.status is AgentStatus.OK
+    inference_contract = gateway.calls[0]["research_contract"]
+    assert isinstance(inference_contract, dict)
+    inference_data = inference_contract["data"]
+    assert isinstance(inference_data, dict)
+    inference_sections = inference_data["sections"]
+    assert isinstance(inference_sections, list)
+    assert isinstance(inference_sections[0], dict)
+    assert inference_sections[0].get("items") is None
+    inference_index = inference_contract["data_evidence_index"]
+    assert isinstance(inference_index, dict)
+    compact = inference_index["ev-1"]
+    assert isinstance(compact, dict)
+    assert compact["value"] == 205.0
+    assert "parent_evidence_ids" not in compact
+    audit_payload = logger.records[0].input_payload["input_payload"]
+    assert isinstance(audit_payload, dict)
+    audit_contract = audit_payload["research_contract"]
+    assert isinstance(audit_contract, dict)
+    audit_data = audit_contract["data"]
+    assert isinstance(audit_data, dict)
+    audit_sections = audit_data["sections"]
+    assert isinstance(audit_sections, list)
+    assert isinstance(audit_sections[0], dict)
+    assert audit_sections[0]["items"] == [1]
+    audit_index = audit_contract["data_evidence_index"]
+    assert isinstance(audit_index, dict)
+    audit_item = audit_index["ev-1"]
+    assert isinstance(audit_item, dict)
+    assert audit_item["parent_evidence_ids"] == ["ev-parent"]
+
+
 def test_memory_failure_is_explicit_and_existing_evidence_allows_degradation() -> None:
     """Unavailable Memory should be visible while document-backed work continues."""
 
@@ -462,6 +509,7 @@ def test_memory_failure_is_explicit_and_existing_evidence_allows_degradation() -
             }
         ],
         "memories": [],
+        "structured_evidence": [],
     }
 
 
@@ -470,10 +518,136 @@ def test_prompts_are_versioned_and_missing_prompt_is_explicit(tmp_path: Path) ->
 
     prompt = PromptLoader(PROMPT_ROOT).load(AgentName.RISK_MANAGER)
 
-    assert prompt.version == "v4"
+    assert prompt.version == "v7"
     assert "trade" in prompt.system_prompt
+    archived = PromptLoader(PROMPT_ROOT / "archive" / "pre_agent_contract_v1").load(
+        AgentName.RISK_MANAGER
+    )
+    assert archived.version == "v4"
+    candidate_v1 = PromptLoader(
+        PROMPT_ROOT / "archive" / "agent_contract_candidate_v1"
+    ).load(AgentName.RISK_MANAGER)
+    assert candidate_v1.version == "v5"
+    candidate_v2 = PromptLoader(
+        PROMPT_ROOT / "archive" / "agent_contract_candidate_v2"
+    ).load(AgentName.RISK_MANAGER)
+    assert candidate_v2.version == "v6"
+    candidate_v3 = PromptLoader(
+        PROMPT_ROOT / "archive" / "agent_contract_candidate_v3"
+    ).load(AgentName.RISK_MANAGER)
+    assert candidate_v3.version == "v7"
     with pytest.raises(PromptLoadError, match="unavailable"):
         PromptLoader(tmp_path).load(AgentName.RISK_MANAGER)
+
+
+@pytest.mark.parametrize(
+    "agent_name",
+    [
+        AgentName.FUNDAMENTAL_ANALYST,
+        AgentName.TECHNICAL_TEXT_ANALYST,
+        AgentName.SENTIMENT_ANALYST,
+        AgentName.NEWS_EVENT_ANALYST,
+    ],
+)
+def test_prompts_define_the_role_manifest_and_numeric_contract(
+    agent_name: AgentName,
+) -> None:
+    """Only Analysts receive the strict raw-Evidence contract."""
+
+    prompt = " ".join(PromptLoader(PROMPT_ROOT).load(agent_name).system_prompt.split())
+
+    assert "RoleEvidenceManifest is the sole citation namespace" in prompt
+    assert "Absence of evidence is not evidence of absence" in prompt
+    assert "never invent, shorten, alias, or repair an Evidence ID" in prompt
+    assert "Do not calculate percentages, ratios, unit conversions" in prompt
+
+
+@pytest.mark.parametrize(
+    "agent_name",
+    [
+        AgentName.FUNDAMENTAL_ANALYST,
+        AgentName.TECHNICAL_TEXT_ANALYST,
+        AgentName.SENTIMENT_ANALYST,
+        AgentName.NEWS_EVENT_ANALYST,
+    ],
+)
+def test_analyst_prompt_claim_fields_match_draft_contract(
+    agent_name: AgentName,
+) -> None:
+    """Active Analyst prompts must not require fields forbidden by the Draft."""
+
+    prompt = PromptLoader(PROMPT_ROOT).load(agent_name).system_prompt
+    normalized_prompt = " ".join(prompt.split())
+    allowed = set(AnalystDraftClaim.model_fields)
+    expected = {
+        "claim_id",
+        "claim_type",
+        "claim_path",
+        "claim_text",
+        "numeric_literals",
+        "evidence_ids",
+        "confidence",
+    }
+
+    assert expected <= allowed
+    assert '"derivation_type"' not in prompt
+    assert "do not return a derivation_type field" in normalized_prompt
+
+
+@pytest.mark.parametrize(
+    ("agent_name", "response_model"),
+    [
+        (AgentName.TECHNICAL_TEXT_ANALYST, TechnicalDraftResponse),
+        (AgentName.SENTIMENT_ANALYST, SentimentDraftResponse),
+        (AgentName.NEWS_EVENT_ANALYST, NewsDraftResponse),
+    ],
+)
+def test_live_style_analyst_claim_matches_draft_schema(
+    agent_name: AgentName,
+    response_model: type[DomainModel],
+) -> None:
+    """The active Prompt example shape validates at the Gateway boundary."""
+
+    parsed = response_model.model_validate(
+        {
+            "agent_name": agent_name.value,
+            "status": "ok",
+            "analysis": {
+                "claims": [
+                    {
+                        "claim_path": "analysis.facts[0]",
+                        "claim_text": "Evidence-backed fact.",
+                        "numeric_literals": [],
+                        "evidence_ids": ["canonical-evidence-id"],
+                    }
+                ],
+                "uncertainties": [],
+            },
+        }
+    )
+
+    assert parsed.model_dump(mode="json")["analysis"]["claims"]
+
+
+@pytest.mark.parametrize(
+    "agent_name",
+    [
+        AgentName.RESEARCH_MANAGER,
+        AgentName.BULL_MANAGER,
+        AgentName.BEAR_MANAGER,
+        AgentName.RISK_MANAGER,
+    ],
+)
+def test_manager_prompts_use_upstream_claims_not_raw_evidence(
+    agent_name: AgentName,
+) -> None:
+    """Managers must consume Claim IDs and never reconstruct raw grounding."""
+
+    prompt = " ".join(PromptLoader(PROMPT_ROOT).load(agent_name).system_prompt.split())
+
+    assert "upstream claim_id" in prompt
+    assert "Never reference raw Evidence IDs" in prompt
+    assert "RoleEvidenceManifest is the sole citation namespace" not in prompt
 
 
 @pytest.mark.parametrize(
@@ -493,11 +667,58 @@ def test_normalized_score_prompts_define_range_and_forbid_other_scales(
     prompt = PromptLoader(PROMPT_ROOT).load(agent_name)
     normalized_prompt = " ".join(prompt.system_prompt.split())
 
-    expected_version = "v5" if agent_name is AgentName.FUNDAMENTAL_ANALYST else "v4"
+    expected_version = {
+        AgentName.FUNDAMENTAL_ANALYST: "v10",
+        AgentName.BULL_MANAGER: "v8",
+        AgentName.BEAR_MANAGER: "v10",
+        AgentName.RISK_MANAGER: "v7",
+    }[agent_name]
     assert prompt.version == expected_version
     assert "between 0.0 and 1.0 inclusive" in normalized_prompt
     assert "Never use a 1-to-5 or 0-to-100 scale" in normalized_prompt
     assert "not 3 or 60" in normalized_prompt
+    if agent_name is AgentName.BEAR_MANAGER:
+        assert '"claim_type"' not in prompt.system_prompt
+
+
+def test_completion_prompts_require_available_research_categories() -> None:
+    """Live report coverage must consume, rather than relabel, available data."""
+
+    fundamental = " ".join(
+        PromptLoader(PROMPT_ROOT)
+        .load(AgentName.FUNDAMENTAL_ANALYST)
+        .system_prompt.split()
+    )
+    technical = " ".join(
+        PromptLoader(PROMPT_ROOT)
+        .load(AgentName.TECHNICAL_TEXT_ANALYST)
+        .system_prompt.split()
+    )
+    news = " ".join(
+        PromptLoader(PROMPT_ROOT)
+        .load(AgentName.NEWS_EVENT_ANALYST)
+        .system_prompt.split()
+    )
+
+    for category in (
+        "Growth",
+        "Margins",
+        "Profitability",
+        "Balance Sheet/Liquidity",
+        "Valuation",
+    ):
+        assert category in fundamental
+    for category in (
+        "Trend",
+        "Momentum",
+        "Volatility",
+        "Volume",
+        "Relative Strength",
+        "Drawdown",
+    ):
+        assert category in technical
+    for category in ("rates", "inflation", "labor", "growth", "financial-stress"):
+        assert category in news
 
 
 def test_agent_modules_do_not_import_storage_provider_or_openai_boundaries() -> None:

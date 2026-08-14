@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from datetime import date
+from datetime import date, datetime
 
 from src.models.identifiers import AssetId
 from src.repositories.base import (
@@ -19,6 +19,9 @@ from src.schemas.market_data import (
     FundamentalRecord,
     InstrumentRecord,
     MacroObservationRecord,
+    NewsEvidenceRecord,
+    SentimentEvidenceRecord,
+    SentimentSnapshotRecord,
 )
 
 _INSTRUMENT_COLUMNS = (
@@ -63,6 +66,8 @@ _EOD_COLUMNS = (
     "volume",
     "turnover",
     "vwap",
+    "feed_identity",
+    "coverage_scope",
     "source_id",
     "ingestion_ts",
 )
@@ -77,10 +82,16 @@ _FUNDAMENTAL_COLUMNS = (
     "net_income",
     "eps_basic",
     "total_assets",
+    "current_assets",
     "total_liabilities",
+    "current_liabilities",
+    "total_debt",
     "shareholders_equity",
     "operating_cash_flow",
+    "shares_outstanding",
     "free_cash_flow",
+    "revenue_yoy",
+    "net_income_yoy",
     "gross_margin",
     "operating_margin",
     "net_margin",
@@ -88,9 +99,17 @@ _FUNDAMENTAL_COLUMNS = (
     "roa",
     "debt_to_equity",
     "current_ratio",
+    "eps_ttm",
+    "book_value_per_share",
+    "market_cap",
     "pe_ttm",
     "pb",
+    "earnings_yield",
+    "source_locator",
+    "quality",
     "filing_url",
+    "filing_date",
+    "accepted_at",
     "source_id",
     "ingestion_ts",
 )
@@ -105,6 +124,7 @@ _MACRO_COLUMNS = (
     "frequency",
     "realtime_start",
     "realtime_end",
+    "source_locator",
     "source_id",
     "ingestion_ts",
 )
@@ -123,6 +143,51 @@ _EVENT_COLUMNS = (
     "tags_json",
     "impact_window_days",
     "has_document",
+)
+
+_SENTIMENT_SNAPSHOT_COLUMNS = (
+    "asset_id",
+    "as_of",
+    "provider",
+    "score",
+    "label",
+    "bullish_pct",
+    "bearish_pct",
+    "message_volume_score",
+    "message_volume_label",
+    "source_timestamp",
+    "quality",
+    "source_locator",
+    "evidence_class",
+    "ingestion_ts",
+)
+
+_SENTIMENT_EVIDENCE_COLUMNS = (
+    "source",
+    "message_id",
+    "asset_id",
+    "created_at",
+    "text",
+    "declared_sentiment",
+    "source_locator",
+    "evidence_class",
+    "ingestion_ts",
+)
+
+_NEWS_COLUMNS = (
+    "news_id",
+    "asset_id",
+    "headline",
+    "summary",
+    "content",
+    "author",
+    "created_at",
+    "updated_at",
+    "source_url",
+    "provider",
+    "original_source",
+    "source_locator",
+    "ingestion_ts",
 )
 
 
@@ -277,6 +342,8 @@ class MarketDataRepository(BaseRepository):
                 record.volume,
                 record.turnover,
                 record.vwap,
+                record.feed_identity,
+                record.coverage_scope,
                 record.source_id,
                 record.ingestion_ts,
             ),
@@ -310,13 +377,17 @@ class MarketDataRepository(BaseRepository):
         asset_id: AssetId,
         *,
         end_date: date,
+        start_date: date | None = None,
+        ingested_as_of: datetime | None = None,
         limit: int = 60,
     ) -> list[EodBarRecord]:
-        """Return recent bars in chronological order for feature computation.
+        """Return point-in-time bars in chronological order.
 
         Args:
             asset_id: Canonical security identifier.
             end_date: Inclusive latest trading date.
+            start_date: Optional inclusive earliest trading date.
+            ingested_as_of: Optional inclusive ingestion-time cutoff.
             limit: Maximum number of recent observations.
 
         Returns:
@@ -325,15 +396,26 @@ class MarketDataRepository(BaseRepository):
 
         if limit <= 0:
             raise ValueError("EOD bar limit must be positive")
+        if start_date is not None and end_date < start_date:
+            raise ValueError("EOD bar end_date cannot precede start_date")
+        predicates = ["asset_id = ?", "trade_date <= ?"]
+        parameters: list[object] = [str(asset_id), end_date]
+        if start_date is not None:
+            predicates.append("trade_date >= ?")
+            parameters.append(start_date)
+        if ingested_as_of is not None:
+            predicates.append("ingestion_ts <= ?")
+            parameters.append(_database_timestamp(ingested_as_of))
+        parameters.append(limit)
         rows = self._fetch_all(
             f"""
             SELECT {", ".join(_EOD_COLUMNS)}
             FROM eod_bars
-            WHERE asset_id = ? AND trade_date <= ?
+            WHERE {" AND ".join(predicates)}
             ORDER BY trade_date DESC
             LIMIT ?
             """,
-            (str(asset_id), end_date, limit),
+            parameters,
         )
         return [map_row(EodBarRecord, _EOD_COLUMNS, row) for row in reversed(rows)]
 
@@ -432,6 +514,18 @@ class MarketDataRepository(BaseRepository):
             ("series_key", "observation_date"),
             values,
         )
+        if record.realtime_start is not None and record.realtime_end is not None:
+            self._upsert(
+                "macro_series_vintages",
+                _MACRO_COLUMNS,
+                (
+                    "series_key",
+                    "observation_date",
+                    "realtime_start",
+                    "realtime_end",
+                ),
+                values,
+            )
 
     def get_macro_observation(
         self,
@@ -459,6 +553,175 @@ class MarketDataRepository(BaseRepository):
             if row is None
             else map_row(MacroObservationRecord, _MACRO_COLUMNS, row)
         )
+
+    def list_macro_observations(
+        self,
+        series_keys: Sequence[str],
+        *,
+        end_date: date,
+        as_of: datetime,
+    ) -> list[MacroObservationRecord]:
+        """Return the latest stored vintage known by the requested cutoff."""
+
+        if not series_keys:
+            return []
+        placeholders = ", ".join("?" for _ in series_keys)
+        columns = _MACRO_COLUMNS
+        rows = self._fetch_all(
+            f"""
+            SELECT {", ".join(columns)}
+            FROM macro_series_vintages AS candidate
+            WHERE series_key IN ({placeholders})
+              AND observation_date <= ?
+              AND realtime_start <= ?
+              AND ingestion_ts <= ?
+              AND realtime_start = (
+                  SELECT max(newer.realtime_start)
+                  FROM macro_series_vintages AS newer
+                  WHERE newer.series_key = candidate.series_key
+                    AND newer.observation_date = candidate.observation_date
+                    AND newer.realtime_start <= ?
+                    AND newer.ingestion_ts <= ?
+              )
+            ORDER BY series_key, observation_date
+            """,
+            (
+                *series_keys,
+                end_date,
+                as_of.date(),
+                _database_timestamp(as_of),
+                as_of.date(),
+                _database_timestamp(as_of),
+            ),
+        )
+        return [map_row(MacroObservationRecord, columns, row) for row in rows]
+
+    def upsert_sentiment_snapshot(self, record: SentimentSnapshotRecord) -> None:
+        """Idempotently persist one community sentiment observation."""
+
+        values = tuple(
+            str(record.asset_id) if column == "asset_id" else getattr(record, column)
+            for column in _SENTIMENT_SNAPSHOT_COLUMNS
+        )
+        self._upsert(
+            "sentiment_snapshots",
+            _SENTIMENT_SNAPSHOT_COLUMNS,
+            ("asset_id", "source_timestamp", "provider"),
+            values,
+        )
+
+    def list_sentiment_snapshots(
+        self,
+        asset_id: AssetId,
+        *,
+        start_at: datetime,
+        as_of: datetime,
+    ) -> list[SentimentSnapshotRecord]:
+        """Return point-in-time community sentiment history."""
+
+        rows = self._fetch_all(
+            f"""
+            SELECT {", ".join(_SENTIMENT_SNAPSHOT_COLUMNS)}
+            FROM sentiment_snapshots
+            WHERE asset_id = ?
+              AND source_timestamp >= ?
+              AND source_timestamp <= ?
+              AND ingestion_ts <= ?
+            ORDER BY source_timestamp, provider
+            """,
+            (
+                str(asset_id),
+                _database_timestamp(start_at),
+                _database_timestamp(as_of),
+                _database_timestamp(as_of),
+            ),
+        )
+        return [
+            map_row(SentimentSnapshotRecord, _SENTIMENT_SNAPSHOT_COLUMNS, row)
+            for row in rows
+        ]
+
+    def upsert_sentiment_evidence(self, record: SentimentEvidenceRecord) -> None:
+        """Idempotently persist one attributable community message."""
+
+        values = tuple(
+            str(record.asset_id) if column == "asset_id" else getattr(record, column)
+            for column in _SENTIMENT_EVIDENCE_COLUMNS
+        )
+        self._upsert(
+            "sentiment_evidence",
+            _SENTIMENT_EVIDENCE_COLUMNS,
+            ("source", "message_id"),
+            values,
+        )
+
+    def list_sentiment_evidence(
+        self,
+        asset_id: AssetId,
+        *,
+        start_at: datetime,
+        as_of: datetime,
+    ) -> list[SentimentEvidenceRecord]:
+        """Return attributable posts created and ingested by the cutoff."""
+
+        rows = self._fetch_all(
+            f"""
+            SELECT {", ".join(_SENTIMENT_EVIDENCE_COLUMNS)}
+            FROM sentiment_evidence
+            WHERE asset_id = ?
+              AND created_at >= ?
+              AND created_at <= ?
+              AND ingestion_ts <= ?
+            ORDER BY created_at, message_id
+            """,
+            (
+                str(asset_id),
+                _database_timestamp(start_at),
+                _database_timestamp(as_of),
+                _database_timestamp(as_of),
+            ),
+        )
+        return [
+            map_row(SentimentEvidenceRecord, _SENTIMENT_EVIDENCE_COLUMNS, row)
+            for row in rows
+        ]
+
+    def upsert_news_evidence(self, record: NewsEvidenceRecord) -> None:
+        """Idempotently persist canonical news attribution metadata."""
+
+        values = tuple(
+            str(record.asset_id) if column == "asset_id" else getattr(record, column)
+            for column in _NEWS_COLUMNS
+        )
+        self._upsert("news_evidence", _NEWS_COLUMNS, ("news_id",), values)
+
+    def list_news_evidence(
+        self,
+        asset_id: AssetId,
+        *,
+        start_at: datetime,
+        as_of: datetime,
+    ) -> list[NewsEvidenceRecord]:
+        """Return publication-time-safe canonical news records."""
+
+        rows = self._fetch_all(
+            f"""
+            SELECT {", ".join(_NEWS_COLUMNS)}
+            FROM news_evidence
+            WHERE asset_id = ?
+              AND created_at >= ?
+              AND created_at <= ?
+              AND ingestion_ts <= ?
+            ORDER BY created_at, news_id
+            """,
+            (
+                str(asset_id),
+                _database_timestamp(start_at),
+                _database_timestamp(as_of),
+                _database_timestamp(as_of),
+            ),
+        )
+        return [map_row(NewsEvidenceRecord, _NEWS_COLUMNS, row) for row in rows]
 
     def upsert_corporate_event(self, record: CorporateEventRecord) -> None:
         """Persist one normalized corporate event.
@@ -511,6 +774,36 @@ class MarketDataRepository(BaseRepository):
             values["tags_json"] = decode_json_object(values["tags_json"])
         return CorporateEventRecord.model_validate(values)
 
+    def list_corporate_events(
+        self,
+        asset_id: AssetId,
+        *,
+        start_at: datetime,
+        as_of: datetime,
+    ) -> list[CorporateEventRecord]:
+        """Return point-in-time asset event candidates in chronological order."""
+
+        rows = self._fetch_all(
+            f"""
+            SELECT {", ".join(_EVENT_COLUMNS)}
+            FROM corporate_events
+            WHERE asset_id = ? AND event_date >= ? AND event_date <= ?
+            ORDER BY event_date, event_id
+            """,
+            (
+                str(asset_id),
+                _database_timestamp(start_at),
+                _database_timestamp(as_of),
+            ),
+        )
+        records: list[CorporateEventRecord] = []
+        for row in rows:
+            values = dict(zip(_EVENT_COLUMNS, row, strict=True))
+            if values["tags_json"] is not None:
+                values["tags_json"] = decode_json_object(values["tags_json"])
+            records.append(CorporateEventRecord.model_validate(values))
+        return records
+
     def _upsert(
         self,
         table: str,
@@ -553,3 +846,11 @@ class MarketDataRepository(BaseRepository):
 
 def _placeholders(columns: Sequence[str]) -> str:
     return ", ".join("?" for _ in columns)
+
+
+def _database_timestamp(value: datetime) -> datetime:
+    """Match DuckDB's timezone-naive local ``TIMESTAMP`` representation."""
+
+    if value.tzinfo is None or value.utcoffset() is None:
+        return value
+    return value.astimezone().replace(tzinfo=None)

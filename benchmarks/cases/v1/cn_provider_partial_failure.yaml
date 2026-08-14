@@ -1,0 +1,73 @@
+benchmark_version: research_benchmark_v1
+case_id: cn_provider_partial_failure
+case_version: v1
+scenario: provider_partial_failure
+market: CN
+asset_id: CN:999998.SZ
+report_date: 2026-08-01
+expected_outcome: report
+sources:
+  - evidence_id: cn-partial-available-source
+    fixture_kind: synthetic
+    provider: benchmark_fixture
+    document_id: cn-partial-document
+    excerpt_ref: cn-partial-chunk
+    source_locator: benchmarks/cases/v1/cn_provider_partial_failure.yaml
+    collected_at: 2026-08-01
+    published_at: "2026-07-27T08:00:00+00:00"
+    usage_basis: Synthetic redistribution-safe partial Provider scenario.
+    text: >-
+      The annual disclosure was available. Revenue was stable. The market price
+      history provider failed. Valuation and volatility could not be verified.
+known_missing_data: [market_price_history]
+simulated_failures: [market_price_provider_timeout]
+report:
+  title: CN Provider Partial Failure Benchmark Report
+  facts:
+    - text: The annual disclosure was available.
+      evidence_ids: [cn-partial-available-source]
+    - text: Revenue was stable.
+      evidence_ids: [cn-partial-available-source]
+    - text: The market price history provider failed.
+      evidence_ids: [cn-partial-available-source]
+  inferences:
+    - text: Valuation and volatility could not be verified.
+      evidence_ids: [cn-partial-available-source]
+  risks:
+    - text: The Provider failure limits price-sensitive conclusions.
+      evidence_ids: [cn-partial-available-source]
+  uncertainties:
+    - "Known missing data: market_price_history."
+    - No values were synthesized for the failed Provider stream.
+  bull_summary: Stable revenue is the only available positive evidence.
+  bear_summary: Missing market history prevents price-sensitive analysis.
+  risk_summary: Provider incompleteness is an explicit analysis limitation.
+  final_recommendation: The report is data-limited and no trading action is provided.
+observed_failure_code: null
+expected:
+  required_facts:
+    - The annual disclosure was available.
+    - The market price history provider failed.
+  allowed_missing_items: [market_price_history]
+  forbidden_conclusions:
+    - buy the stock
+    - sell the shares
+    - guaranteed return
+  expected_failure_code: null
+thresholds:
+  lifecycle_compliance_min: 1.0
+  deterministic_score_min: 1.0
+  expected_fact_coverage_min: 1.0
+  forbidden_conclusion_compliance_min: 1.0
+  check_minimums:
+    structure_completeness: 1.0
+    numeric_grounding: 1.0
+    citation_coverage: 1.0
+    citation_traceability: 1.0
+    uncertainty_presence: 1.0
+    temporal_validity: 1.0
+    trading_instruction_compliance: 1.0
+    missing_data_disclosure: 1.0
+  live_dimension_minimums:
+    uncertainty_expression: 0.8
+    missing_data_disclosure: 1.0

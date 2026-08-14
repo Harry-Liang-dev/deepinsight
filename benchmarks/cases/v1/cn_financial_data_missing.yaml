@@ -1,0 +1,72 @@
+benchmark_version: research_benchmark_v1
+case_id: cn_financial_data_missing
+case_version: v1
+scenario: financial_data_missing
+market: CN
+asset_id: CN:999999.SH
+report_date: 2026-08-01
+expected_outcome: report
+sources:
+  - evidence_id: cn-missing-disclosure
+    fixture_kind: synthetic
+    provider: benchmark_fixture
+    document_id: cn-missing-document
+    excerpt_ref: cn-missing-chunk
+    source_locator: benchmarks/cases/v1/cn_financial_data_missing.yaml
+    collected_at: 2026-08-01
+    published_at: "2026-07-29T08:00:00+00:00"
+    usage_basis: Synthetic redistribution-safe CN disclosure scenario.
+    text: >-
+      The issuer disclosed revenue growth. The operating cash flow table was
+      unavailable. Management stated that demand remained stable. Margin
+      direction could not be verified.
+known_missing_data: [operating_cash_flow]
+simulated_failures: [fundamental_stream_missing]
+report:
+  title: CN Financial Data Missing Benchmark Report
+  facts:
+    - text: The issuer disclosed revenue growth.
+      evidence_ids: [cn-missing-disclosure]
+    - text: The operating cash flow table was unavailable.
+      evidence_ids: [cn-missing-disclosure]
+  inferences:
+    - text: Management stated that demand remained stable.
+      evidence_ids: [cn-missing-disclosure]
+  risks:
+    - text: Margin direction could not be verified.
+      evidence_ids: [cn-missing-disclosure]
+  uncertainties:
+    - "Known missing data: operating_cash_flow."
+    - The missing cash flow table limits fundamental quality assessment.
+  bull_summary: Disclosed revenue growth is the principal positive evidence.
+  bear_summary: Missing cash flow data prevents a complete quality assessment.
+  risk_summary: Cash flow and margin direction remain uncertain.
+  final_recommendation: The evidence is incomplete and no trading action is provided.
+observed_failure_code: null
+expected:
+  required_facts:
+    - The issuer disclosed revenue growth.
+    - The operating cash flow table was unavailable.
+  allowed_missing_items: [operating_cash_flow]
+  forbidden_conclusions:
+    - buy the stock
+    - sell the shares
+    - guaranteed return
+  expected_failure_code: null
+thresholds:
+  lifecycle_compliance_min: 1.0
+  deterministic_score_min: 1.0
+  expected_fact_coverage_min: 1.0
+  forbidden_conclusion_compliance_min: 1.0
+  check_minimums:
+    structure_completeness: 1.0
+    numeric_grounding: 1.0
+    citation_coverage: 1.0
+    citation_traceability: 1.0
+    uncertainty_presence: 1.0
+    temporal_validity: 1.0
+    trading_instruction_compliance: 1.0
+    missing_data_disclosure: 1.0
+  live_dimension_minimums:
+    uncertainty_expression: 0.8
+    missing_data_disclosure: 1.0

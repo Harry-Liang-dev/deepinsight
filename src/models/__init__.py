@@ -3,6 +3,7 @@
 from src.models.enums import (
     AgentName,
     AgentStatus,
+    ClaimIntent,
     DocumentType,
     EventSeverity,
     IngestionJobType,
@@ -27,6 +28,7 @@ __all__ = [
     "AgentName",
     "AgentProtocol",
     "AgentStatus",
+    "ClaimIntent",
     "AssetId",
     "DocumentType",
     "DomainModel",

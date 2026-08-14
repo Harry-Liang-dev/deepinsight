@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterator
+from contextlib import contextmanager
 from pathlib import Path
 
 import duckdb
@@ -12,7 +14,19 @@ from src.repositories import (
     CORE_TABLES,
     DatabaseInitializationError,
     DuckDBDatabase,
+    TransientRepositoryError,
 )
+from src.repositories.base import BaseRepository, RepositoryError
+
+
+class ProbeRepository(BaseRepository):
+    """Expose one protected read for Repository error classification tests."""
+
+    def read(self) -> tuple[object, ...] | None:
+        """Execute one harmless read through the shared Repository boundary."""
+
+        return self._fetch_one("SELECT 1", ())
+
 
 EXPECTED_SCHEMA = {
     "instruments": (
@@ -60,6 +74,8 @@ EXPECTED_SCHEMA = {
         "volume",
         "turnover",
         "vwap",
+        "feed_identity",
+        "coverage_scope",
         "source_id",
         "ingestion_ts",
         "p2_feature_blob_json",
@@ -74,10 +90,16 @@ EXPECTED_SCHEMA = {
         "net_income",
         "eps_basic",
         "total_assets",
+        "current_assets",
         "total_liabilities",
+        "current_liabilities",
+        "total_debt",
         "shareholders_equity",
         "operating_cash_flow",
+        "shares_outstanding",
         "free_cash_flow",
+        "revenue_yoy",
+        "net_income_yoy",
         "gross_margin",
         "operating_margin",
         "net_margin",
@@ -85,9 +107,17 @@ EXPECTED_SCHEMA = {
         "roa",
         "debt_to_equity",
         "current_ratio",
+        "eps_ttm",
+        "book_value_per_share",
+        "market_cap",
         "pe_ttm",
         "pb",
+        "earnings_yield",
+        "source_locator",
+        "quality",
         "filing_url",
+        "filing_date",
+        "accepted_at",
         "source_id",
         "ingestion_ts",
         "p2_factor_blob_json",
@@ -102,9 +132,66 @@ EXPECTED_SCHEMA = {
         "frequency",
         "realtime_start",
         "realtime_end",
+        "source_locator",
         "source_id",
         "ingestion_ts",
         "p2_regime_feature_json",
+    ),
+    "macro_series_vintages": (
+        "series_key",
+        "region_code",
+        "observation_date",
+        "indicator_name",
+        "value",
+        "unit",
+        "frequency",
+        "realtime_start",
+        "realtime_end",
+        "source_locator",
+        "source_id",
+        "ingestion_ts",
+    ),
+    "sentiment_snapshots": (
+        "asset_id",
+        "as_of",
+        "provider",
+        "score",
+        "label",
+        "bullish_pct",
+        "bearish_pct",
+        "message_volume_score",
+        "message_volume_label",
+        "source_timestamp",
+        "quality",
+        "source_locator",
+        "evidence_class",
+        "ingestion_ts",
+    ),
+    "sentiment_evidence": (
+        "source",
+        "message_id",
+        "asset_id",
+        "created_at",
+        "text",
+        "declared_sentiment",
+        "source_locator",
+        "evidence_class",
+        "ingestion_ts",
+    ),
+    "news_evidence": (
+        "news_id",
+        "asset_id",
+        "headline",
+        "summary",
+        "content",
+        "author",
+        "created_at",
+        "updated_at",
+        "source_url",
+        "provider",
+        "original_source",
+        "source_locator",
+        "ingestion_ts",
     ),
     "corporate_events": (
         "event_id",
@@ -219,6 +306,18 @@ EXPECTED_SCHEMA = {
         "p2_strategy_hint_json",
         "p2_signal_stub_json",
     ),
+    "report_evaluations": (
+        "evaluation_id",
+        "report_id",
+        "ruleset_version",
+        "judge_model",
+        "input_fingerprint",
+        "overall_score",
+        "deterministic_score",
+        "judge_score",
+        "result_json",
+        "created_at",
+    ),
     "report_sections": (
         "report_id",
         "section_name",
@@ -275,12 +374,22 @@ EXPECTED_PRIMARY_KEYS = {
     "eod_bars": ("asset_id", "trade_date"),
     "fundamentals": ("asset_id", "fiscal_period_end", "report_type"),
     "macro_series": ("series_key", "observation_date"),
+    "macro_series_vintages": (
+        "series_key",
+        "observation_date",
+        "realtime_start",
+        "realtime_end",
+    ),
+    "sentiment_snapshots": ("asset_id", "provider", "source_timestamp"),
+    "sentiment_evidence": ("source", "message_id"),
+    "news_evidence": ("news_id",),
     "corporate_events": ("event_id",),
     "text_documents": ("document_id",),
     "document_chunks": ("chunk_id",),
     "memory_items": ("memory_id",),
     "agent_runs": ("run_id",),
     "reports": ("report_id",),
+    "report_evaluations": ("evaluation_id",),
     "report_sections": ("report_id", "section_name"),
     "llm_cache": ("cache_key",),
     "ingestion_jobs": ("job_id",),
@@ -448,3 +557,54 @@ def test_bootstrap_reports_invalid_database_target(tmp_path: Path) -> None:
 
     with pytest.raises(DatabaseInitializationError):
         database.bootstrap()
+
+
+def test_connections_are_scoped_and_not_reused(
+    database: DuckDBDatabase,
+) -> None:
+    """Independent operations receive distinct connections closed on exit."""
+
+    with database.connection() as first:
+        assert first.execute("SELECT 1").fetchone() == (1,)
+    with database.connection() as second:
+        assert second.execute("SELECT 1").fetchone() == (1,)
+
+    assert first is not second
+    with pytest.raises(duckdb.ConnectionException):
+        first.execute("SELECT 1")
+
+
+@pytest.mark.parametrize(
+    ("failure", "transient"),
+    [
+        (duckdb.ConnectionException("temporary connection failure"), True),
+        (duckdb.ConnectionException("connection has already been closed"), False),
+        (duckdb.SerializationException("serialization conflict"), True),
+        (duckdb.TransactionException("transaction conflict"), True),
+        (duckdb.IOException("Could not set lock on file"), True),
+        (duckdb.CatalogException("table is absent"), False),
+        (duckdb.ConstraintException("constraint failed"), False),
+        (duckdb.IOException("database file appears corrupt"), False),
+    ],
+)
+def test_repository_classifies_only_allowlisted_transient_errors(
+    database: DuckDBDatabase,
+    monkeypatch: pytest.MonkeyPatch,
+    failure: duckdb.Error,
+    transient: bool,
+) -> None:
+    """Schema, integrity, corruption, and programming errors are not retried."""
+
+    @contextmanager
+    def failing_connection() -> Iterator[duckdb.DuckDBPyConnection]:
+        raise failure
+        yield  # pragma: no cover
+
+    monkeypatch.setattr(database, "connection", failing_connection)
+    expected = TransientRepositoryError if transient else RepositoryError
+
+    with pytest.raises(expected) as raised:
+        ProbeRepository(database).read()
+
+    assert raised.value.database_error_type == type(failure).__name__
+    assert str(failure) not in str(raised.value)

@@ -1,0 +1,160 @@
+dataset_version: live_agent_benchmark_v1
+snapshot_id: aapl_sec_alpaca_20260807_v1
+market_coverage: [US]
+coverage_limitations:
+  - CN and HK are excluded because no fixed legally retained real Agent-input snapshot is available.
+data_start: 2026-05-08
+data_end: 2026-08-07
+sources:
+  - evidence_id: sec_operations_q3_2026
+    provider: sec_edgar
+    document_id: sec-0000320193-000032019326000020
+    chunk_id: sec-operations-q3-2026
+    title: Apple Inc. Form 10-Q operations excerpt
+    source_locator: https://www.sec.gov/Archives/edgar/data/320193/000032019326000020/aapl-20260627.htm
+    collected_at: 2026-08-08T08:23:15Z
+    published_at: 2026-07-31T00:00:00Z
+    usage_basis: Public SEC filing; compact excerpt retained for reproducible research evaluation.
+    text: >-
+      CONDENSED CONSOLIDATED STATEMENTS OF OPERATIONS (Unaudited) (In millions,
+      except number of shares, which are reflected in thousands, and per-share
+      amounts). Three Months Ended and Nine Months Ended June 27, 2026 and June
+      28, 2025. Products net sales were $78,678 million and $66,613 million for
+      the three-month periods and $272,629 million and $233,287 million for the
+      nine-month periods. Services net sales were $30,739 million and $27,423
+      million for the three-month periods and $91,728 million and $80,408
+      million for the nine-month periods. Total net sales were $109,417 million
+      and $94,036 million for the three-month periods and $364,357 million and
+      $313,695 million for the nine-month periods. Operating income was $35,695
+      million and $28,202 million for the three-month periods and $122,432
+      million and $100,623 million for the nine-month periods. Net income was
+      $29,789 million and $23,434 million for the three-month periods and
+      $101,464 million and $84,544 million for the nine-month periods.
+  - evidence_id: sec_commitments_q3_2026
+    provider: sec_edgar
+    document_id: sec-0000320193-000032019326000020
+    chunk_id: sec-commitments-q3-2026
+    title: Apple Inc. Form 10-Q commitments excerpt
+    source_locator: https://www.sec.gov/Archives/edgar/data/320193/000032019326000020/aapl-20260627.htm
+    collected_at: 2026-08-08T08:23:15Z
+    published_at: 2026-07-31T00:00:00Z
+    usage_basis: Public SEC filing; compact excerpt retained for reproducible research evaluation.
+    text: >-
+      As of June 27, 2026, the total unrecognized compensation cost related to
+      outstanding RSUs was $26.7 billion, which the Company expects to recognize
+      over a weighted-average period of 2.7 years. Unconditional purchase
+      obligations primarily consist of supplier arrangements, licensed
+      intellectual property and content, and distribution rights. Future
+      payments under unconditional purchase obligations with a remaining term
+      in excess of one year were $2,053 million for the remaining three months
+      of 2026, $7,652 million in 2027, $6,406 million in 2028, $5,421 million in
+      2029, $5,481 million in 2030 and $615 million thereafter, totaling $27,628
+      million. The Company is subject to various legal proceedings and claims
+      that have not been fully resolved. The outcome of litigation is inherently
+      uncertain. Forward-looking statements concerning macroeconomic conditions,
+      tariffs and other measures are not guarantees of future performance.
+  - evidence_id: alpaca_selected_bars_20260807
+    provider: alpaca_market_data
+    document_id: alpaca-US-AAPL-20260508-20260807
+    chunk_id: alpaca-selected-eod-bars-v1
+    title: Fixed selected US:AAPL Alpaca IEX raw 1Day bars
+    source_locator: https://data.alpaca.markets/v2/stocks/bars
+    collected_at: 2026-08-08T08:23:15Z
+    published_at: 2026-08-07T20:00:00Z
+    usage_basis: User-authorized Alpaca market-data snapshot; selected normalized bars retained for A/B consistency.
+    text: >-
+      Fixed Alpaca IEX raw 1Day evidence for US:AAPL. On 2026-05-08 open was
+      290.11, high 294.76, low 290.065, close 293.15, volume 1591559 and VWAP
+      293.173409. On 2026-05-15 open was 297.94, high 303.19, low 296.6, close
+      300.19, volume 1241262 and VWAP 300.375834. On 2026-06-15 open was 293.99,
+      high 297.78, low 291.75, close 296.53, volume 1573337 and VWAP 296.013635.
+      On 2026-07-15 open was 317.46, high 328.705, low 317.4, close 327.58,
+      volume 1721273 and VWAP 326.024682. On 2026-08-07 open was 311.395, high
+      314.785, low 310.76, close 313.29, volume 1073989 and VWAP 312.787299.
+      Across the retained 63-bar source window, observed low was 273.79,
+      observed high was 344.555, minimum close was 275.21 and maximum close was
+      340.005.
+memories:
+  - memory_id: aapl_commitment_memory_v1
+    source_evidence_id: sec_commitments_q3_2026
+    summary_text: >-
+      The filing reports unconditional purchase obligations totaling $27,628
+      million and states that unresolved litigation outcomes are inherently uncertain.
+    memory_level: L2
+    namespace_key: ASSET:US:AAPL
+    memory_type: issuer_risk
+    effective_ts: 2026-07-31T00:00:00Z
+    score: 0.95
+    importance_score: 0.8
+scenarios:
+  - case_id: us_normal_fundamentals
+    scenario: normal_fundamentals
+    asset_id: US:AAPL
+    report_date: 2026-08-07
+    source_ids: [sec_operations_q3_2026, alpaca_selected_bars_20260807]
+    memory_ids: [aapl_commitment_memory_v1]
+    structured_features:
+      latest_close: 313.29
+      observed_window_low: 273.79
+      observed_window_high: 344.555
+      quarterly_total_net_sales: 109417
+      nine_month_total_net_sales: 364357
+    known_missing_data: []
+  - case_id: us_missing_data
+    scenario: missing_data
+    asset_id: US:AAPL
+    report_date: 2026-08-07
+    source_ids: [sec_operations_q3_2026]
+    memory_ids: [aapl_commitment_memory_v1]
+    structured_features:
+      latest_close: null
+      valuation_multiple: null
+      quarterly_total_net_sales: 109417
+    known_missing_data:
+      - structured_features.latest_close
+      - structured_features.valuation_multiple
+  - case_id: us_conflicting_evidence
+    scenario: conflicting_evidence
+    asset_id: US:AAPL
+    report_date: 2026-08-07
+    source_ids: [sec_operations_q3_2026, sec_commitments_q3_2026]
+    memory_ids: [aapl_commitment_memory_v1]
+    structured_features:
+      quarterly_total_net_sales: 109417
+      unconditional_purchase_obligations: 27628
+    known_missing_data: []
+  - case_id: us_material_event
+    scenario: material_event
+    asset_id: US:AAPL
+    report_date: 2026-08-07
+    source_ids: [sec_commitments_q3_2026]
+    memory_ids: [aapl_commitment_memory_v1]
+    structured_features:
+      unconditional_purchase_obligations: 27628
+      litigation_outcome_known: false
+    known_missing_data:
+      - resolved litigation outcome
+  - case_id: us_high_volatility
+    scenario: high_volatility
+    asset_id: US:AAPL
+    report_date: 2026-08-07
+    source_ids: [alpaca_selected_bars_20260807, sec_commitments_q3_2026]
+    memory_ids: [aapl_commitment_memory_v1]
+    structured_features:
+      latest_close: 313.29
+      observed_window_low: 273.79
+      observed_window_high: 344.555
+      minimum_close: 275.21
+      maximum_close: 340.005
+    known_missing_data: []
+  - case_id: us_incomplete_memory
+    scenario: incomplete_memory
+    asset_id: US:AAPL
+    report_date: 2026-08-07
+    source_ids: [sec_operations_q3_2026, alpaca_selected_bars_20260807]
+    memory_ids: []
+    structured_features:
+      latest_close: 313.29
+      quarterly_total_net_sales: 109417
+    known_missing_data:
+      - retrieved_memories

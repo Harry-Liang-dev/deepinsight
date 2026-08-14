@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from pathlib import Path
 
 import pytest
@@ -166,6 +166,45 @@ def test_source_instrument_and_market_data_crud(
     market_data.upsert_corporate_event(event)
     assert market_data.get_corporate_event(event.event_id) == event
     assert instruments.get(AssetId("US:MSFT")) is None
+
+
+def test_eod_repository_applies_date_and_ingestion_cutoffs(
+    database: DuckDBDatabase,
+) -> None:
+    """Point-in-time reads exclude out-of-window and future-ingested bars."""
+
+    repository = MarketDataRepository(database)
+    first_ingestion = datetime(2026, 8, 5, 8, 0, tzinfo=UTC)
+    second_ingestion = datetime(2026, 8, 6, 8, 0, tzinfo=UTC)
+    for trade_date, ingestion_ts in (
+        (date(2026, 8, 4), first_ingestion),
+        (date(2026, 8, 5), second_ingestion),
+    ):
+        repository.upsert_eod_bar(
+            EodBarRecord(
+                asset_id=ASSET_ID,
+                trade_date=trade_date,
+                close=200.0,
+                source_id="alpaca_market_data",
+                ingestion_ts=ingestion_ts,
+            )
+        )
+
+    visible = repository.list_eod_bars(
+        ASSET_ID,
+        start_date=date(2026, 8, 4),
+        end_date=date(2026, 8, 5),
+        ingested_as_of=first_ingestion,
+        limit=10,
+    )
+
+    assert [bar.trade_date for bar in visible] == [date(2026, 8, 4)]
+    with pytest.raises(ValueError, match="cannot precede"):
+        repository.list_eod_bars(
+            ASSET_ID,
+            start_date=date(2026, 8, 6),
+            end_date=date(2026, 8, 5),
+        )
 
 
 def test_document_repository_round_trip(database: DuckDBDatabase) -> None:

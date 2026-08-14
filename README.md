@@ -1,44 +1,210 @@
 # DeepInsight
 
-DeepInsight 是面向多市场的 AI 投资研究平台。Phase One 的唯一产品输出是带有
-来源追踪的标准化研究报告。
+> **Institutional-grade AI research, grounded in evidence.**
 
-当前版本不包含交易、订单执行、组合优化、回测、策略生成、强化学习或模型训练。
+DeepInsight is an evidence-grounded multi-agent AI investment research system
+designed to turn fragmented market, fundamental, macro, news, and sentiment
+data into auditable institutional-style research.
 
-## 当前最小闭环
+It is not a stock-picking chatbot, and it does not ask an LLM to guess financial
+numbers. DeepInsight builds a canonical research dataset first, validates every
+accepted factual claim against Evidence, and then uses specialized Agents for
+interpretation, debate, risk reasoning, and report synthesis.
 
-已打通的单资产离线流程：
+- Multi-source financial intelligence
+- Eight-agent research organization
+- Evidence-grounded and numerically validated claims
+- Point-in-time-safe data and Memory boundaries
+- Auditable Markdown and JSON research reports
 
-```text
-FastAPI 研究请求
-→ Fake Provider 固定数据
-→ 标准化与 DuckDB 持久化
-→ 文档分块与 Fake Embedding/FAISS
-→ Memory 检索
-→ 四个 Analyst Agent
-→ Research/Bull/Bear/Risk Manager
-→ 十章节 Markdown/JSON 报告
-→ DuckDB、L3 Memory 和 API 查询
+The current Phase 3 product output is an **AI Research Report**. Trading,
+portfolio allocation, backtesting, model training, Factor, Regime, and MoE
+capabilities are not part of the current release.
+
+## How it works
+
+```mermaid
+flowchart TD
+    S[SEC EDGAR] --> D[Data Ingestion]
+    F[FMP] --> D
+    A[Alpaca] --> D
+    R[FRED] --> D
+    T[Stocktwits] --> D
+    D --> B[ResearchDataBundle]
+    B --> E[Evidence + Memory]
+    E --> FA[Fundamental Analyst]
+    E --> TA[Technical Analyst]
+    E --> SA[Sentiment Analyst]
+    E --> NA[News / Event Analyst]
+    FA --> RM[Research Manager]
+    TA --> RM
+    SA --> RM
+    NA --> RM
+    RM --> BU[Bull Manager]
+    RM --> BE[Bear Manager]
+    BU --> RI[Risk Manager]
+    BE --> RI
+    RI --> RP[Auditable Research Report]
+    RP --> EV[Evaluation]
 ```
 
-离线入口使用固定测试数据、`FakeLLMProvider` 和
-`FakeEmbeddingService`，不读取或调用真实 OpenAI API。
+The deterministic layer computes and normalizes financial values before model
+inference. LLMs are responsible for interpretation, synthesis, debate, and risk
+reasoning—not raw financial arithmetic.
 
-## 目录
+The authoritative fact flow is:
 
-- `apps/`：API 及后续 Worker、Scheduler、Web 应用入口
-- `config/`：Provider 元数据和版本化 Agent Prompt
-- `data/`：本地 DuckDB、FAISS、原文、快照和备份目录
-- `docs/`：系统规格、任务规格和运维文档
-- `infra/`：Docker、Compose 和预留基础设施目录
-- `scripts/`：数据库初始化及维护脚本
-- `src/`：领域模型、Repository、Service、Agent 和编排代码
-- `tests/`：单元、集成和固定测试数据
+```text
+Multi-source Data
+→ Canonical Research Data
+→ Evidence
+→ Analyst Validated Claims
+→ Manager Claims
+→ Research Report
+```
 
-## 安装
+## Research capabilities
 
-系统要求 Ubuntu、Conda 和 Python 3.12。Conda 只提供解释器，`uv` 根据
-`pyproject.toml` 安装依赖；不要创建项目内 `.venv`。
+### Fundamental intelligence
+
+- Revenue and net-income growth
+- Gross, operating, and net margins
+- ROE and ROA
+- Liquidity and leverage
+- EPS TTM and book value per share
+- Market capitalization, P/E, P/B, and earnings yield
+
+### Technical intelligence
+
+- Multi-window returns and simple moving averages
+- RSI, MACD, and ATR
+- Realized volatility and maximum drawdown
+- Volume ratio
+- Relative strength versus SPY, QQQ, and XLK
+
+### Macro intelligence
+
+- Rates and yield-curve context
+- Inflation
+- Labor conditions
+- Growth and industrial production
+- Financial stress
+
+### Sentiment intelligence
+
+- Community sentiment and bullish/bearish distribution
+- Attention and message volume
+- Sentiment change
+- Raw community messages retained as supporting Evidence, not verified facts
+
+### News and events
+
+- SEC filings and corporate events
+- Alpaca financial news
+- Point-in-time event lineage and source references
+
+## Data sources
+
+| Provider | Capability | Current role |
+|---|---|---|
+| SEC EDGAR | Filings, XBRL facts, corporate events | Authoritative filing and disclosure source |
+| Financial Modeling Prep | Standardized US fundamentals, TTM ratios, valuation | Primary standardized-metric source; disabled unless configured |
+| Alpaca Market Data | OHLCV, benchmarks, financial news | Primary price, market/sector context, and news source |
+| FRED / ALFRED | Macroeconomic observations and vintages | Point-in-time macro source |
+| Stocktwits MCP | Community sentiment and attention | Sentiment Evidence; not treated as verified company fact |
+| Qwen | Structured LLM inference and evaluation | Current production live LLM through the shared `LLMGateway` |
+
+Several live Providers require credentials from the user's own accounts. No
+credential value belongs in the repository.
+
+## The eight-agent research organization
+
+1. **Fundamental Analyst** — growth, profitability, balance sheet, and valuation
+2. **Technical Analyst** — trend, momentum, volatility, volume, and relative strength
+3. **Sentiment Analyst** — community positioning, attention, and disagreement
+4. **News/Event Analyst** — filings, corporate events, and financial news
+5. **Research Manager** — integrates the four Analyst claim sets
+6. **Bull Manager** — constructs the evidence-supported upside thesis
+7. **Bear Manager** — constructs the evidence-supported downside thesis
+8. **Risk Manager** — reviews macro, event, market, and thesis risks
+
+Managers consume validated upstream claims; they do not reconnect to Providers
+or independently fetch facts. Agents never depend directly on DuckDB, FAISS, or
+a Provider SDK.
+
+## Evidence grounding
+
+Every accepted factual claim retains provenance to canonical Evidence. Numeric
+claims require either an exact source literal or a deterministic feature
+calculation. Unknown citations, unsupported numbers, and prohibited claim
+intents are quarantined and cannot enter managers or reports.
+
+DeepInsight deliberately prefers an explicit gap over an invented completion:
+if a fact cannot be validated, it is rejected or disclosed as missing.
+
+## Point-in-time safety
+
+Research data, source timestamps, and Memory retrieval share an explicit
+`as_of` cutoff. Records observed after that cutoff are not eligible for the
+run. This prevents future leakage and establishes the foundation for future
+point-in-time research datasets, factor research, regime representation, and
+backtesting—none of which are claimed as implemented here.
+
+## Phase 3 validation snapshot
+
+Research Completeness v1 was frozen on the real US:AAPL acceptance run
+`20260814T100747Z`:
+
+| Check | Result |
+|---|---:|
+| Default pytest | 447 passed, 5 live tests deselected |
+| Eight Agents | 8/8 completed |
+| Accepted Agent claims | 54 |
+| Rejected claims | 2, quarantined |
+| Unique citations traced | 56/56 |
+| Citation coverage | 1.00 |
+| Citation traceability | 1.00 |
+| Numeric grounding | 1.00 |
+| Factual correctness | 0.97 |
+| Trading-instruction compliance | 1.00 |
+| Overall report evaluation | 0.9675 |
+
+This is one live **research-quality acceptance** using real SEC, FMP, Alpaca,
+FRED, Stocktwits, and Qwen services. It is not an investment-return result,
+trading benchmark, or statement of future performance.
+
+## Example output
+
+The accepted AAPL report combines:
+
+- a standardized growth, margin, profitability, liquidity, and valuation snapshot;
+- rates, inflation, labor, growth, and financial-stress context;
+- trend, momentum, volatility, volume, drawdown, and benchmark-relative strength;
+- aggregate community sentiment and attributable financial news;
+- separate Bull, Bear, Risk, and final synthesis sections.
+
+Local live artifacts are written to a timestamped, Git-ignored directory:
+
+```text
+data/live_acceptance/20260814T100747Z/
+├── run_manifest.json
+├── research_data_bundle.json
+├── research_data_bundle_summary.json
+├── duckdb/platform.duckdb
+└── reports/
+    ├── rep_27ce48e18b5443f297c485405792c535.md
+    ├── rep_27ce48e18b5443f297c485405792c535.json
+    └── rep_27ce48e18b5443f297c485405792c535.evaluation.json
+```
+
+Generated acceptance data is evidence for a local run and is not intended for
+source control.
+
+## Installation
+
+DeepInsight targets Ubuntu and Python 3.12. Conda provides the interpreter;
+`uv` resolves and installs dependencies from the sole dependency declaration,
+`pyproject.toml`. The project does not create an in-repository `.venv`.
 
 ```bash
 conda env create --file environment.yml
@@ -46,218 +212,208 @@ conda activate deepinsight
 uv pip install --python "$CONDA_PREFIX/bin/python" -e ".[dev]"
 ```
 
-已有环境可使用：
+To create the environment without `environment.yml`:
 
 ```bash
-conda env update --name deepinsight --file environment.yml
+conda create -n deepinsight python=3.12 pip -y
 conda activate deepinsight
+python -m pip install uv
 uv pip install --python "$CONDA_PREFIX/bin/python" -e ".[dev]"
 ```
 
-## 启动
+## Configuration
 
-启动安全默认 API：
+[`src/core/settings.py`](src/core/settings.py) is the typed configuration source.
+The application reads environment variables only; it does not load `.env`
+files. [`.env.example`](.env.example) is a name-and-default reference, not a
+credential store.
 
-```bash
-"$CONDA_PREFIX/bin/python" -m uvicorn apps.api.main:app \
-  --host 127.0.0.1 \
-  --port 8000
-```
-
-默认入口提供健康检查和完整 OpenAPI，但不会在导入时擅自连接数据库、FAISS
-或外部 Provider。未完成部署装配的研究和 Memory 操作会明确返回不可用状态。
-
-健康检查：
+Prepare a private shell script outside the repository:
 
 ```bash
-curl --fail http://127.0.0.1:8000/health
+chmod 600 ~/.local/bin/load_deepinsight_keys.sh
+source ~/.local/bin/load_deepinsight_keys.sh
 ```
 
-### 单机生产拓扑
+Core live variables:
 
-生产入口采用 `FastAPI → DuckDB report_jobs → Redis(job_id) → 单 Worker`
-的持久化任务链。Redis 只传递任务 ID；请求、状态、错误和报告 ID 以 DuckDB
-为准。Scheduler 只通过 FastAPI 提交请求，Streamlit Web 只通过 FastAPI
-查询任务和报告。
+| Variable | Required for |
+|---|---|
+| `DEEPINSIGHT_LLM_PROVIDER=qwen` | Selecting the production Qwen path |
+| `QWEN_API_KEY` | Qwen inference and evaluation |
+| `QWEN_MODEL_NAME` | Qwen model selection; current default is `qwen3.7-flash` |
+| `DEEPINSIGHT_PROVIDER_SEC_USER_AGENT` | SEC Fair Access identity |
+| `DEEPINSIGHT_PROVIDER_SEC_CIK_MAP` | Canonical asset-to-CIK mapping |
+| `APCA_API_KEY_ID`, `APCA_API_SECRET_KEY` | Alpaca data and news |
+| `FRED_API_KEY` | FRED/ALFRED macro data |
+| `STOCKTWITS_MCP_ENABLED=true` | Explicit Stocktwits MCP enablement |
+| `FMP_ENABLED=true`, `FMP_API_KEY` | FMP standardized metrics |
+| `DEEPINSIGHT_LIVE_*` | Versioned live dataset, cutoff, window, and output root |
 
-先复制并填写本地配置；真实密钥只放在未纳入 Git 的 `.env` 或受控环境变量中：
+Stocktwits authorization state is stored under the configured local
+`STOCKTWITS_MCP_TOKEN_STORE`, which is ignored by Git. Never display, attach,
+or commit the private loader, OAuth state, or any secret.
 
-```bash
-cp .env.example .env
-docker compose config --quiet
-docker compose up --build
-```
+## Quick start
 
-服务地址：
+### Offline API demo
 
-- API：`http://127.0.0.1:8000`
-- Web：`http://127.0.0.1:8501`
-
-Worker 要求有效的 `OPENAI_API_KEY`、`DEEPINSIGHT_PROVIDER_SEC_USER_AGENT`
-和 `DEEPINSIGHT_PROVIDER_SEC_CIK_MAP`。缺少配置时会显式启动失败，不会切换到
-Fake Provider。当前官方 OpenAI 账户充值受阻，因此该生产调用的最终复验
-（P1-3）明确延期；离线闭环及已完成的 SEC + Qwen 受控验收不受影响。
-
-本地不使用 Compose 时，可分别启动：
-
-```bash
-"$CONDA_PREFIX/bin/python" -m uvicorn \
-  apps.api.production:create_production_application --factory \
-  --host 127.0.0.1 --port 8000
-"$CONDA_PREFIX/bin/python" -m apps.worker.main
-"$CONDA_PREFIX/bin/python" -m apps.scheduler.main
-"$CONDA_PREFIX/bin/python" -m streamlit run apps/web/main.py
-```
-
-## 离线端到端演示
-
-启动不需要任何密钥的临时离线 API：
+The deterministic offline path requires no external credentials:
 
 ```bash
 "$CONDA_PREFIX/bin/python" -m uvicorn apps.api.offline_main:app \
-  --host 127.0.0.1 \
-  --port 8001
+  --host 127.0.0.1 --port 8001
 ```
 
-提交固定的单资产研究请求：
+Health check:
+
+```bash
+curl --fail http://127.0.0.1:8001/health
+```
+
+Submit the fixed offline single-asset workflow through the same public API
+contract used by production composition:
 
 ```bash
 curl --fail \
   -H "Content-Type: application/json" \
   -d '{
-    "report_date": "2026-07-31",
+    "report_date": "2026-08-14",
     "market_scope": "US",
     "report_type": "single_asset",
     "asset_ids": ["US:AAPL"],
     "language": "en",
     "include_sections": [
-      "executive_view",
-      "macro_context",
-      "fundamentals",
-      "technical_text",
-      "sentiment",
-      "news_events",
-      "bull_case",
-      "bear_case",
-      "risk_review",
-      "final_synthesis"
+      "executive_view", "macro_context", "fundamentals",
+      "technical_text", "sentiment", "news_events",
+      "bull_case", "bear_case", "risk_review", "final_synthesis"
     ],
     "force_refresh": false
   }' \
   http://127.0.0.1:8001/v1/reports/generate
 ```
 
-第一次演示请求使用 `job_demo_1` 和 `rep_demo_1`：
+The production application factory is available separately and requires its
+configured DuckDB/FAISS/Redis and live Provider environment:
 
 ```bash
-curl --fail http://127.0.0.1:8001/v1/reports/jobs/job_demo_1
-curl --fail http://127.0.0.1:8001/v1/reports/rep_demo_1
+"$CONDA_PREFIX/bin/python" -m uvicorn \
+  apps.api.production:create_production_application --factory \
+  --host 127.0.0.1 --port 8000
 ```
 
-离线入口使用进程生命周期内的临时目录，停止进程后自动清理；它仅用于演示和
-集成验证，不是生产数据入口。
+Routes delegate to injected application services; they do not call databases,
+vector indexes, or LLM Providers directly. See [API documentation](docs/api.md)
+for the complete contract.
 
-## 测试和静态检查
+### Live provider smokes
 
-```bash
-"$CONDA_PREFIX/bin/python" -m pytest
-"$CONDA_PREFIX/bin/python" -m ruff check .
-"$CONDA_PREFIX/bin/python" -m mypy
-"$CONDA_PREFIX/bin/python" -m black --check .
-```
-
-只运行完整离线闭环：
+After sourcing the private shell environment, each smoke remains explicit and
+outside default pytest:
 
 ```bash
-"$CONDA_PREFIX/bin/python" -m pytest \
-  tests/integration/test_research_workflow_e2e.py -q
-```
-
-也可以运行：
-
-```bash
-make check
-```
-
-默认 pytest 不访问真实网络、不需要商业 Provider 凭据，也不会消耗 OpenAI
-额度。真实 OpenAI 冒烟通过独立脚本显式运行，不属于默认 pytest：
-
-```bash
-export OPENAI_API_KEY="从安全凭据来源注入，不要提交到仓库"
-OPENAI_MAX_RETRIES=0 OPENAI_STORE_REMOTE=false \
-  "$CONDA_PREFIX/bin/python" -m scripts.smoke_llm
-```
-
-脚本复用 `Settings → LLMGateway → OpenAIProvider` 生产调用链，使用
-`OPENAI_MODEL_FAST` 配置的模型，只发起一次最小结构化请求，并用现有
-`RiskManagerResponse` 校验响应。缓存写入临时 DuckDB，执行结束后自动清理。
-不要把真实密钥写入命令历史；上面的 `export` 仅表示环境变量要求，实际环境中
-应优先使用受控的密钥注入方式或未纳入 Git 的本地 `.env`。
-
-OpenAI 账户不可用时，可显式运行临时的 DashScope Qwen Responses 兼容烟雾
-测试。它不替换生产 `LLMGateway`，只验证当前网络、兼容 SDK 调用和现有
-`RiskManagerResponse`：
-
-```bash
-export DASHSCOPE_API_KEY="从安全凭据来源注入，不要提交到仓库"
-DASHSCOPE_MODEL=qwen3.8-max \
+"$CONDA_PREFIX/bin/python" -m scripts.smoke_sec_edgar
+"$CONDA_PREFIX/bin/python" -m scripts.smoke_alpaca
+"$CONDA_PREFIX/bin/python" -m scripts.smoke_fred
+STOCKTWITS_MCP_ENABLED=true \
+  "$CONDA_PREFIX/bin/python" -m scripts.smoke_stocktwits
+FMP_ENABLED=true \
+  "$CONDA_PREFIX/bin/python" -m scripts.smoke_fmp
+DEEPINSIGHT_LLM_PROVIDER=qwen \
   "$CONDA_PREFIX/bin/python" -m scripts.smoke_qwen --diagnostic
 ```
 
-该脚本固定 `max_retries=0` 且只发起一次请求。默认使用官方示例的兼容地址；
-如工作空间已迁移到新地址，可用 `DASHSCOPE_BASE_URL` 覆盖。模型必须是当前
-DashScope 账户有权调用的 Responses 模型。脚本不会把 Qwen 注册为第一阶段
-生产 Provider，也不能替代生产 OpenAI Gateway 的最终验收。
+### Reproducible live report
 
-### SEC 真实数据到 Qwen 报告验收
-
-独立 live 脚本使用官方 SEC EDGAR 披露、DashScope `text-embedding-v4` 和
-Qwen，经过现有标准化、DuckDB、chunk、FAISS、Memory、八 Agent、报告流水线
-及 FastAPI。它不属于默认 pytest：
+`scripts.live_report` is fail-closed: every required Provider, Qwen Judge, and
+dataset field must be configured, and no Fake fallback is allowed.
 
 ```bash
-export SEC_USER_AGENT="DeepInsight 你的受监控邮箱"
-export DASHSCOPE_API_KEY="从安全凭据来源注入"
-
+source ~/.local/bin/load_deepinsight_keys.sh
 env -u ALL_PROXY -u all_proxy \
-  DASHSCOPE_MODEL=qwen3.6-flash \
-  DASHSCOPE_ENABLE_THINKING=false \
+  DEEPINSIGHT_LLM_PROVIDER=qwen \
+  FMP_ENABLED=true \
+  STOCKTWITS_MCP_ENABLED=true \
+  DEEPINSIGHT_LIVE_DATASET_VERSION=live_aapl_release_v1 \
+  DEEPINSIGHT_LIVE_AS_OF_DATE=YYYY-MM-DD \
+  DEEPINSIGHT_LIVE_DATA_START=YYYY-MM-DD \
+  DEEPINSIGHT_LIVE_DATA_END=YYYY-MM-DD \
   "$CONDA_PREFIX/bin/python" -m scripts.live_report
 ```
 
-默认标的是 `US:AAPL`，只抓取一个最近 370 天内的 `10-Q/10-K` 主文档。
-SEC 不提供行情，因此价格历史和结构化估值会在报告中明确标记缺失，不会由
-代码或模型补齐。成功输出包含 `job_id`、内部 Agent `task_id`、`report_id`、
-引用追溯计数、DuckDB 路径及 Markdown/JSON 报告路径。可用
-`DEEPINSIGHT_LIVE_ROOT` 指定新的空输出目录。
-真实报告默认使用 Responses API 明确支持的 `qwen3.6-flash` 非思考模式；
-这类结构化证据提取不需要长推理。可通过环境变量覆盖，但开启深度思考会显著
-增加八次 Agent 调用的延迟和超时风险。
+Choose a closed, internally consistent window where
+`data_start <= data_end <= as_of_date`. The command creates a new timestamped
+directory unless `DEEPINSIGHT_LIVE_ROOT` explicitly selects a new empty root.
 
-## 当前运行边界
+## Quality gates
 
-- 报告仅支持 `single_asset`。
-- 安全默认入口和离线演示仍使用进程内任务服务；生产入口使用持久化
-  `report_jobs` 和 Redis ID 队列。
-- 生产部署固定为单 Worker；同一 DuckDB 文件的 Repository 写事务和
-  快照/备份由跨进程 advisory lock 串行化。
-- Scheduler 当前只提交配置的单资产日报，不扩展为多市场 ETL 编排。
-- Web 是只读任务/报告查看器，不直接访问 DuckDB 或 FAISS。
-- SEC EDGAR 有受控 live Adapter；其他商业及官方数据连接器仍为显式不可用
-  的网络隔离边界。
-- 官方 OpenAI live smoke 的成功复验属于延期项 P1-3；不得用 Qwen 结果冒充。
-
-创建一致性快照或备份：
+Default tests are deterministic, offline, and exclude the `live` marker:
 
 ```bash
-"$CONDA_PREFIX/bin/python" -m scripts.snapshot_local
-"$CONDA_PREFIX/bin/python" -m scripts.backup_local
+"$CONDA_PREFIX/bin/python" -m pytest -q
+"$CONDA_PREFIX/bin/python" -m ruff check .
+"$CONDA_PREFIX/bin/python" -m mypy .
+"$CONDA_PREFIX/bin/python" -m black --check .
+git diff --check
 ```
 
-脚本在同一文件锁边界内复制 DuckDB 和 FAISS，生成 SHA-256 manifest，并通过
-同目录临时目录原子发布。未来 live 运行产物位于 Git 忽略的
-`data/live_acceptance/`；仓库中已有的 2026-08-06 验收样本作为历史交付证据
-保留。
+The offline research benchmark is also deterministic:
 
-详细说明见 [运维文档](docs/operations.md)、[API 文档](docs/api.md) 和
-[模块状态](docs/MODULE_STATUS.md)。
+```bash
+"$CONDA_PREFIX/bin/python" -m pytest \
+  tests/integration/benchmark -q
+```
+
+## Repository structure
+
+```text
+apps/                    API, Worker, Scheduler, and Web composition roots
+config/                  Provider metadata, prompts, and evaluation rules
+src/
+├── adapters/            External Provider boundaries
+├── agents/              Eight-agent contracts and coordination
+├── benchmark/           Offline benchmark runner
+├── evaluation/          Deterministic and LLM-Judge evaluation
+├── memory/              Point-in-time research Memory
+├── operators/           Deterministic financial feature calculations
+├── repositories/        DuckDB and FAISS persistence boundaries
+├── reports/             Report contracts and assembly
+├── schemas/             Shared Pydantic v2 domain contracts
+└── services/            Ingestion, Gateway, and Bundle services
+scripts/                 Explicit operations and live-smoke entry points
+tests/                   Offline unit/integration tests and isolated live tests
+docs/                    Specifications, decisions, tasks, releases, and operations
+```
+
+## Roadmap
+
+- **Phase 1 — Research Operating System Foundation:** done
+- **Phase 2 — Evaluation, Benchmark, and Real Data Validation:** done
+- **Phase 3 — Research Completeness v1:** done and frozen
+- **Phase 4 — Structured Research Intelligence:** planned
+  - `ResearchStateSnapshot`
+  - point-in-time research datasets
+  - factor infrastructure
+  - regime representation
+- **Future research:** factor mining, regime-aware routing, MoE, backtesting,
+  model post-training, and a strategy layer
+
+The long-term direction is an end-to-end research and quantitative-development
+system, but the implementation sequence starts with trustworthy research data
+and auditable claims—not trading.
+
+## Documentation
+
+- [Master specification](docs/MASTER_SPEC.md)
+- [Coding guide](docs/CODING_GUIDE.md)
+- [Module status](docs/MODULE_STATUS.md)
+- [Architecture decisions](docs/DECISIONS.md)
+- [Schema reference](docs/schema.md)
+- [Operations guide](docs/operations.md)
+- [Phase 3 release notes](docs/releases/PHASE3_RESEARCH_COMPLETENESS_V1.md)
+- [Phase 3 founder roadshow (Chinese)](docs/roadshow/DEEPINSIGHT_PHASE3_ROADSHOW_CN.md)
+
+## Disclaimer
+
+DeepInsight is currently a research system. It does not provide investment
+advice, portfolio allocation, or trade execution.

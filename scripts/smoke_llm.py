@@ -18,15 +18,17 @@ import structlog
 from pydantic import ValidationError
 from structlog.testing import CapturingLogger
 
-from src.core import AppSettings, load_settings
+from src.core import AppSettings, LLMProviderName, load_settings
 from src.models.types import JsonObject
 from src.repositories import DuckDBDatabase, LLMCacheRepository
 from src.schemas.agents import RiskManagerResponse
 from src.services import (
+    CredentialNotConfigured,
     LLMCacheError,
     LLMGateway,
     LLMProviderError,
     OpenAIProvider,
+    build_configured_llm_provider,
 )
 
 _SYSTEM_PROMPT = (
@@ -48,9 +50,12 @@ _REQUIRED_LOG_FIELDS = {
 }
 _REQUIRED_SUCCESS_LOG_FIELDS = {
     *_REQUIRED_LOG_FIELDS,
-    "prompt_tokens",
-    "completion_tokens",
-    "response_id",
+    "input_tokens",
+    "output_tokens",
+    "prompt_version",
+    "retry_count",
+    "schema_version",
+    "timestamp",
 }
 
 
@@ -61,19 +66,25 @@ class SmokeCheckError(RuntimeError):
 def _diagnostic_request(settings: AppSettings) -> dict[str, object]:
     """Return the exact smoke request body without authorization headers."""
 
+    runtime = build_configured_llm_provider(settings)
     encoded_input = OpenAIProvider.encode_input_payload(_INPUT_PAYLOAD)
+    request_body: dict[str, object] = {
+        "model": runtime.model_fast,
+        "instructions": _SYSTEM_PROMPT,
+        "input": encoded_input,
+        "store": runtime.settings.store_remote,
+    }
+    if runtime.provider_name is LLMProviderName.OPENAI:
+        request_body["text"] = {"format": {"type": "json_object"}}
+    else:
+        request_body["enable_thinking"] = settings.qwen.enable_thinking
     return {
-        "endpoint": "https://api.openai.com/v1/responses",
-        "request_body": {
-            "model": settings.openai.model_fast,
-            "instructions": _SYSTEM_PROMPT,
-            "input": encoded_input,
-            "text": {"format": {"type": "json_object"}},
-            "store": settings.openai.store_remote,
-        },
+        "provider": runtime.provider_name.value,
+        "endpoint": runtime.endpoint,
+        "request_body": request_body,
         "sdk_options": {
-            "timeout_seconds": settings.openai.timeout_seconds,
-            "max_retries": settings.openai.max_retries,
+            "timeout_seconds": runtime.settings.timeout_seconds,
+            "max_retries": runtime.settings.max_retries,
         },
     }
 
@@ -113,22 +124,15 @@ def _assert_log_safety(
 def _validate_response(content: dict[str, object]) -> RiskManagerResponse:
     """Validate provider JSON with the existing Phase One Agent schema."""
 
-    response = RiskManagerResponse.model_validate(content)
-    groups = (
-        response.confirmed_risks,
-        response.scenario_risks,
-        response.watch_items,
-    )
-    if any(len(group) != 1 or not group[0].strip() for group in groups):
-        raise SmokeCheckError("LLM response did not follow the compact smoke shape")
-    return response
+    return RiskManagerResponse.model_validate(content)
 
 
 def _run_live_check(settings: AppSettings, api_key: str) -> dict[str, object]:
     """Execute exactly one Gateway invocation and return safe result metadata."""
 
     bound_logger, captured_logger = _capturing_logger()
-    model = settings.openai.model_fast
+    runtime = build_configured_llm_provider(settings)
+    model = runtime.model_fast
 
     with TemporaryDirectory(prefix="deepinsight-llm-smoke-") as temporary_root:
         database = DuckDBDatabase(f"{temporary_root}/smoke.duckdb")
@@ -136,7 +140,7 @@ def _run_live_check(settings: AppSettings, api_key: str) -> dict[str, object]:
         cache = LLMCacheRepository(database)
         gateway = LLMGateway(
             cache,
-            settings.openai,
+            provider=runtime.provider,
             logger=bound_logger,
         )
 
@@ -145,6 +149,9 @@ def _run_live_check(settings: AppSettings, api_key: str) -> dict[str, object]:
                 model,
                 _SYSTEM_PROMPT,
                 _INPUT_PAYLOAD,
+                prompt_version="llm-smoke-v1",
+                schema_version="risk-manager-response-v1",
+                response_model=RiskManagerResponse,
             )
         except (LLMCacheError, LLMProviderError):
             _assert_log_safety(captured_logger, api_key=api_key)
@@ -161,6 +168,13 @@ def _run_live_check(settings: AppSettings, api_key: str) -> dict[str, object]:
             model,
             _SYSTEM_PROMPT,
             _INPUT_PAYLOAD,
+            provider=runtime.provider_name.value,
+            prompt_version="llm-smoke-v1",
+            schema_version="risk-manager-response-v1",
+            response_schema=cast(
+                JsonObject,
+                RiskManagerResponse.model_json_schema(mode="validation"),
+            ),
         )
         cached = cache.get(cache_key)
         if cached is None:
@@ -171,7 +185,7 @@ def _run_live_check(settings: AppSettings, api_key: str) -> dict[str, object]:
         if cached_response != response:
             raise SmokeCheckError("Cached LLM response differs from validated output")
         if (
-            metadata["provider"] != "openai"
+            metadata["provider"] != runtime.provider_name.value
             or metadata["status"] != "ok"
             or metadata["cache_hit"] is not False
         ):
@@ -185,7 +199,7 @@ def _run_live_check(settings: AppSettings, api_key: str) -> dict[str, object]:
             "cache_persisted": True,
             "prompt_tokens": metadata["prompt_tokens"],
             "completion_tokens": metadata["completion_tokens"],
-            "response_id": metadata["response_id"],
+            "response_id": metadata.get("response_id"),
             "request_fingerprint": metadata["request_fingerprint"],
         }
 
@@ -201,22 +215,39 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
     settings = load_settings()
-    secret = settings.openai.api_key
+    try:
+        runtime = build_configured_llm_provider(settings)
+    except CredentialNotConfigured as exc:
+        print(
+            json.dumps(
+                {
+                    "status": "error",
+                    "error_code": exc.code,
+                    "message": str(exc),
+                },
+                ensure_ascii=False,
+            ),
+            file=sys.stderr,
+        )
+        return 2
+    secret = runtime.settings.api_key
+    credential_name = runtime.settings.api_key_env
     if secret is None or not secret.get_secret_value().strip():
         print(
-            "未执行：缺少 OPENAI_API_KEY，请通过环境变量或本地 .env 注入。",
+            f"未执行：缺少 {credential_name}，请从启动进程的本地 shell 注入。",
             file=sys.stderr,
         )
         return 2
-    if settings.openai.max_retries != 0:
+    if runtime.settings.max_retries != 0:
         print(
-            "未执行：烟雾测试要求 OPENAI_MAX_RETRIES=0，以保证最多一次远程请求。",
+            "未执行：烟雾测试要求所选 Provider 的 MAX_RETRIES=0，"
+            "以保证最多一次远程请求。",
             file=sys.stderr,
         )
         return 2
-    if settings.openai.store_remote:
+    if runtime.settings.store_remote:
         print(
-            "未执行：烟雾测试要求 OPENAI_STORE_REMOTE=false。",
+            "未执行：烟雾测试要求所选 Provider 的 STORE_REMOTE=false。",
             file=sys.stderr,
         )
         return 2

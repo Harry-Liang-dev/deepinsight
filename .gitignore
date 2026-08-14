@@ -57,3 +57,6 @@ data/snapshots/*
 data/backups/*
 !data/backups/.gitkeep
 data/live_acceptance/
+data/live_agent_contract/
+data/live_agent_benchmark/
+data/auth/

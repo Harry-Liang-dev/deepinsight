@@ -15,7 +15,15 @@ from src.models.enums import DocumentType, Market, MarketScope
 from src.models.identifiers import AssetId
 from src.models.types import JsonObject
 from src.schemas.documents import TextDocumentRecord
-from src.schemas.market_data import EodBarRecord, InstrumentRecord
+from src.schemas.market_data import (
+    EodBarRecord,
+    FundamentalRecord,
+    InstrumentRecord,
+    MacroObservationRecord,
+    NewsEvidenceRecord,
+    SentimentEvidenceRecord,
+    SentimentSnapshotRecord,
+)
 
 
 class NormalizationError(ValueError):
@@ -224,11 +232,228 @@ class DataNormalizer:
                 volume=volume,
                 turnover=turnover,
                 vwap=prices["vwap"],
+                feed_identity=_optional_text(raw.get("feed_identity")),
+                coverage_scope=_optional_text(raw.get("coverage_scope")),
                 source_id=_required_text(source_id, "source_id"),
                 ingestion_ts=received_at or datetime.now(UTC),
             )
         except (ValueError, TypeError, ValidationError) as exc:
             raise _normalization_failure(source_id, "eod_bar", exc) from exc
+
+    def normalize_fundamental(
+        self,
+        source_id: str,
+        raw: ProviderRecord,
+        *,
+        received_at: datetime | None = None,
+    ) -> FundamentalRecord:
+        """Normalize one provider-independent issuer financial observation."""
+
+        try:
+            asset_id = self._identifiers.normalize(
+                raw.get("asset_id", raw.get("symbol")),
+                raw.get("market"),
+                raw.get("exchange_code"),
+            )
+            numeric_fields = {
+                name: _optional_float(raw.get(name), name)
+                for name in _FUNDAMENTAL_NUMERIC_FIELDS
+            }
+            if all(value is None for value in numeric_fields.values()):
+                raise ValueError(
+                    "fundamental record requires at least one numeric fact"
+                )
+            values: dict[str, object] = {
+                "asset_id": asset_id,
+                "fiscal_period_end": _required_date(
+                    raw.get("fiscal_period_end"),
+                    "fiscal_period_end",
+                ),
+                "report_type": _required_text(
+                    raw.get("report_type"),
+                    "report_type",
+                ),
+                "filing_url": _optional_text(raw.get("filing_url")),
+                "filing_date": _optional_date(
+                    raw.get("filing_date"),
+                    "filing_date",
+                ),
+                "accepted_at": _optional_datetime(
+                    raw.get("accepted_at"),
+                    "accepted_at",
+                ),
+                "source_locator": _optional_text(raw.get("source_locator")),
+                "quality": _optional_text(raw.get("quality")),
+                "source_id": _required_text(source_id, "source_id"),
+                "ingestion_ts": received_at or datetime.now(UTC),
+            }
+            values.update(numeric_fields)
+            return FundamentalRecord.model_validate(values)
+        except (ValueError, TypeError, ValidationError) as exc:
+            raise _normalization_failure(source_id, "fundamental", exc) from exc
+
+    def normalize_macro_observation(
+        self,
+        source_id: str,
+        raw: ProviderRecord,
+        *,
+        received_at: datetime | None = None,
+    ) -> MacroObservationRecord:
+        """Normalize one vintage-aware macro observation."""
+
+        try:
+            return MacroObservationRecord(
+                series_key=_required_text(raw.get("series_id"), "series_id"),
+                region_code=MarketScope(
+                    _required_text(raw.get("region_code"), "region_code").upper()
+                ),
+                observation_date=_required_date(
+                    raw.get("observation_date"),
+                    "observation_date",
+                ),
+                indicator_name=_required_text(
+                    raw.get("indicator_name"),
+                    "indicator_name",
+                ),
+                value=_optional_float(raw.get("value"), "value"),
+                unit=_optional_text(raw.get("unit")),
+                frequency=_optional_text(raw.get("frequency")),
+                realtime_start=_required_date(
+                    raw.get("realtime_start"),
+                    "realtime_start",
+                ),
+                realtime_end=_required_date(
+                    raw.get("realtime_end"),
+                    "realtime_end",
+                ),
+                source_locator=_required_text(
+                    raw.get("source_locator"),
+                    "source_locator",
+                ),
+                source_id=_required_text(source_id, "source_id"),
+                ingestion_ts=received_at or datetime.now(UTC),
+            )
+        except (ValueError, TypeError, ValidationError) as exc:
+            raise _normalization_failure(source_id, "macro", exc) from exc
+
+    def normalize_sentiment_snapshot(
+        self,
+        source_id: str,
+        raw: ProviderRecord,
+        *,
+        received_at: datetime | None = None,
+    ) -> SentimentSnapshotRecord:
+        """Normalize a community signal without treating it as a fact."""
+
+        try:
+            asset_id = self._identifiers.normalize(
+                raw.get("asset_id", raw.get("symbol")),
+                raw.get("market"),
+                raw.get("exchange_code"),
+            )
+            source_timestamp = _required_datetime(
+                raw.get("source_timestamp"),
+                "source_timestamp",
+            )
+            return SentimentSnapshotRecord(
+                asset_id=asset_id,
+                as_of=_required_datetime(raw.get("as_of"), "as_of"),
+                provider=_required_text(source_id, "source_id"),
+                score=_optional_float(raw.get("score"), "score"),
+                label=_optional_text(raw.get("label")),
+                bullish_pct=_optional_float(
+                    raw.get("bullish_pct"),
+                    "bullish_pct",
+                ),
+                bearish_pct=_optional_float(
+                    raw.get("bearish_pct"),
+                    "bearish_pct",
+                ),
+                message_volume_score=_optional_float(
+                    raw.get("message_volume_score"),
+                    "message_volume_score",
+                ),
+                message_volume_label=_optional_text(raw.get("message_volume_label")),
+                source_timestamp=source_timestamp,
+                quality=_required_text(raw.get("quality"), "quality"),
+                source_locator=_required_text(
+                    raw.get("source_locator"),
+                    "source_locator",
+                ),
+                ingestion_ts=received_at or datetime.now(UTC),
+            )
+        except (ValueError, TypeError, ValidationError) as exc:
+            raise _normalization_failure(source_id, "sentiment_snapshot", exc) from exc
+
+    def normalize_sentiment_evidence(
+        self,
+        source_id: str,
+        raw: ProviderRecord,
+        *,
+        received_at: datetime | None = None,
+    ) -> SentimentEvidenceRecord:
+        """Normalize one attributable community message."""
+
+        try:
+            asset_id = self._identifiers.normalize(
+                raw.get("asset_id", raw.get("symbol")),
+                raw.get("market"),
+                raw.get("exchange_code"),
+            )
+            return SentimentEvidenceRecord(
+                message_id=_required_text(raw.get("message_id"), "message_id"),
+                asset_id=asset_id,
+                created_at=_required_datetime(raw.get("created_at"), "created_at"),
+                text=_required_text(raw.get("text"), "text"),
+                declared_sentiment=_optional_text(raw.get("declared_sentiment")),
+                source=_required_text(source_id, "source_id"),
+                source_locator=_required_text(
+                    raw.get("source_locator"),
+                    "source_locator",
+                ),
+                ingestion_ts=received_at or datetime.now(UTC),
+            )
+        except (ValueError, TypeError, ValidationError) as exc:
+            raise _normalization_failure(source_id, "sentiment_evidence", exc) from exc
+
+    def normalize_news_evidence(
+        self,
+        source_id: str,
+        raw: ProviderRecord,
+        *,
+        received_at: datetime | None = None,
+    ) -> NewsEvidenceRecord:
+        """Normalize provider news fields into a stable attribution record."""
+
+        try:
+            asset_id = self._identifiers.normalize(
+                raw.get("asset_id", raw.get("symbol")),
+                raw.get("market"),
+                raw.get("exchange_code"),
+            )
+            return NewsEvidenceRecord(
+                news_id=_required_text(raw.get("news_id"), "news_id"),
+                asset_id=asset_id,
+                headline=_required_text(raw.get("headline"), "headline"),
+                summary=_optional_text(raw.get("summary")),
+                content=_optional_text(raw.get("content")),
+                author=_optional_text(raw.get("author")),
+                created_at=_required_datetime(raw.get("created_at"), "created_at"),
+                updated_at=_optional_datetime(raw.get("updated_at"), "updated_at"),
+                source_url=_required_text(raw.get("source_url"), "source_url"),
+                provider=_required_text(source_id, "source_id"),
+                original_source=_required_text(
+                    raw.get("original_source"),
+                    "original_source",
+                ),
+                source_locator=_required_text(
+                    raw.get("source_locator"),
+                    "source_locator",
+                ),
+                ingestion_ts=received_at or datetime.now(UTC),
+            )
+        except (ValueError, TypeError, ValidationError) as exc:
+            raise _normalization_failure(source_id, "news_evidence", exc) from exc
 
     def normalize_document(
         self,
@@ -297,6 +522,39 @@ def _normalization_failure(
     return NormalizationError(
         f"{source_id} {object_type} normalization failed: {detail}"
     )
+
+
+_FUNDAMENTAL_NUMERIC_FIELDS = (
+    "revenue",
+    "gross_profit",
+    "operating_income",
+    "net_income",
+    "eps_basic",
+    "total_assets",
+    "current_assets",
+    "total_liabilities",
+    "current_liabilities",
+    "total_debt",
+    "shareholders_equity",
+    "operating_cash_flow",
+    "shares_outstanding",
+    "free_cash_flow",
+    "revenue_yoy",
+    "net_income_yoy",
+    "gross_margin",
+    "operating_margin",
+    "net_margin",
+    "roe",
+    "roa",
+    "debt_to_equity",
+    "current_ratio",
+    "eps_ttm",
+    "book_value_per_share",
+    "market_cap",
+    "pe_ttm",
+    "pb",
+    "earnings_yield",
+)
 
 
 def _required_text(value: object, field: str) -> str:
@@ -369,6 +627,15 @@ def _optional_datetime(value: object, field: str) -> datetime | None:
         except ValueError as exc:
             raise ValueError(f"{field} must be an ISO datetime") from exc
     raise TypeError(f"{field} must be a datetime")
+
+
+def _required_datetime(value: object, field: str) -> datetime:
+    parsed = _optional_datetime(value, field)
+    if parsed is None:
+        raise ValueError(f"{field} is required")
+    if parsed.tzinfo is None or parsed.utcoffset() is None:
+        raise ValueError(f"{field} must include a timezone")
+    return parsed.astimezone(UTC)
 
 
 def _optional_object(value: object, field: str) -> JsonObject | None:

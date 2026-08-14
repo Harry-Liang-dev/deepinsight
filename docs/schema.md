@@ -250,6 +250,13 @@ from the cross-module Pydantic contracts described above.
 | `report_jobs` | `job_id` | Durable report request, lifecycle, safe error, and report reference |
 | `phase2_registry` | `module_name` | Disabled Phase Two extension registry |
 
+`fundamentals` retains raw SEC Company Facts including total/current assets,
+total/current liabilities, consolidated debt, equity, cash flow, EPS, and
+shares where published. Growth, margins, ratios, and valuation are derived
+Evidence with parent IDs; they are not silently persisted as Provider facts.
+Alpaca OHLC coverage metadata records `adjustment=raw|all|...` so adjusted and
+raw research series remain distinguishable.
+
 The following indexes are initialized:
 
 - `idx_eod_bars_asset_date`
@@ -282,6 +289,7 @@ Repository classes:
 | `LLMCacheRecord` | `LLMCacheRepository` | `llm_cache` |
 | `IngestionJobRecord` | `IngestionJobRepository` | `ingestion_jobs` |
 | `ReportJobRecord` | `ReportJobRepository` | `report_jobs` |
+| `EvaluationResult` | `EvaluationRepository` | `report_evaluations` |
 
 Repository-owned persistence records live under `src/repositories/` and are
 not cross-module business contracts. Repository mapping converts `AssetId`,
@@ -347,3 +355,30 @@ available through that date; ordered chunks remain available through
 These methods return existing domain records and keep SQL inside Repository
 classes. The workflow never introduces a database model into Agent, Memory,
 report, or API contracts.
+
+## Report evaluation
+
+The first Phase Two storage addition is `report_evaluations`:
+
+| Column | Meaning |
+|---|---|
+| `evaluation_id` | Immutable evaluation primary key |
+| `report_id` | Evaluated report identifier |
+| `ruleset_version` | Exact versioned scoring rules |
+| `judge_model` | Judge model or explicit Fake identifier |
+| `input_fingerprint` | SHA-256 of report, evidence, missing-data inputs, rules, and model |
+| `overall_score` | Weighted twelve-dimension score in `[0, 1]` |
+| `deterministic_score` | Score derived only from deterministic checks |
+| `judge_score` | Score derived only from LLM Judge checks |
+| `result_json` | Complete validated `EvaluationResult` audit object |
+| `created_at` | Evaluation instant normalized to UTC before DuckDB storage |
+
+`idx_report_evaluations_report_created` locates historical evaluations by
+report and creation time. A duplicate evaluation ID fails rather than
+overwriting prior audit evidence.
+
+The result JSON retains eight deterministic checks, six Judge checks, and
+twelve unique dimension results. Every check and dimension includes a reason,
+evidence locator, score, and pass state. Repository reads compare the
+duplicated audit columns with the JSON result and fail if either representation
+is invalid or inconsistent.

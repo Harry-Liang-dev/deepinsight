@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import math
 import os
@@ -112,6 +113,10 @@ class VectorRepository(Protocol):
         source_table: str,
     ) -> None:
         """Replace one namespace from authoritative source records."""
+        ...
+
+    def snapshot_id(self, namespaces: list[str]) -> str:
+        """Return a stable provider-independent identity for namespace state."""
         ...
 
 
@@ -322,6 +327,37 @@ class FaissVectorRepository:
         with self._lock:
             state = self._load(namespace)
             return 0 if state is None else int(state.index.ntotal)
+
+    def snapshot_id(self, namespaces: list[str]) -> str:
+        """Return a stable identity for the persisted requested namespaces.
+
+        The identity contains validated manifest values and vector IDs only.
+        It does not expose FAISS objects, vectors, or source content.
+        """
+
+        namespace_states: list[object] = []
+        with self._lock:
+            for namespace in sorted(set(namespaces)):
+                state = self._load(namespace)
+                if state is None:
+                    namespace_states.append(
+                        {"namespace": namespace, "status": "missing"}
+                    )
+                    continue
+                namespace_states.append(
+                    {
+                        "manifest": state.manifest.model_dump(mode="json"),
+                        "vector_ids": sorted(state.metadata),
+                    }
+                )
+        encoded = json.dumps(
+            {"namespaces": namespace_states},
+            ensure_ascii=False,
+            separators=(",", ":"),
+            sort_keys=True,
+        )
+        digest = hashlib.sha256(encoded.encode("utf-8")).hexdigest()
+        return f"vecsnap_{digest}"
 
     def rebuild(
         self,

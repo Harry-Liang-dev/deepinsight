@@ -1,6 +1,6 @@
 # Domain Schema
 
-This document describes Phase One cross-module contracts and their persistence
+This document describes cross-module contracts and their persistence
 boundaries. Pydantic models and Protocol interfaces perform no I/O themselves;
 the later sections identify the Repositories and services that implement
 DuckDB and FAISS storage.
@@ -42,6 +42,14 @@ symbols require an explicit exchange rather than inferring one.
 | `TaskStatus` | `queued`, `running`, `completed`, `failed` |
 | `IngestionJobType` | `full`, `incremental`, `repair` |
 | `EventSeverity` | `low`, `medium`, `high`, `critical` |
+| `SectorId` | Stable `S01` through `S18` Sector Ontology v1 IDs |
+| `SectorMembershipRole` | `core`, `upstream`, `downstream`, `supplier`, `customer`, `competitor`, `beneficiary` |
+| `ResearchScopeType` | `global`, `macro`, `sector`, `industry_chain`, `asset`, `research_episode` |
+| `SectorEdgeType` | `belongs_to`, `supplies`, `customer_of`, `competes_with`, `benefits_from`, `exposed_to`, `drives` |
+| `MacroCycleDirection` | `rising`, `falling`, `stable`, `mixed`, `unknown` |
+| `SectorAnomalyType` | `price_volume`, `breadth`, `earnings`, `news_event`, `macro_shock`, `supply_chain_propagation` |
+| `AnomalyDirection` | `positive`, `negative`, `mixed`, `unknown` |
+| `SectorAnomalyStatus` | `detected`, `propagation_candidate` |
 
 `AgentName` contains the four analyst and four manager names declared in
 MASTER_SPEC.
@@ -108,6 +116,166 @@ Memory text, source, creator, times, importance, and filters.
 `FakeEmbeddingService` is deterministic and offline. `DocumentEmbeddingService`
 advances existing document chunks from `embedding_status = pending` to
 `indexed` only after the matching vector is persisted.
+
+## Sector Ontology and hierarchical research scope
+
+`SectorOntology` v1 fixes exactly 18 first-level research Sectors (`S01`–`S18`).
+An `IndustryChainDefinition` is a dynamic, versioned object belonging to one
+Sector. `SectorMembership` maps an `AssetId` to a Sector, zero or more chains,
+and an economic role with weight, confidence, source, and validity interval.
+
+All ontology intervals use `[valid_from, valid_to)` semantics: the start is
+inclusive and an optional end is exclusive. New membership revisions append
+rows and never overwrite prior periods. Point-in-time reads require
+`valid_from <= as_of < valid_to`, with a null end representing an open interval.
+
+`ResearchScopeDefinition` establishes the independent research hierarchy:
+
+```text
+GLOBAL → MACRO → SECTOR → INDUSTRY_CHAIN → ASSET → RESEARCH_EPISODE
+```
+
+An Asset scope may attach directly to a Sector when no chain is appropriate.
+The hierarchy requires one GLOBAL root, existing parents, valid parent-child
+types, contained validity intervals, and no cycles. This scope does not replace
+Memory L0–L4 or the existing per-request Agent `ResearchScopeV1`.
+
+The minimal DuckDB knowledge graph stores typed `SectorNode` and `SectorEdge`
+contracts. It provides versioned relationship rows only; no graph database or
+complex graph algorithm is introduced.
+
+`SectorUniverseSnapshot` materializes one Sector's immutable research universe
+at an `as_of` date. It records sorted canonical assets, only market-validated
+optional benchmark assets, the membership version, source, deterministic
+coverage diagnostics, and quality. Its content-derived `snapshot_id` and an
+append-only Repository prevent future membership changes from rewriting an
+old snapshot.
+
+`SectorBenchmarkCandidate` is configuration, not Evidence that an ETF exists.
+Only a real price observation promotes a candidate to a temporal
+`SectorBenchmarkMapping`; an unvalidated or unavailable candidate is stored as
+MISSING and never enters a snapshot.
+
+`SectorResearchSnapshot v1` is the deterministic state derived from one
+`SectorUniverseSnapshot`. It contains `SectorMarketState`,
+`SectorBreadthState`, `SectorFundamentalState`, and `SectorValuationState`.
+Every `CoveredSectorMetric` includes its value, `coverage_count`,
+`universe_count`, and AVAILABLE/PARTIAL/MISSING status. Cross-sectional
+aggregates require at least two valid constituents; otherwise the value stays
+null and the metric is PARTIAL rather than presenting a single issuer as a
+Sector statistic.
+
+Sector return, volatility, drawdown, fundamental, and valuation aggregates use
+the constituent median. Breadth ratios use only valid constituent inputs;
+return dispersion uses sample standard deviation. The two excess-return fields
+use a 20-session horizon against SPY and the first validated Sector benchmark.
+The operator rejects observations after `as_of`, uses FMP standardized records
+as the canonical ratio source, and never invokes an LLM.
+
+`SectorMacroSnapshot` adds the deterministic Macro-to-Sector projection
+without defining a market Regime. Its `SectorCycleState` contains rates,
+inflation, labor, growth, and financial-stress dimensions. Each dimension
+retains its underlying series signals, current value, three- and twelve-month
+reference values, coverage, direction, as-of date, and source lineage.
+
+`MacroSensitivity` aligns monthly benchmark returns with monthly macro
+changes. It stores one independent `MacroSensitivityEstimate` per FRED series:
+OLS beta, Pearson correlation, observation count, required count, rolling
+window, status, and source ID. The v1 window is 36 months with a minimum of 24
+aligned observations. CPI, core PCE, payrolls, industrial production, and GDP
+use year-over-year changes; other series use level changes. Missing or short
+history produces PARTIAL/MISSING output and never an extrapolated coefficient.
+The operator rejects future prices, observations, vintages, and ingestion
+timestamps.
+
+`SectorAnomalyEvent` is the authoritative Day34 Radar event. It stores its
+deterministic anomaly type, Sector and Industry Chain identities, source and
+candidate affected assets, direction, severity, confidence, five explicit
+timestamps, canonical Evidence IDs, summary, optional propagation hypothesis,
+status, and ruleset version. Validation requires timezone-aware timestamps and
+enforces `event_time <= available_at`, `published_at <= available_at`,
+`available_at <= as_of`, and `ingested_at <= as_of`.
+
+Radar rules are deterministic: trailing price-return z-score and volume ratio,
+Sector breadth divergence/dispersion, attributable structured earnings
+surprise, material event/news classification, Day33 macro-change plus
+sensitivity thresholds, and effective Day30 membership/graph traversal.
+Propagation output is explicitly a candidate and keeps direction UNKNOWN when
+the graph establishes exposure but not impact. It is not an Agent, Regime,
+Factor, or investment recommendation.
+
+`sector_anomaly_events` stores one immutable canonical body.
+`sector_anomaly_scopes` links that event ID to existing SECTOR, CHAIN, and
+source-ASSET scopes without duplicating structured content. The Memory
+projection uses existing L1/L2 namespaces, one identical summary per linked
+scope, and an attributable `SourceReference`; no Radar-specific Memory level
+or hierarchy exists.
+
+## Sector research Agent contracts
+
+`SectorResearchInput v1` is the Day35 point-in-time composition contract. It
+requires one UTC `research_as_of` shared by the Sector universe/state, Macro
+snapshot, Radar events, and `ResearchContextBundle`. Industry Chain,
+membership, node, edge, benchmark, Event, and Memory revisions must already be
+effective at that cutoff. The contract composes existing Day30-Day34 models;
+it does not define a second temporal validator or persistence schema.
+
+`SectorResearchEvidence` is a compact projection over direct upstream objects.
+Each entry reuses `RoleEvidenceManifestEntry` and adds only interpretation
+constraints: Evidence kind, availability status, Chain/Event lineage,
+historical-association-only, propagation-candidate-only, and explicit
+degradation requirements. Only exact manifest IDs are citable.
+
+`SectorResearchOutput v1` is claim-first:
+
+| Field | Meaning |
+|---|---|
+| `claims` | Authoritative accepted `ValidatedClaim` collection with Sector category and direct Evidence IDs |
+| `cycle_assessment` | Interpretive Sector phase, confidence, uncertainty, and accepted supporting Claim IDs |
+| `uncertainties` / `missing_data` | Explicit PARTIAL, proxy, missing Radar/Memory, or other coverage limits |
+| `rejected_claims` | Invalid producer output retained only for audit and excluded from downstream facts |
+| `evidence_manifest` | Exact invocation-local direct-upstream citation namespace |
+| `model_version` / `prompt_version` | Reproducible inference identities |
+
+The Sector phase enum is `accelerating`, `expanding`, `mature`, `slowing`,
+`contracting`, `recovering`, or `uncertain`. It is an Evidence-backed research
+interpretation, not `MacroCycleDirection`, Market Regime, Factor, or trading
+signal. Numeric literals are extracted from final Claim text by Python and
+must occur exactly in at least one bound Evidence entry. The LLM cannot
+calculate ratios, percentages, unit conversions, dates, aggregates, or rounded
+values.
+
+`SectorResearchAgent` remains outside `AgentName`; that enum continues to
+contain exactly the four Phase 3 analysts and four managers.
+
+## Sector-to-asset context contracts
+
+Day36 adds `SectorContextBundle v1` without adding a persistence table. The
+bundle binds one asset and UTC `research_as_of` to an effective temporal
+membership, one primary Sector, active Industry Chains, the accepted
+`SectorResearchOutput` Claim collection, its cycle assessment, aligned Sector
+and Macro snapshot IDs, and compact Radar Event references. Event references
+are valid only when an accepted Sector Claim carries the corresponding
+`event:<event_id>` Evidence ID. Future events and identity/time mismatches are
+rejected.
+
+`SectorRoleContext v1` is a least-privilege projection. The four Analysts see
+only relevant presentation context and keep their existing role-local asset
+Evidence contract. Research/Bull/Bear/Risk receive relevant accepted Sector
+Claims in the existing `validated_claims` shape and may cite their Claim IDs as
+direct upstream. Recursive lineage remains:
+
+```text
+Asset Manager Claim
+→ Sector Claim
+→ Sector state or Radar Evidence
+→ canonical Provider source
+```
+
+`SectorContextUsageDiagnostic` records only context ID, role, provided/used
+Claim and Event IDs, and serialized projection size. It is not a trajectory,
+reward, Factor, Regime, or new Memory model. No Sector context is a valid
+empty/degraded state; the asset workflow then retains the Phase 3 behavior.
 
 ## LLM contracts
 
@@ -248,6 +416,10 @@ from the cross-module Pydantic contracts described above.
 | `llm_cache` | `cache_key` | Structured LLM response cache |
 | `ingestion_jobs` | `job_id` | Ingestion lifecycle records |
 | `report_jobs` | `job_id` | Durable report request, lifecycle, safe error, and report reference |
+| `sector_nodes` | `node_id`, `version`, `valid_from` | Versioned Sector, Industry Chain, and Asset graph nodes |
+| `sector_edges` | `edge_id`, `version`, `valid_from` | Versioned directed Sector graph relationships |
+| `sector_memberships` | `asset_id`, `sector_id`, `role`, `valid_from`, `version` | Point-in-time asset classification and chain roles |
+| `research_scopes` | `scope_id`, `version`, `valid_from` | Unified hierarchical research scopes |
 | `phase2_registry` | `module_name` | Disabled Phase Two extension registry |
 
 `fundamentals` retains raw SEC Company Facts including total/current assets,
@@ -269,6 +441,10 @@ The following indexes are initialized:
 - `idx_agent_runs_report_agent`
 - `idx_reports_date_market`
 - `idx_report_jobs_status_created`
+- `idx_sector_nodes_type_time`
+- `idx_sector_edges_source_target`
+- `idx_sector_memberships_asset_time`
+- `idx_research_scopes_parent`
 
 DuckDB FTS is not enabled in Phase One database bootstrap.
 
@@ -290,6 +466,11 @@ Repository classes:
 | `IngestionJobRecord` | `IngestionJobRepository` | `ingestion_jobs` |
 | `ReportJobRecord` | `ReportJobRepository` | `report_jobs` |
 | `EvaluationResult` | `EvaluationRepository` | `report_evaluations` |
+| `SectorNode`, `SectorEdge`, `SectorMembership`, `ResearchScopeDefinition` | `SectorOntologyRepository` | `sector_nodes`, `sector_edges`, `sector_memberships`, `research_scopes` |
+| `SectorBenchmarkMapping`, `SectorUniverseSnapshot` | `SectorOntologyRepository` | `sector_benchmark_mappings`, `sector_universe_snapshots` |
+| `SectorResearchSnapshot` | `SectorOntologyRepository` | `sector_research_snapshots` |
+| `SectorMacroSnapshot` | `SectorOntologyRepository` | `sector_macro_snapshots` |
+| `SectorAnomalyEvent` | `SectorOntologyRepository` | `sector_anomaly_events`, `sector_anomaly_scopes` |
 
 Repository-owned persistence records live under `src/repositories/` and are
 not cross-module business contracts. Repository mapping converts `AssetId`,

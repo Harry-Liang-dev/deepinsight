@@ -59,4 +59,7 @@ data/backups/*
 data/live_acceptance/
 data/live_agent_contract/
 data/live_agent_benchmark/
+data/live_sector_radar/
+data/sector_asset_integration/
+data/live_sector_research/
 data/auth/

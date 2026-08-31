@@ -62,6 +62,59 @@ def test_vintages_are_idempotent_and_future_knowledge_is_excluded(
     assert count == (2,)
 
 
+def test_macro_history_batch_upsert_preserves_point_in_time_vintages(
+    tmp_path: Path,
+) -> None:
+    """Batch persistence retains the same vintage semantics as single writes."""
+
+    database = DuckDBDatabase(tmp_path / "macro-batch.duckdb")
+    database.bootstrap()
+    repository = MarketDataRepository(database)
+    first = MacroObservationRecord(
+        series_key="FEDFUNDS",
+        region_code=MarketScope.US,
+        observation_date=date(2026, 6, 1),
+        indicator_name="Federal Funds Rate",
+        value=4.25,
+        unit="Percent",
+        frequency="Monthly",
+        realtime_start=date(2026, 7, 1),
+        realtime_end=date(2026, 7, 1),
+        source_locator="fred:FEDFUNDS:2026-06-01",
+        source_id="fred",
+        ingestion_ts=AS_OF - timedelta(days=1),
+    )
+    second = first.model_copy(
+        update={
+            "observation_date": date(2026, 7, 1),
+            "value": 4.0,
+            "realtime_start": date(2026, 8, 1),
+            "realtime_end": date(2026, 8, 1),
+            "source_locator": "fred:FEDFUNDS:2026-07-01",
+        }
+    )
+
+    repository.upsert_macro_observations([first, second])
+    available = repository.list_macro_observations(
+        ["FEDFUNDS"], end_date=date(2026, 8, 10), as_of=AS_OF
+    )
+
+    assert [item.observation_date for item in available] == [
+        first.observation_date,
+        second.observation_date,
+    ]
+    assert [item.value for item in available] == [first.value, second.value]
+    assert [item.source_locator for item in available] == [
+        first.source_locator,
+        second.source_locator,
+    ]
+    with database.connection() as connection:
+        count = connection.execute(
+            "SELECT count(*) FROM macro_series_vintages"
+        ).fetchone()
+    assert count == (2,)
+
+
 def test_news_and_sentiment_apply_publication_and_ingestion_cutoffs(
     tmp_path: Path,
 ) -> None:

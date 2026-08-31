@@ -38,6 +38,7 @@ from src.schemas.research_data import (
     ResearchDataBundle,
     ResearchDataBundleRequest,
 )
+from src.schemas.sector_context import SectorContextResolution
 from src.services import IngestionRequest
 from src.services.data_ingestion import FundamentalRangeProvider
 
@@ -158,6 +159,19 @@ class ResearchDataBundleBuilder(Protocol):
         ...
 
 
+class AssetSectorContextResolver(Protocol):
+    """Resolve already-produced Sector Intelligence for one asset cutoff."""
+
+    def resolve(
+        self,
+        *,
+        asset_id: AssetId,
+        research_as_of: datetime,
+    ) -> SectorContextResolution:
+        """Return PIT-safe context or an explicit empty-valid resolution."""
+        ...
+
+
 class FeatureOperator(Protocol):
     """Compute deterministic JSON features from normalized rows."""
 
@@ -200,6 +214,7 @@ class ResearchWorkflowService:
         report_pipeline: ReportFinalizer,
         model_name: str,
         data_bundle_builder: ResearchDataBundleBuilder | None = None,
+        sector_context_resolver: AssetSectorContextResolver | None = None,
         dataset_version: str = "runtime_research_v1",
         document_lookback_days: int = 370,
         evidence_chunks_per_document: int = 4,
@@ -229,6 +244,7 @@ class ResearchWorkflowService:
         self._report_pipeline = report_pipeline
         self._model_name = model_name
         self._data_bundle_builder = data_bundle_builder
+        self._sector_context_resolver = sector_context_resolver
         self._dataset_version = dataset_version
         self._document_lookback_days = document_lookback_days
         self._evidence_chunks_per_document = evidence_chunks_per_document
@@ -331,6 +347,21 @@ class ResearchWorkflowService:
             retrieved_memories=memories,
         )
 
+        sector_context_bundle = None
+        if self._sector_context_resolver is not None:
+            sector_resolution = self._sector_context_resolver.resolve(
+                asset_id=asset_id,
+                research_as_of=as_of,
+            )
+            sector_context_bundle = sector_resolution.bundle
+            features["sector_context_status"] = sector_resolution.status.value
+            if sector_resolution.reason:
+                features["sector_context_degradation"] = sector_resolution.reason
+            context = context.model_copy(
+                update={"structured_features": features},
+                deep=True,
+            )
+
         agent_result = self._coordinator.run(
             ResearchTaskRequest(
                 task_id=task_id,
@@ -339,6 +370,7 @@ class ResearchWorkflowService:
                 input_context=context,
                 data_bundle=data_bundle,
                 context_bundle=context_bundle,
+                sector_context_bundle=sector_context_bundle,
             )
         )
         if agent_result.status is not AgentStatus.OK:

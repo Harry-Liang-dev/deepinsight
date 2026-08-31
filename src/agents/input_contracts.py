@@ -31,6 +31,8 @@ from src.schemas.research_data import (
     ResearchDataSection,
     ResearchEvidenceItem,
 )
+from src.schemas.sector_context import SectorContextBundle, SectorRoleContext
+from src.services.sector_context import SectorContextProjector
 
 type InputSchemaVersion = Literal["agent_input_v1"]
 type OutputSchemaVersion = Literal["agent_output_v1", "agent_output_v2"]
@@ -470,6 +472,7 @@ class AgentInputBaseV1(DomainModel):
     coverage: AgentCoverageManifestV1
     data_evidence_index: dict[str, ResearchEvidenceItem]
     memory_evidence_index: dict[str, ResearchContextMemory]
+    sector_context: SectorRoleContext | None = None
     epistemic_policy: AgentEpistemicPolicyV1 = Field(
         default_factory=AgentEpistemicPolicyV1
     )
@@ -533,6 +536,13 @@ class AgentInputBaseV1(DomainModel):
             raise ValueError("future structured evidence cannot enter Agent input")
         if any(item.effective_ts > self.scope.as_of for item in memory_items.values()):
             raise ValueError("future Memory cannot enter Agent input")
+        if self.sector_context is not None:
+            if self.sector_context.agent_role is not self.agent_name:
+                raise ValueError("Sector context projection has the wrong Agent role")
+            if self.sector_context.asset_id != self.scope.asset_id:
+                raise ValueError("Sector context asset does not match Agent scope")
+            if self.sector_context.research_as_of != self.scope.as_of:
+                raise ValueError("Sector context cutoff does not match Agent scope")
         return self
 
     def resolve_data_evidence(self, evidence_id: str) -> ResearchEvidenceItem:
@@ -708,6 +718,7 @@ class AgentInputProjector:
         data_bundle: ResearchDataBundle,
         context_bundle: ResearchContextBundle,
         agent_name: AgentName,
+        sector_context_bundle: SectorContextBundle | None = None,
     ) -> AnalystInputV1:
         """Project one of the four Analyst inputs.
 
@@ -725,7 +736,13 @@ class AgentInputProjector:
 
         if agent_name not in _ANALYSTS:
             raise AgentInputProjectionError("analyst projection requires Analyst role")
-        values = _base_input_values(data_bundle, context_bundle, agent_name, ())
+        values = _base_input_values(
+            data_bundle,
+            context_bundle,
+            agent_name,
+            (),
+            sector_context_bundle,
+        )
         model_by_role: dict[AgentName, type[AgentInputBaseV1]] = {
             AgentName.FUNDAMENTAL_ANALYST: FundamentalAnalystInputV1,
             AgentName.TECHNICAL_TEXT_ANALYST: TechnicalTextAnalystInputV1,
@@ -743,6 +760,7 @@ class AgentInputProjector:
         context_bundle: ResearchContextBundle,
         agent_name: AgentName,
         analyst_outputs: tuple[VersionedUpstreamOutputV1, ...],
+        sector_context_bundle: SectorContextBundle | None = None,
     ) -> ManagerResearchContextV1:
         """Project read-only global context for one Manager role.
 
@@ -777,6 +795,7 @@ class AgentInputProjector:
             context_bundle,
             agent_name,
             unavailable,
+            sector_context_bundle,
         )
         values["analyst_outputs"] = analyst_outputs
         return ManagerResearchContextV1.model_validate(values)
@@ -787,6 +806,7 @@ def _base_input_values(
     context_bundle: ResearchContextBundle,
     agent_name: AgentName,
     unavailable_upstream: tuple[AgentName, ...],
+    sector_context_bundle: SectorContextBundle | None,
 ) -> dict[str, object]:
     _validate_bundle_alignment(data_bundle, context_bundle)
     requirement = _requirement(agent_name)
@@ -842,6 +862,11 @@ def _base_input_values(
             item.evidence_id: item for section in sections for item in section.items
         },
         "memory_evidence_index": {item.memory_id: item for item in memory_items},
+        "sector_context": (
+            None
+            if sector_context_bundle is None
+            else SectorContextProjector.for_role(sector_context_bundle, agent_name)
+        ),
     }
 
 

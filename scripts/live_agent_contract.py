@@ -24,11 +24,16 @@ from src.agents import (
     TechnicalTextAnalystAgent,
 )
 from src.agents.base import BaseAgent
-from src.agents.contracts import AgentExecutionResult, AgentInvocation
+from src.agents.contracts import (
+    AgentExecutionResult,
+    AgentInvocation,
+    ResearchTaskRequest,
+)
 from src.agents.coordinator import (
     _context_for_contract,
     _contract_json,
     _parse_analyst_output,
+    _sector_context_usage,
     _versioned_output,
 )
 from src.agents.input_contracts import (
@@ -64,6 +69,7 @@ from src.schemas.agents import (
 )
 from src.schemas.memory import MemorySearchRequest, MemorySearchResponse
 from src.schemas.research_data import ResearchDataBundle
+from src.schemas.sector_context import SectorContextBundle
 from src.services import LLMGateway, build_configured_llm_provider
 
 _AGENT_CLASSES: dict[AgentName, type[BaseAgent]] = {
@@ -121,6 +127,11 @@ def _parser() -> argparse.ArgumentParser:
         "--output-root", type=Path, default=Path("data/live_agent_contract")
     )
     parser.add_argument("--model")
+    parser.add_argument(
+        "--sector-context",
+        type=Path,
+        help="Optional PIT-aligned SectorContextBundle JSON for Day36 integration.",
+    )
     parser.add_argument("--label", default="candidate")
     parser.add_argument(
         "--sentiment-only",
@@ -152,6 +163,20 @@ def main(argv: Sequence[str] | None = None) -> int:
         bundle = ResearchDataBundle.model_validate_json(
             arguments.bundle.read_text(encoding="utf-8")
         )
+        sector_context = (
+            None
+            if arguments.sector_context is None
+            else SectorContextBundle.model_validate_json(
+                arguments.sector_context.read_text(encoding="utf-8")
+            )
+        )
+        if sector_context is not None and (
+            sector_context.asset_id != bundle.asset_id
+            or sector_context.research_as_of != bundle.as_of
+        ):
+            return _configuration_error(
+                "Sector context must match the fixed asset bundle and cutoff."
+            )
         memory_bundle = _empty_memory_bundle(bundle)
         prompt_loader = PromptLoader(arguments.prompt_root)
         selected_roles = (
@@ -195,6 +220,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 base_context,
                 agents[AgentName.SENTIMENT_ANALYST],
                 model,
+                sector_context,
             )
         else:
             results = _run_chain(
@@ -204,6 +230,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 agents,
                 model,
                 include_risk=arguments.include_risk,
+                sector_context=sector_context,
             )
         stamp = datetime.now(UTC)
         run_id = f"agent_contract_{stamp.strftime('%Y%m%dT%H%M%SZ')}_{uuid4().hex[:8]}"
@@ -213,6 +240,9 @@ def main(argv: Sequence[str] | None = None) -> int:
             "timestamp": stamp.isoformat(),
             "dataset_version": bundle.dataset_version,
             "data_bundle_id": bundle.bundle_id,
+            "sector_context_id": (
+                None if sector_context is None else sector_context.context_id
+            ),
             "provider": configured.provider_name.value,
             "provider_real": True,
             "judge_real": False,
@@ -232,6 +262,66 @@ def main(argv: Sequence[str] | None = None) -> int:
                 role.value: _metrics(result) for role, result in results.items()
             },
         }
+        if sector_context is not None:
+            usage = _sector_context_usage(
+                ResearchTaskRequest(
+                    task_id=run_id,
+                    model_name=model,
+                    input_context=base_context,
+                    data_bundle=bundle,
+                    context_bundle=memory_bundle,
+                    sector_context_bundle=sector_context,
+                ),
+                results,
+            )
+            summary["sector_context_usage"] = [
+                item.model_dump(mode="json")
+                for item in usage
+                if item.agent_role in results
+            ]
+            summary["with_without_sector"] = {
+                "without_sector": {
+                    "provided_sector_claims": 0,
+                    "used_sector_claims": 0,
+                    "provided_events": 0,
+                    "used_events": 0,
+                    "context_chars": 0,
+                },
+                "with_sector": {
+                    "provided_sector_claims": sum(
+                        len(item.provided_sector_claim_ids)
+                        for item in usage
+                        if item.agent_role in results
+                    ),
+                    "used_sector_claims": sum(
+                        len(item.used_sector_claim_ids)
+                        for item in usage
+                        if item.agent_role in results
+                    ),
+                    "provided_events": sum(
+                        len(item.provided_event_ids)
+                        for item in usage
+                        if item.agent_role in results
+                    ),
+                    "used_events": sum(
+                        len(item.used_event_ids)
+                        for item in usage
+                        if item.agent_role in results
+                    ),
+                    "context_chars": sum(
+                        item.serialized_context_chars
+                        for item in usage
+                        if item.agent_role in results
+                    ),
+                    "missing_data_items": sum(
+                        len(result.missing_data) for result in results.values()
+                    ),
+                    "accepted_claims": sum(
+                        cast(int, _metrics(result)["valid_claims"])
+                        for result in results.values()
+                    ),
+                },
+            }
         passed = sum(result.status is AgentStatus.OK for result in results.values())
         summary["passed_agents"] = passed
         summary["failed_agents"] = len(selected_roles) - passed
@@ -300,11 +390,14 @@ def _run_chain(
     model: str,
     *,
     include_risk: bool = False,
+    sector_context: SectorContextBundle | None = None,
 ) -> dict[AgentName, AgentExecutionResult]:
     results: dict[AgentName, AgentExecutionResult] = {}
     analyst_outputs: list[AnalystOutput] = []
     for role in ANALYST_ORDER:
-        analyst_contract = AgentInputProjector.analyst(bundle, memory_bundle, role)
+        analyst_contract = AgentInputProjector.analyst(
+            bundle, memory_bundle, role, sector_context
+        )
         analyst_request = AgentRequest(
             run_id=f"fixed:{role.value}",
             agent_name=role,
@@ -327,6 +420,7 @@ def _run_chain(
         memory_bundle,
         AgentName.RESEARCH_MANAGER,
         slots,
+        sector_context,
     )
     research_contract = ResearchManagerInputV1(context=research_context)
     research_request = ResearchManagerRequest(
@@ -355,6 +449,7 @@ def _run_chain(
             memory_bundle,
             role,
             slots,
+            sector_context,
         )
         manager_contract = input_model(
             context=manager_context,
@@ -385,6 +480,7 @@ def _run_chain(
                 memory_bundle,
                 AgentName.RISK_MANAGER,
                 slots,
+                sector_context,
             )
             risk_contract = RiskManagerInputV1(
                 context=risk_context,
@@ -426,11 +522,12 @@ def _run_sentiment_only(
     base_context: AgentContext,
     agent: BaseAgent,
     model: str,
+    sector_context: SectorContextBundle | None = None,
 ) -> dict[AgentName, AgentExecutionResult]:
     """Invoke only Sentiment against the same fixed role projection."""
 
     role = AgentName.SENTIMENT_ANALYST
-    contract = AgentInputProjector.analyst(bundle, memory_bundle, role)
+    contract = AgentInputProjector.analyst(bundle, memory_bundle, role, sector_context)
     request = AgentRequest(
         run_id=f"fixed:{role.value}",
         agent_name=role,

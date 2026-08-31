@@ -25,6 +25,153 @@
 | Research Benchmark | Complete | 100% | Versioned seven-case CN/HK/US offline corpus, provenance and expectation contracts, deterministic threshold gates, machine JSON results, and isolated live Judge boundary |
 | Live Agent Benchmark | Complete | 100% | Immutable US snapshot, six real-Agent scenarios, real LLM/Judge hard gate, per-case artifacts, input fingerprints, and neutral baseline/candidate comparison |
 | Phase 3 Shared Research Context | Complete | 100% | Canonical ResearchDataBundle + ResearchContextBundle, eight role projections, structured Evidence citation bridge, point-in-time orchestration, and LLM run metadata wiring |
+| Phase 4 Sector Ontology | Complete | 100% | Fixed 18-sector ontology, dynamic Industry Chains, temporal memberships, hierarchical research scopes, minimal DuckDB graph, and non-exhaustive five-asset seed |
+| Phase 4 Sector Universe | Complete | 100% | Immutable point-in-time snapshots over versioned memberships, optional market-validated ETF benchmarks, coverage diagnostics, and a scoped five-asset US live smoke |
+| Phase 4 Deterministic Sector State | Complete | 100% | Versioned market, breadth, fundamental, and valuation state with explicit sample coverage, strict point-in-time inputs, immutable DuckDB snapshots, and no LLM computation |
+| Phase 4 Sector Cycle & Macro Sensitivity | Complete | 100% | Five-dimensional descriptive macro cycle state plus rolling univariate Sector sensitivity with explicit sample gates, PIT lineage, immutable snapshots, and no Regime model |
+| Phase 4 Sector Anomaly Radar | Complete | 100% | Deterministic price/volume, breadth, earnings, news/event, macro-shock and graph-grounded propagation candidates with immutable PIT events and existing hierarchical Memory scopes |
+| Phase 4 Sector Research Agent | Complete | 100% | Upstream claim-first Sector synthesis over deterministic state, Macro, Radar, Industry Chain, and PIT Memory contracts with exact numeric/citation grounding and explicit degradation |
+| Phase 4 Sector-to-Asset Integration | Complete | 100% | PIT asset-to-Sector/Chain routing, compact role-specific Sector context, direct-upstream Claim provenance, usage diagnostics, graceful Phase 3 fallback, and real Qwen 8/8 validation |
+
+## Phase Four status
+
+- Day30 establishes `SectorOntology v1` with exactly 18 stable first-level
+  research categories; no additional first-level Sector was introduced.
+- Dynamic Industry Chains and asset memberships use immutable versioned rows
+  with inclusive `valid_from` and exclusive optional `valid_to` boundaries.
+- Unified scopes cover GLOBAL, MACRO, SECTOR, INDUSTRY_CHAIN, ASSET, and
+  RESEARCH_EPISODE without changing Memory L0–L4 or Phase 3 Agent contracts.
+- DuckDB persists the minimal `sector_nodes`, `sector_edges`,
+  `sector_memberships`, and `research_scopes` model. No graph engine, graph
+  algorithm, Sector Agent, Radar, Factor, Backtest, or trading behavior exists.
+- The AAPL/NVDA/AMD/TSM/MU seed is explicitly a test fixture, not a complete
+  security universe or production classification claim.
+- Day30 Gate A: `455 passed, 5 deselected`; Ruff, mypy, Black, and
+  `git diff --check` pass.
+- Day31 adds immutable `SectorUniverseSnapshot` rows and temporal
+  `SectorBenchmarkMapping` rows. All 18 Sectors have explicit optional US ETF
+  candidates; only candidates with a real Alpaca bar are promoted into a
+  snapshot. Empty benchmarks remain valid MISSING mappings.
+- The scoped live smoke `20260830T024104Z` validated AAPL, NVDA, AMD, TSM, MU
+  and 17 unique ETF candidates. S01 contains AMD/NVDA/TSM with SOXX; S02
+  contains MU with SOXX as a PARTIAL proxy; S03 contains AAPL with XLK as a
+  PARTIAL proxy. Classification uses the non-exhaustive internally curated
+  `sector_universe_membership_v1`, not a test-fixture identity or a claimed
+  full US constituent universe.
+- The checked-in FMP adapter has standardized fundamentals but no
+  profile/screener/classification contract. Automatic exhaustive constituent
+  discovery therefore remains PARTIAL and does not trigger a new Provider in
+  Day31. The detailed audit is in `docs/SECTOR_CAPABILITY_MATRIX.md`.
+- Day31 Gate A: `461 passed, 5 deselected`; Ruff, mypy, Black, and
+  `git diff --check` pass.
+- Day32 establishes `SectorResearchSnapshot v1`. Constituent price features
+  reuse `TechnicalFeatureOperator`; cross-sectional medians, breadth ratios,
+  dispersion, benchmark-relative returns, FMP fundamental breadth, and
+  valuation medians are computed only by deterministic Python operators.
+- Every metric records `coverage_count`, `universe_count`, and
+  AVAILABLE/PARTIAL/MISSING. Sector aggregates require at least two valid
+  constituents, so one-name S02/S03 snapshots do not present an issuer value
+  as Sector breadth.
+- Live smoke `20260830T034235Z` wrote 720 real Alpaca bars and four real FMP
+  standardized records, then generated S01 AVAILABLE plus S02/S03 PARTIAL
+  snapshots. FMP returned a visible `ProviderUnavailableError` for MU; no
+  value was fabricated and the S02 fundamental coverage is 0/1.
+- Day32 Gate A: `469 passed, 5 deselected`; Ruff, mypy, Black, and
+  `git diff --check` pass.
+- Day33 adds deterministic `SectorCycleState` and `MacroSensitivity` outputs.
+  The cycle view describes rates, inflation, labor, growth, and financial
+  stress from the existing 12-series FRED pack using current, three-month,
+  and twelve-month comparisons. It is descriptive state, not a trained or
+  hand-labelled Regime.
+- Macro sensitivity aligns monthly Sector benchmark returns with monthly
+  macro changes over a rolling 36-month window. Each series uses an
+  independent OLS beta and Pearson correlation and requires at least 24
+  aligned observations; insufficient series remain PARTIAL without
+  extrapolation.
+- Live smoke `20260830T051233Z` persisted 2,128 real Alpaca bars, 6,192 FRED
+  point-in-time observations, and three immutable S01/S02/S03 macro
+  snapshots. Eleven of twelve sensitivity series met the sample gate for
+  each Sector; quarterly GDP remained PARTIAL. No LLM call was made.
+- Day33 Gate A: `474 passed, 5 deselected`; Ruff, mypy, Black, and
+  `git diff --check` pass.
+- Day34 adds the independent deterministic `SectorAnomalyRadar`. Its v1 rule
+  set covers price/volume spikes, breadth divergence, structured earnings
+  surprise, material company/news events, macro-to-Sector shocks, and
+  membership/graph-grounded supply-chain propagation candidates. Radar does
+  not call an Agent or LLM and does not make an investment judgment.
+- `SectorAnomalyEvent` enforces publication, availability, ingestion, and
+  `as_of` cutoffs and retains canonical Evidence, Sector, Chain, source asset,
+  affected asset, severity, confidence and candidate status. One structured
+  event body is linked to multiple existing SECTOR/CHAIN/ASSET scopes; Memory
+  projections reuse the exact same summary and existing L1/L2 hierarchy.
+- Live smoke `20260830T074510Z` detected six real events from the audited
+  Day32/Day33 data: one TSM price/volume anomaly, four macro-shock candidates,
+  and one NVIDIA AI Infrastructure propagation candidate. Ten Evidence links
+  were retained, future leakage was zero, and real Qwen embedding/FAISS
+  retrieval returned S01/S02/S03 Sector-scope results of 3/1/2. Propagation
+  direction remained UNKNOWN. No LLM anomaly calculation occurred.
+- Day34 Gate A: `480 passed, 5 deselected`; Ruff, mypy, Black, and
+  `git diff --check` pass.
+- Day35 adds `SectorResearchAgent` as an independent upstream research
+  component, not a ninth peer in the frozen eight-Agent asset chain. It accepts
+  aligned Day31-Day34 snapshots plus the existing `ResearchContextBundle`,
+  projects compact direct-upstream Evidence, and emits only validated Sector
+  Claims plus an Evidence-backed interpretive cycle assessment.
+- The Agent does not calculate Sector or Macro features, query a Provider,
+  DuckDB, or FAISS directly, mutate the Industry Chain graph, or emit a trade,
+  position, order, target price, Factor, or Regime. Invalid Claims are
+  quarantined and never become accepted output or Memory.
+- Selected accepted anomaly, catalyst, risk, chain, and cycle Claims may be
+  written through the existing public Memory boundary to SECTOR/CHAIN L3 trace
+  scopes. The current Memory write schema has no structured metadata bag, so
+  Day35 stores the required lineage metadata in a deterministic JSON header;
+  it does not persist an undifferentiated narrative or create L4 Memory.
+- Fixed real-snapshot smoke `20260830T081642Z` reused the audited Day32 state,
+  Day33 Macro, and Day34 Radar databases. S01/S02/S03 all passed with zero
+  invalid citations and all numeric Claims exactly grounded. All three HIGH
+  Radar events were represented; S02/S03 remained explicitly PARTIAL/proxy.
+- The real Qwen rerun on Day36 exposed one Prompt/schema responsibility drift:
+  the Prompt asked the model to self-report `claim_intent`. The field was
+  removed from the Prompt and the authoritative Draft schema now applies its
+  deterministic analytical-inference default. S02 and S03 then produced real,
+  strictly validated Qwen Sector outputs; S01 remains a visible local Claim
+  promotion failure and is not represented as a successful live result.
+- Day35 Gate A: `496 passed, 5 deselected`; Ruff, mypy, Black, and
+  `git diff --check` pass.
+- Day36 adds `SectorContextBundle v1` and eight least-privilege role
+  projections. Asset routing uses effective `SectorMembership` rows and
+  Industry Chain IDs; it never infers a Sector from ticker text. Analysts see
+  presentation-only conditional Sector context while retaining their existing
+  asset-Evidence contract. Managers receive accepted Sector Claims as direct
+  upstream Claims and reuse the existing recursive provenance validator.
+- `ResearchWorkflowService` accepts an optional Sector resolver. Missing
+  membership, chain, Radar events, Sector output, or a PARTIAL snapshot remains
+  explicit and safely falls back to the frozen Phase 3 path without Fake data.
+  No Provider, Memory schema, Agent role, Prompt, Report, or database table was
+  added.
+- Fixed real-snapshot smoke `20260830T134805Z` resolved NVDA to
+  S01/NVIDIA_AI_INFRA, MU to S02/HBM, and AAPL to S03/APPLE_CHAIN. All three
+  contexts retained real Day32-Day34 snapshot/Event lineage; S02/S03 and other
+  limited coverage remained PARTIAL rather than being upgraded.
+- Real Qwen integrated run `agent_contract_20260830T134209Z_e0291bba` passed
+  all eight asset Agents. The role projections supplied 17 Sector Claim slots;
+  recursive diagnostics observed 5 actual Sector Claim uses and 2 Radar Event
+  uses across Research/Bull/Bear/Risk. Accepted numeric Claims were `26/26`
+  grounded, with zero invalid citations, schema errors, or unbound Claims.
+- The stronger real Sector-to-asset rerun used the real Qwen S03 output from
+  `data/live_sector_research/20260830T135456Z/` directly in AAPL contract run
+  `agent_contract_20260830T135643Z_70442a96`. All eight asset Agents passed.
+  The projections supplied 24 Sector Claim slots and six Event slots; recursive
+  diagnostics observed ten Sector Claim uses and four Event uses. All `38/38`
+  accepted numeric Claims were grounded, with zero invalid citations, schema
+  errors, or unbound Claims. No Fake fallback was used.
+- The same fixed asset/as-of baseline without Sector context
+  (`agent_contract_20260830T134349Z_248ca374`) also passed 8/8. Because these
+  are independent stochastic model samples, Claim-count differences are
+  integration diagnostics only and are not evidence of research or investment
+  performance improvement.
+- Day36 Gate A: `506 passed, 5 deselected`; Ruff, mypy, Black, and
+  `git diff --check` pass.
 
 ## Phase Three status
 

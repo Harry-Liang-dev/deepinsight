@@ -12,6 +12,10 @@ from src.schemas.common import ErrorInfo, SourceReference
 from src.schemas.llm import LLMRunMetadata
 from src.schemas.memory import MemorySearchRequest
 from src.schemas.research_data import ResearchDataBundle
+from src.schemas.sector_context import (
+    SectorContextBundle,
+    SectorContextUsageDiagnostic,
+)
 
 
 class PromptTemplate(DomainModel):
@@ -82,6 +86,7 @@ class ResearchTaskRequest(DomainModel):
     memory_query: MemorySearchRequest | None = None
     data_bundle: ResearchDataBundle | None = None
     context_bundle: ResearchContextBundle | None = None
+    sector_context_bundle: SectorContextBundle | None = None
 
     @model_validator(mode="after")
     def validate_phase3_bundles(self) -> ResearchTaskRequest:
@@ -90,6 +95,10 @@ class ResearchTaskRequest(DomainModel):
         if (self.data_bundle is None) is not (self.context_bundle is None):
             raise ValueError("Data and Memory bundles must be supplied together")
         if self.data_bundle is None or self.context_bundle is None:
+            if self.sector_context_bundle is not None:
+                raise ValueError(
+                    "Sector context requires the versioned Data and Memory bundles"
+                )
             return self
         metadata = self.context_bundle.retrieval_metadata
         if self.data_bundle.asset_id != self.input_context.asset_id:
@@ -102,6 +111,12 @@ class ResearchTaskRequest(DomainModel):
             raise ValueError("Data and Memory bundle as_of values must match")
         if self.data_bundle.window_end != self.input_context.report_date:
             raise ValueError("Data bundle window must end on the report date")
+        if self.sector_context_bundle is not None:
+            sector = self.sector_context_bundle
+            if sector.asset_id != self.data_bundle.asset_id:
+                raise ValueError("Sector context asset does not match Data bundle")
+            if sector.research_as_of != self.data_bundle.as_of:
+                raise ValueError("Sector context cutoff does not match Data bundle")
         return self
 
 
@@ -117,3 +132,4 @@ class ResearchTaskResult(DomainModel):
     risk_manager: AgentExecutionResult | None = None
     missing_agents: list[AgentName] = Field(default_factory=list)
     uncertainties: list[str] = Field(default_factory=list)
+    sector_context_usage: tuple[SectorContextUsageDiagnostic, ...] = ()

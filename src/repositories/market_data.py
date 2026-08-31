@@ -527,6 +527,42 @@ class MarketDataRepository(BaseRepository):
                 values,
             )
 
+    def upsert_macro_observations(
+        self,
+        records: Sequence[MacroObservationRecord],
+    ) -> None:
+        """Persist normalized macro history using bounded batch transactions."""
+
+        rows = [self._macro_values(record) for record in records]
+        self._upsert_many(
+            "macro_series",
+            _MACRO_COLUMNS,
+            ("series_key", "observation_date"),
+            rows,
+        )
+        vintage_rows = [
+            values
+            for record, values in zip(records, rows, strict=True)
+            if record.realtime_start is not None and record.realtime_end is not None
+        ]
+        self._upsert_many(
+            "macro_series_vintages",
+            _MACRO_COLUMNS,
+            ("series_key", "observation_date", "realtime_start", "realtime_end"),
+            vintage_rows,
+        )
+
+    @staticmethod
+    def _macro_values(record: MacroObservationRecord) -> tuple[object, ...]:
+        return tuple(
+            (
+                record.region_code.value
+                if column == "region_code"
+                else getattr(record, column)
+            )
+            for column in _MACRO_COLUMNS
+        )
+
     def get_macro_observation(
         self,
         series_key: str,
@@ -824,6 +860,28 @@ class MarketDataRepository(BaseRepository):
             ON CONFLICT ({", ".join(key_columns)}) DO UPDATE SET {updates}
             """,
             values,
+        )
+
+    def _upsert_many(
+        self,
+        table: str,
+        columns: Sequence[str],
+        key_columns: Sequence[str],
+        rows: Sequence[Sequence[object]],
+    ) -> None:
+        update_columns = tuple(
+            column for column in columns if column not in key_columns
+        )
+        updates = ", ".join(
+            f"{column} = excluded.{column}" for column in update_columns
+        )
+        self._executemany(
+            f"""
+            INSERT INTO {table} ({", ".join(columns)})
+            VALUES ({_placeholders(columns)})
+            ON CONFLICT ({", ".join(key_columns)}) DO UPDATE SET {updates}
+            """,
+            rows,
         )
 
     def _select_one(

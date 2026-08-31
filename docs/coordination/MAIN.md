@@ -237,3 +237,72 @@ First Main integration quality gates on 2026-08-09:
 
 NO — offline integration is green, but the live seven-Agent hard gate is 5/7;
 Risk and Fresh Acceptance remain correctly blocked.
+
+---
+
+# Phase 4A Day36 Integration Closure — 2026-08-30
+
+## Current Status
+
+Day30-Day35 Sector Intelligence is now connected to the frozen eight-Agent
+asset chain through `SectorContextBundle v1`. The older Phase 3 blocker record
+above is retained as history and is no longer current.
+
+## Current Task
+
+Phase 4A final integration is complete. Macro/sector state, Sector Macro,
+Radar, Sector Research Claims, effective Industry Chains, and asset research
+now form one point-in-time path.
+
+## API Changes
+
+- Added optional PIT `SectorContextBundle` and eight `SectorRoleContext`
+  projections.
+- Added Repository-backed asset-to-Sector/Chain resolution with explicit
+  missing/PARTIAL degradation.
+- Added optional `ResearchWorkflowService` Sector resolver injection.
+- Added ID-only `SectorContextUsageDiagnostic`; no trajectory or reward model.
+- Managers reuse accepted Sector Claims as direct upstream; Phase 3 Claim,
+  grounding, quarantine, and compliance contracts are unchanged.
+
+## Files Changed
+
+- `src/schemas/sector_context.py`
+- `src/services/sector_context.py`
+- `src/agents/contracts.py`
+- `src/agents/input_contracts.py`
+- `src/agents/coordinator.py`
+- `src/agents/base.py`
+- `src/orchestration/research_workflow.py`
+- `scripts/live_agent_contract.py`
+- `scripts/smoke_sector_asset_integration.py`
+- `tests/unit/services/test_sector_context.py`
+- shared status/schema/decision documentation
+
+## Tests
+
+- Full pytest: `506 passed, 5 deselected`.
+- Ruff, mypy, Black, `git diff --check`: PASS.
+- Three-asset real-snapshot routing/projection `20260830T134805Z`: NVDA, MU,
+  AAPL PASS.
+- Real Qwen integrated AAPL contract using a real Qwen S03 Sector output:
+  `agent_contract_20260830T135643Z_70442a96`, 8/8 PASS.
+- Actual Sector use: 10 Sector Claim references and 4 Radar Event references;
+  invalid citations/schema errors/unbound Claims: 0. All 38 accepted numeric
+  Claims were grounded.
+
+## Blockers
+
+NONE for the Phase 4A contract or the validated S03/AAPL live LLM path. The
+S01 live Sector run still has a local Claim-promotion failure and remains a
+non-blocking coverage limitation; it was not hidden or replaced by Fake.
+
+## Required Changes From Other Modules
+
+NONE. Day35 JSON-header Memory lineage remains accepted technical debt for
+Phase 4B; Day36 did not alter the Memory storage contract.
+
+## Ready For Integration
+
+YES — `DAY36_SECTOR_INTEGRATION = PASS` and Phase 4A is ready for Phase 4B
+planning, but Day36 does not start Phase 4B.

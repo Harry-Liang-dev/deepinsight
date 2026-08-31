@@ -67,6 +67,23 @@ from src.services.llm_provider import (
     build_configured_llm_provider,
 )
 from src.services.research_data_bundle import ResearchDataBundleService
+from src.services.sector_ontology import (
+    SectorOntologyService,
+    SectorOntologyValidationError,
+    build_sector_ontology_seed_v1,
+    build_sector_ontology_v1,
+    validate_scope_hierarchy,
+    validate_sector_ontology_seed,
+)
+from src.services.sector_radar import SectorRadarMemoryError, SectorRadarMemoryService
+from src.services.sector_universe import (
+    CURRENT_US_RESEARCH_UNIVERSE_VERSION,
+    SectorUniverseError,
+    SectorUniverseService,
+    build_current_us_research_memberships_v1,
+    build_us_sector_benchmark_candidates_v1,
+    resolve_validated_benchmark_mappings,
+)
 
 __all__ = [
     "AssetIdentifierNormalizer",
@@ -82,6 +99,7 @@ __all__ = [
     "EmbeddingService",
     "EmbeddingServiceError",
     "ConfiguredLLMProvider",
+    "CURRENT_US_RESEARCH_UNIVERSE_VERSION",
     "CredentialNotConfigured",
     "FakeLLMProvider",
     "FakeEmbeddingService",
@@ -120,6 +138,19 @@ __all__ = [
     "QwenProvider",
     "RawTextStore",
     "ResearchDataBundleService",
+    "SectorOntologyService",
+    "SectorOntologyValidationError",
+    "SectorRadarMemoryError",
+    "SectorRadarMemoryService",
+    "SectorUniverseError",
+    "SectorUniverseService",
     "VectorIdAllocator",
     "build_configured_llm_provider",
+    "build_sector_ontology_seed_v1",
+    "build_sector_ontology_v1",
+    "build_current_us_research_memberships_v1",
+    "build_us_sector_benchmark_candidates_v1",
+    "resolve_validated_benchmark_mappings",
+    "validate_scope_hierarchy",
+    "validate_sector_ontology_seed",
 ]

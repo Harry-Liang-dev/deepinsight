@@ -1214,3 +1214,318 @@ artifacts out of source control avoids publishing bulky licensed/runtime data
 or local authentication state while retaining an auditable local acceptance.
 
 ---
+
+## ADR-0032
+
+Date
+
+2026-08-30
+
+Decision
+
+Adopt `SectorOntology v1` as exactly 18 stable first-level research Sectors
+identified by `S01` through `S18`. Industry Chains remain dynamic, versioned
+research objects associated with one Sector. Asset `SectorMembership` records
+carry chain roles, source, confidence, weight, and half-open
+`[valid_from, valid_to)` intervals; a new revision appends rather than replacing
+historical classification.
+
+Add a unified research-scope hierarchy with GLOBAL, MACRO, SECTOR,
+INDUSTRY_CHAIN, ASSET, and RESEARCH_EPISODE types. This hierarchy is separate
+from the existing Memory L0–L4 levels and from the Phase 3 per-request Agent
+scope. It requires one root, type-valid parent links, contained validity
+intervals, and deterministic cycle rejection.
+
+Persist the minimal foundation in DuckDB tables `sector_nodes`, `sector_edges`,
+`sector_memberships`, and `research_scopes`. The supported edge vocabulary is
+BELONGS_TO, SUPPLIES, CUSTOMER_OF, COMPETES_WITH, BENEFITS_FROM, EXPOSED_TO,
+and DRIVES. No Neo4j, graph algorithm, Sector Agent, Radar, Factor, Backtest,
+or trading capability is introduced. The five-asset seed is non-exhaustive and
+exists only to validate contracts and temporal behavior.
+
+Reason
+
+The legacy fields on `instruments` can describe only a current classification
+snapshot and would destroy history if overwritten. Independent temporal
+memberships preserve point-in-time research safety. A narrow DuckDB graph and
+scope tree establish Macro-to-Asset research identity without duplicating the
+existing Data, Memory, or Agent architectures and leave later Phase 4 services
+free to consume stable contracts.
+
+---
+
+## ADR-0033
+
+Date
+
+2026-08-30
+
+Decision
+
+Build `SectorUniverseSnapshot` as an immutable point-in-time projection over
+the existing temporal `SectorMembership` records. Store snapshots and
+benchmark mappings in the existing DuckDB Sector Repository. A snapshot
+records its `as_of`, sorted canonical asset IDs, membership version, source,
+coverage diagnostics, quality, and optional benchmark IDs. New membership
+states create new snapshots and never update historical rows.
+
+Maintain an optional benchmark candidate for each of the 18 Sectors, but do
+not treat a configured ticker as verified. Promote a candidate into a temporal
+`SectorBenchmarkMapping` only after the existing Alpaca Adapter returns a real
+daily bar in the requested window. Broad proxies such as SOXX for Memory &
+Storage and XLK for Consumer Electronics remain explicitly PARTIAL rather than
+being represented as exact constituent benchmarks.
+
+Use the current versioned five-asset research universe for Day31 v1 because
+the checked-in FMP Adapter does not implement profile, screener,
+classification, or constituents, while Alpaca supplies prices/news but not
+classification. Promote the approved Day30 mapping into the distinct
+`sector_universe_membership_v1` revision with an explicit internal-curation
+source so a live snapshot never claims a test fixture as its classification
+source. Do not infer a complete universe from SEC SIC or introduce a new
+Provider. This is sufficient for the scoped S01/S02/S03 live smoke, but
+automatic exhaustive constituents across all 18 Sectors remain a documented
+coverage limitation.
+
+Reason
+
+The task explicitly permits the current research universe when FMP constituent
+access is unavailable. Separating candidate configuration from live-validated
+mapping prevents nonexistent or unavailable ETFs from entering research.
+Append-only snapshots preserve point-in-time safety and allow later universe
+expansion without rewriting Day31 history.
+
+---
+
+## ADR-0034
+
+Date
+
+2026-08-30
+
+Decision
+
+Define `SectorResearchSnapshot v1` as an immutable deterministic projection of
+one point-in-time `SectorUniverseSnapshot`. Reuse the existing
+`TechnicalFeatureOperator` for each constituent and benchmark, then compute
+Sector market state, breadth, fundamental breadth, and valuation state in one
+`SectorStateOperator`. No LLM participates in feature calculation.
+
+Use constituent medians for Sector returns, volatility, drawdown,
+fundamentals, and valuation; do not average market capitalization. Define
+`excess_return_vs_market` and `excess_return_vs_sector_benchmark` on a
+20-session horizon. Define leaders and laggards as constituents whose 20-day
+return is respectively above or below the validated Sector benchmark return.
+FMP standardized records have priority for canonical ratios when both FMP and
+SEC rows exist.
+
+Represent every aggregate with a value, coverage count, universe count, and
+AVAILABLE/PARTIAL/MISSING status. Require at least two valid constituents for
+a Sector aggregate. A smaller sample remains PARTIAL with a null aggregate,
+even when its single issuer observation is available. Persist the result in
+the append-only `sector_research_snapshots` table.
+
+Treat DuckDB `TIMESTAMP` round trips as UTC when the existing Repository
+returns a naive datetime; DataNormalizer writes normalized UTC and the schema
+stores it without timezone metadata. This restoration occurs only for cutoff
+comparison, and observations after the `as_of` end-of-day remain rejected.
+
+Reason
+
+Sector features must be reproducible, order-independent, and safe for later
+structured research without delegating arithmetic to a model. Explicit sample
+coverage prevents the small Day31 universe from creating apparently precise
+but misleading Sector aggregates. Append-only state and strict time cutoffs
+preserve historical reproducibility.
+
+---
+
+## ADR-0035
+
+Date
+
+2026-08-30
+
+Decision
+
+Connect the existing FRED Macro Pack to deterministic Sector research through
+two versioned outputs: `SectorCycleState v1` and `MacroSensitivity v1`. The
+cycle state is a five-dimensional descriptive summary of rates, inflation,
+labor, growth, and financial stress. It compares the latest transformed
+observation with available three- and twelve-month references and reports
+RISING, FALLING, STABLE, MIXED, or UNKNOWN. It is explicitly not a Regime
+classifier, trained model, or investment signal.
+
+Estimate Sector macro sensitivity using the first validated Sector benchmark,
+monthly benchmark returns, and monthly FRED changes. Use a rolling 36-month
+window, require at least 24 aligned observations, and report one univariate OLS
+beta plus Pearson correlation per series. CPI, core PCE, payrolls, industrial
+production, and GDP use year-over-year changes; rates, spreads, unemployment,
+and stress series use level changes. Do not introduce multivariate regression,
+imputation, extrapolation, or LLM calculation.
+
+Persist each combined result as an immutable `sector_macro_snapshots` row with
+source Sector snapshot identity, feature version, status, coverage, and source
+IDs. Reject prices, observations, vintages, and ingestion timestamps later
+than the Sector `as_of`. Batch persistence of long FRED histories uses one
+Repository transaction per table while preserving the existing vintage keys
+and read semantics.
+
+Reason
+
+Day33 needs reproducible Macro-to-Sector context before any later Regime work.
+Simple descriptive comparisons and independently auditable sensitivity
+statistics expose direction and historical association without pretending to
+identify causal effects. Explicit sample counts keep quarterly GDP and other
+sparse series PARTIAL rather than manufacturing precision. FRED real-time
+metadata makes a current acceptance snapshot point-in-time safe; recreating
+historical release-by-release backtests would require a separately versioned
+vintage dataset and is intentionally out of scope.
+
+---
+
+## ADR-0036
+
+Date
+
+2026-08-30
+
+Decision
+
+Implement `SectorAnomalyRadar v1` as an independent deterministic event
+detector over the existing Day30 ontology, Day32 Sector state, Day33 macro
+state, normalized OHLCV, corporate events, and news. Support six event types:
+price/volume, breadth, earnings, news/company event, macro shock, and
+supply-chain propagation candidate. Do not add an Agent, LLM detector,
+Regime, Factor, trading action, or new data Provider.
+
+Use transparent rules rather than ML anomaly detection. Price events use a
+trailing return z-score and median-volume ratio; breadth uses short/long
+participation divergence and cross-sectional dispersion; earnings requires
+structured actual and expected values; material news uses an auditable narrow
+term set; macro shocks require both a material three-month relative move and a
+Day33 sensitivity with sufficient observations. These thresholds are ruleset
+v1 configuration constants, not learned parameters or causal claims.
+
+Allow propagation only when effective Industry Chain membership or graph edges
+connect the source event to candidate assets. Propagation remains
+`PROPAGATION_CANDIDATE`, uses UNKNOWN direction, preserves the original
+Evidence IDs, and explicitly defers impact interpretation to later research.
+
+Persist one immutable `SectorAnomalyEvent` body and separate scope links in
+DuckDB. Project the exact same summary into the existing L1/L2 Memory service
+for effective SECTOR, CHAIN, and source-ASSET namespaces. This reuses the
+current hierarchical scope and FAISS infrastructure rather than creating a
+Radar Memory hierarchy. Every event and query is bounded by `available_at`,
+`ingested_at`, and `as_of`.
+
+Reason
+
+Day35 needs a small, auditable set of noteworthy Sector events rather than a
+second narrative system. Deterministic rules make detection reproducible and
+allow false positives to be inspected. Separating canonical event storage from
+scope links avoids divergent duplicate bodies while preserving both Sector
+and asset research retrieval. Knowledge-graph propagation identifies where to
+look; it deliberately does not assert who benefits or recommend a trade.
+
+---
+
+## ADR-0037
+
+Date
+
+2026-08-30
+
+Decision
+
+Implement `SectorResearchAgent v1` as an independent research component above
+the frozen eight-Agent asset chain. Do not add it to `AgentName`, the Phase 3
+role registry, or the asset coordinator. Day36 may later project its accepted
+Claims into a separate `SectorContextBundle`; Day35 does not alter that chain.
+
+Compose `SectorResearchInput v1` from one aligned `SectorUniverseSnapshot`,
+`SectorResearchSnapshot`, `SectorMacroSnapshot`, optional benchmark mapping,
+PIT-safe `SectorAnomalyEvent` rows, effective Industry Chain/membership/graph
+context, and the existing `ResearchContextBundle`. The Agent receives these
+typed objects from its composition boundary and never receives a Repository,
+Provider, DuckDB, or FAISS implementation.
+
+Project those direct upstream objects into a compact invocation-local Evidence
+manifest. `SectorResearchOutput v1` contains an authoritative collection of
+existing `ValidatedClaim` objects enriched only by a Sector category, an
+interpretive `SectorCycleAssessment`, explicit uncertainties/missing data, and
+quarantined Claim diagnostics. Narrative is not a second factual channel.
+Every accepted Claim must cite exact manifest IDs, bind every Python-extracted
+numeric literal exactly, and use `direct_evidence` provenance. A minimum of
+three valid Claims and coverage of every HIGH/CRITICAL Radar event are required.
+
+Treat Macro beta/correlation only as historical association, propagation as a
+candidate hypothesis, and PARTIAL/proxy/MISSING state as degraded Evidence.
+Reject causal upgrades, unsupported numeric transformations, graph mutations,
+invented catalysts, and system-generated trading intent. Selected accepted
+research Claims may be persisted through the current Memory service as L3
+SECTOR/CHAIN trace items with a deterministic lineage header; do not persist a
+free-form full narrative or create L4 Regime Memory.
+
+Reason
+
+Day35 needs interpretation over already reproducible Sector intelligence, not
+a second metric engine or a ninth asset role. Reusing the Phase 3 Evidence and
+Validated Claim architecture preserves strict citation/numeric behavior and
+makes later Day36 consumption possible without giving downstream Agents raw
+LLM prose. Keeping the interpretive Sector cycle separate from Day33 macro
+directions and from a future Regime model prevents a research assessment from
+becoming a hidden signal.
+
+---
+
+## ADR-0038
+
+Date
+
+2026-08-30
+
+Decision
+
+Integrate Day35 Sector Intelligence into the frozen eight-Agent asset chain
+through one optional, point-in-time `SectorContextBundle v1`. Resolve the
+asset's primary Sector and active Industry Chains only from effective temporal
+`SectorMembership` rows. Preserve multiple-membership, seed/proxy, PARTIAL,
+missing-chain, missing-event, and unavailable-Sector-Agent uncertainty; never
+infer membership from a ticker or prompt text.
+
+Project the bundle separately for all eight roles. Analysts receive compact
+conditional presentation context but retain their existing role-local raw
+asset Evidence validation. Managers receive only relevant accepted Sector
+Claims through the existing `validated_claims` route. Their Claims reference
+Sector Claim IDs as direct upstream, so provenance reaches Sector state/Radar
+Evidence and canonical Provider sources recursively without a second numeric
+or citation pass. Radar detail is limited to News/Event, Research, and Risk
+projections and is linked to the accepted Sector Claim carrying the event.
+
+Make Sector resolution an optional orchestration dependency of
+`ResearchWorkflowService`. An absent or invalid Sector context degrades to the
+unchanged Phase 3 workflow; it never triggers Fake data or a Fake model. Add
+only minimal usage diagnostics containing provided/used Claim/Event IDs and
+context size. Do not introduce a new database table, Agent hierarchy, Memory
+layer, trajectory, reward, Factor, Regime, backtest, or trading behavior.
+
+Reason
+
+Day36 must prove Macro-to-Sector-to-Chain-to-Asset is a running information
+path, not merely related schemas. A compact optional context preserves the
+stable Phase 3 Agent contract and makes failures non-blocking. Direct-upstream
+Claim composition keeps each layer responsible for validating only its own
+producer while maintaining complete provenance. Role projections prevent the
+full Sector report or duplicate Radar prose from entering every prompt, and
+ID-only diagnostics prove actual use without creating a learning system before
+Phase 4B.
+
+Day36 live closure also makes Sector Claim intent a deterministic Draft-schema
+default rather than a model-authored Prompt field. This removes a Prompt/schema
+enum drift without weakening Claim intent, Evidence, numeric-grounding, PIT, or
+quarantine policy. The smoke runner persists successful credential-free
+`SectorResearchOutput` objects so the exact real Sector output can be supplied
+to the downstream asset contract and audited independently from its summary.
+
+---

@@ -57,6 +57,13 @@ from src.agents.managers import (
     RiskManagerAgent,
 )
 from src.agents.prompts import PromptLoader, PromptLoadError
+from src.agents.sector_research import (
+    SECTOR_RESEARCH_MODEL_VERSION,
+    SECTOR_RESEARCH_PROMPT_VERSION,
+    SectorResearchAgent,
+    SectorResearchPromptLoader,
+    build_sector_research_evidence,
+)
 
 __all__ = [
     "ANALYST_ORDER",
@@ -100,10 +107,15 @@ __all__ = [
     "ResearchTaskResult",
     "RiskManagerAgent",
     "RiskManagerInputV1",
+    "SECTOR_RESEARCH_MODEL_VERSION",
+    "SECTOR_RESEARCH_PROMPT_VERSION",
+    "SectorResearchAgent",
+    "SectorResearchPromptLoader",
     "SentimentAnalystAgent",
     "SentimentAnalystInputV1",
     "TechnicalTextAnalystAgent",
     "TechnicalTextAnalystInputV1",
     "VersionedUpstreamOutputV1",
+    "build_sector_research_evidence",
     "minimum_valid_claims",
 ]

@@ -191,3 +191,95 @@ NONE.
 ## Ready For Integration
 
 YES — integrated and frozen.
+
+---
+
+# Phase 4A Day35 — Sector Research Agent
+
+## Current Status
+
+Day35 Agent implementation is complete. `SectorResearchAgent` is an
+independent upstream component over Day31-Day34 state and the existing PIT
+Memory bundle; it is not added to the frozen eight-Agent asset chain.
+
+## Current Task
+
+Deliver claim-first, evidence-grounded Sector interpretation for trend,
+breadth, fundamentals, valuation, Macro environment/sensitivity, Industry
+Chains, Radar anomalies, leaders/laggards, catalysts, risks, and an
+interpretive Sector cycle. Day36 integration is intentionally not started.
+
+## API Changes
+
+- Added versioned `SectorResearchInput v1` and `SectorResearchOutput v1`.
+- Reused `RoleEvidenceManifestEntry`, `ValidatedClaim`, `RejectedClaim`,
+  `SourceReference`, and `ResearchContextBundle`; no second Claim/Evidence
+  architecture was introduced.
+- Added compact `SectorResearchEvidence` projection and invocation-local exact
+  citation namespace.
+- Added `SectorCycleAssessment` with accepted supporting Claim IDs, confidence,
+  and uncertainty. It is not Day33 `MacroCycleDirection` or a Regime.
+- Added strict local rejection for unknown Evidence, ungrounded numeric
+  literals, correlation/beta causality, candidate certainty, undisclosed
+  PARTIAL/proxy inputs, invented catalysts, and prohibited trading intent.
+- Selected accepted anomaly/catalyst/risk/chain/cycle Claims may be written
+  through the existing Memory Protocol as SECTOR/CHAIN L3 trace items.
+
+## Prompt Changes
+
+- Added `config/prompts/sector_research_agent.yaml`, version
+  `sector_research_prompt_v1`.
+- Prompt is compact, role-specific, Claim-first, and explicitly forbids metric
+  calculation, new graph relationships, candidate-to-fact promotion,
+  correlation-to-causality promotion, hidden proxy precision, external
+  networking, and trade/position/order/target-price output.
+- No Phase 3 Agent Prompt changed.
+
+## Files Changed
+
+- `src/schemas/sector_research.py`
+- `src/agents/sector_research.py`
+- `src/agents/__init__.py`
+- `config/prompts/sector_research_agent.yaml`
+- `scripts/smoke_sector_research.py`
+- `tests/unit/agents/test_sector_research_agent.py`
+- `docs/schema.md`
+- `docs/DECISIONS.md`
+- `docs/MODULE_STATUS.md`
+- `docs/coordination/AGENTS.md`
+
+## Tests
+
+- Agent-focused: `16 passed`.
+- Full offline pytest: `496 passed, 5 deselected`.
+- Real Day32-Day34 fixed-snapshot Fake smoke: S01/S02/S03 `3/3 PASS`;
+  invalid citations `0`; all accepted numeric Claims grounded; HIGH Radar
+  events cited `3/3`; S02/S03 remained PARTIAL/proxy.
+- Optional real Qwen smoke: visible `configuration_error` during Provider
+  client initialization; no Fake fallback and no accepted live result.
+- Ruff, mypy, Black, and `git diff --check`: PASS.
+
+## Blockers
+
+- Agent contract/offline closure: NONE.
+- Optional live Qwen rerun requires the host's current Provider client
+  configuration issue to be resolved. The same real fixed data remains
+  available and no Agent/Gateway workaround was added.
+- `MASTER_SPEC.md` remains Phase One-oriented and does not describe Day35;
+  current Phase 4 operational truth is the runnable Day30-Day35 code plus
+  ADR-0032 through ADR-0037 and `MODULE_STATUS.md`.
+- Existing coordination `MAIN.md` and this file previously stopped at Phase 3;
+  this Day35 entry closes the Agent-side drift without rewriting Main-owned
+  coordination history.
+
+## Required Changes From Other Modules
+
+NONE for Day35. Day36 Main integration may consume accepted Claims through a
+new `SectorContextBundle`, but must not consume rejected Claims or raw LLM
+text.
+
+## Ready For Integration
+
+YES
+
+`DAY35_SECTOR_AGENT = PASS`

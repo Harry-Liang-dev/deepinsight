@@ -170,3 +170,123 @@ class BenchmarkRunMode(StrEnum):
 
     DEFAULT = "default"
     LIVE = "live"
+
+
+class SectorId(StrEnum):
+    """Stable Sector Ontology v1 identifiers."""
+
+    SEMICONDUCTORS_AI_COMPUTE = "S01"
+    MEMORY_STORAGE = "S02"
+    CONSUMER_ELECTRONICS_HARDWARE = "S03"
+    CLOUD_SOFTWARE_AI_APPLICATIONS = "S04"
+    DATA_CENTER_NETWORKING_OPTICAL = "S05"
+    INTERNET_DIGITAL_PLATFORMS = "S06"
+    ROBOTICS_INDUSTRIAL_AUTOMATION = "S07"
+    AUTOMOTIVE_EV_BATTERIES = "S08"
+    CONSUMER_DISCRETIONARY_RETAIL_BRANDS = "S09"
+    CONSUMER_STAPLES_FOOD_BEVERAGE = "S10"
+    INNOVATIVE_PHARMA_BIOTECH = "S11"
+    MEDICAL_DEVICES_HEALTHCARE_SERVICES = "S12"
+    FINANCIALS = "S13"
+    ENERGY_POWER_UTILITIES_STORAGE = "S14"
+    MATERIALS_CHEMICALS_METALS = "S15"
+    AEROSPACE_DEFENSE = "S16"
+    TRANSPORTATION_LOGISTICS = "S17"
+    REAL_ESTATE_INFRASTRUCTURE = "S18"
+
+
+class OntologyStatus(StrEnum):
+    """Lifecycle state for versioned ontology objects."""
+
+    DRAFT = "draft"
+    ACTIVE = "active"
+    INACTIVE = "inactive"
+    DEPRECATED = "deprecated"
+
+
+class SectorMembershipRole(StrEnum):
+    """An asset's economic role in a Sector or Industry Chain."""
+
+    CORE = "core"
+    UPSTREAM = "upstream"
+    DOWNSTREAM = "downstream"
+    SUPPLIER = "supplier"
+    CUSTOMER = "customer"
+    COMPETITOR = "competitor"
+    BENEFICIARY = "beneficiary"
+
+
+class SectorCapabilityStatus(StrEnum):
+    """Availability of one Sector-universe capability or benchmark mapping."""
+
+    AVAILABLE = "available"
+    PARTIAL = "partial"
+    MISSING = "missing"
+
+
+class MacroCycleDirection(StrEnum):
+    """Deterministic direction of a macro observation or dimension."""
+
+    RISING = "rising"
+    FALLING = "falling"
+    STABLE = "stable"
+    MIXED = "mixed"
+    UNKNOWN = "unknown"
+
+
+class SectorAnomalyType(StrEnum):
+    """Deterministic anomaly categories emitted by the Sector Radar."""
+
+    PRICE_VOLUME = "price_volume"
+    BREADTH = "breadth"
+    EARNINGS = "earnings"
+    NEWS_EVENT = "news_event"
+    MACRO_SHOCK = "macro_shock"
+    SUPPLY_CHAIN_PROPAGATION = "supply_chain_propagation"
+
+
+class AnomalyDirection(StrEnum):
+    """Observed or candidate direction without investment interpretation."""
+
+    POSITIVE = "positive"
+    NEGATIVE = "negative"
+    MIXED = "mixed"
+    UNKNOWN = "unknown"
+
+
+class SectorAnomalyStatus(StrEnum):
+    """Lifecycle state of a deterministic Radar event."""
+
+    DETECTED = "detected"
+    PROPAGATION_CANDIDATE = "propagation_candidate"
+
+
+class ResearchScopeType(StrEnum):
+    """Types in the unified hierarchical research scope."""
+
+    GLOBAL = "global"
+    MACRO = "macro"
+    SECTOR = "sector"
+    INDUSTRY_CHAIN = "industry_chain"
+    ASSET = "asset"
+    RESEARCH_EPISODE = "research_episode"
+
+
+class SectorNodeType(StrEnum):
+    """Node categories persisted by the minimal Sector graph."""
+
+    SECTOR = "sector"
+    INDUSTRY_CHAIN = "industry_chain"
+    ASSET = "asset"
+
+
+class SectorEdgeType(StrEnum):
+    """Supported directed relationships in the minimal Sector graph."""
+
+    BELONGS_TO = "belongs_to"
+    SUPPLIES = "supplies"
+    CUSTOMER_OF = "customer_of"
+    COMPETES_WITH = "competes_with"
+    BENEFITS_FROM = "benefits_from"
+    EXPOSED_TO = "exposed_to"
+    DRIVES = "drives"

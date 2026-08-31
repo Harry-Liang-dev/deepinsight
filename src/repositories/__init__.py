@@ -27,6 +27,7 @@ from src.repositories.report_jobs import ReportJobRepository
 from src.repositories.reports import ReportRepository
 from src.repositories.runs import AgentRunRepository, IngestionJobRepository
 from src.repositories.schema import CORE_INDEXES, CORE_TABLES
+from src.repositories.sectors import SectorOntologyRepository
 from src.repositories.vector import (
     FaissVectorRepository,
     VectorDimensionError,
@@ -65,6 +66,7 @@ __all__ = [
     "TransientRepositoryError",
     "SourceRegistryRecord",
     "SourceRegistryRepository",
+    "SectorOntologyRepository",
     "VectorDimensionError",
     "VectorEntry",
     "VectorIndexManifest",

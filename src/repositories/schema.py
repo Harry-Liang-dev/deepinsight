@@ -21,6 +21,16 @@ CORE_TABLES = frozenset(
         "report_jobs",
         "report_sections",
         "reports",
+        "research_scopes",
+        "sector_edges",
+        "sector_benchmark_mappings",
+        "sector_memberships",
+        "sector_nodes",
+        "sector_universe_snapshots",
+        "sector_research_snapshots",
+        "sector_macro_snapshots",
+        "sector_anomaly_events",
+        "sector_anomaly_scopes",
         "source_registry",
         "sentiment_evidence",
         "sentiment_snapshots",
@@ -41,6 +51,16 @@ CORE_INDEXES = frozenset(
         "idx_reports_date_market",
         "idx_report_evaluations_report_created",
         "idx_report_jobs_status_created",
+        "idx_research_scopes_parent",
+        "idx_sector_edges_source_target",
+        "idx_sector_benchmarks_time",
+        "idx_sector_memberships_asset_time",
+        "idx_sector_nodes_type_time",
+        "idx_sector_universe_as_of",
+        "idx_sector_research_as_of",
+        "idx_sector_macro_as_of",
+        "idx_sector_anomalies_sector_time",
+        "idx_sector_anomaly_scopes_scope",
         "idx_text_documents_asset_publish",
         "idx_news_evidence_asset_created",
         "idx_sentiment_snapshots_asset_time",
@@ -430,6 +450,171 @@ TABLE_DDL = (
     )
     """,
     """
+    CREATE TABLE IF NOT EXISTS sector_nodes (
+        node_id                 VARCHAR NOT NULL,
+        node_type               VARCHAR NOT NULL,
+        name                    VARCHAR NOT NULL,
+        sector_id               VARCHAR,
+        chain_id                VARCHAR,
+        asset_id                VARCHAR,
+        description             VARCHAR,
+        status                  VARCHAR NOT NULL,
+        valid_from              DATE NOT NULL,
+        valid_to                DATE,
+        source                  VARCHAR NOT NULL,
+        version                 VARCHAR NOT NULL,
+        created_at              TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (node_id, version, valid_from),
+        CHECK (valid_to IS NULL OR valid_to > valid_from)
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS sector_edges (
+        edge_id                 VARCHAR NOT NULL,
+        source_node_id          VARCHAR NOT NULL,
+        target_node_id          VARCHAR NOT NULL,
+        edge_type               VARCHAR NOT NULL,
+        confidence              DOUBLE NOT NULL,
+        source                  VARCHAR NOT NULL,
+        valid_from              DATE NOT NULL,
+        valid_to                DATE,
+        version                 VARCHAR NOT NULL,
+        created_at              TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (edge_id, version, valid_from),
+        CHECK (source_node_id <> target_node_id),
+        CHECK (confidence >= 0 AND confidence <= 1),
+        CHECK (valid_to IS NULL OR valid_to > valid_from)
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS sector_memberships (
+        asset_id                VARCHAR NOT NULL,
+        sector_id               VARCHAR NOT NULL,
+        chain_ids_json          VARCHAR NOT NULL,
+        role                    VARCHAR NOT NULL,
+        valid_from              DATE NOT NULL,
+        valid_to                DATE,
+        weight                  DOUBLE NOT NULL,
+        confidence              DOUBLE NOT NULL,
+        source                  VARCHAR NOT NULL,
+        version                 VARCHAR NOT NULL,
+        created_at              TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (asset_id, sector_id, role, valid_from, version),
+        CHECK (weight >= 0 AND weight <= 1),
+        CHECK (confidence >= 0 AND confidence <= 1),
+        CHECK (valid_to IS NULL OR valid_to > valid_from)
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS research_scopes (
+        scope_id                VARCHAR NOT NULL,
+        scope_type              VARCHAR NOT NULL,
+        parent_scope_id         VARCHAR,
+        name                    VARCHAR NOT NULL,
+        valid_from              DATE NOT NULL,
+        valid_to                DATE,
+        version                 VARCHAR NOT NULL,
+        created_at              TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (scope_id, version, valid_from),
+        CHECK (scope_id <> parent_scope_id),
+        CHECK (valid_to IS NULL OR valid_to > valid_from)
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS sector_benchmark_mappings (
+        sector_id               VARCHAR NOT NULL,
+        benchmark_ids_json      VARCHAR NOT NULL,
+        status                  VARCHAR NOT NULL,
+        source                  VARCHAR NOT NULL,
+        valid_from              DATE NOT NULL,
+        valid_to                DATE,
+        version                 VARCHAR NOT NULL,
+        created_at              TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (sector_id, version, valid_from),
+        CHECK (valid_to IS NULL OR valid_to > valid_from)
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS sector_universe_snapshots (
+        snapshot_id             VARCHAR PRIMARY KEY,
+        sector_id               VARCHAR NOT NULL,
+        as_of                   DATE NOT NULL,
+        asset_ids_json          VARCHAR NOT NULL,
+        benchmark_ids_json      VARCHAR NOT NULL,
+        membership_version      VARCHAR NOT NULL,
+        source                  VARCHAR NOT NULL,
+        coverage_json           VARCHAR NOT NULL,
+        quality                 VARCHAR NOT NULL,
+        created_at              TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE (sector_id, as_of, membership_version)
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS sector_research_snapshots (
+        snapshot_id             VARCHAR PRIMARY KEY,
+        sector_id               VARCHAR NOT NULL,
+        as_of                   DATE NOT NULL,
+        market_state_json       VARCHAR NOT NULL,
+        breadth_state_json      VARCHAR NOT NULL,
+        fundamental_state_json  VARCHAR NOT NULL,
+        valuation_state_json    VARCHAR NOT NULL,
+        coverage_json           VARCHAR NOT NULL,
+        source_ids_json         VARCHAR NOT NULL,
+        feature_version         VARCHAR NOT NULL,
+        status                  VARCHAR NOT NULL,
+        created_at              TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE (sector_id, as_of, feature_version)
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS sector_macro_snapshots (
+        snapshot_id                 VARCHAR PRIMARY KEY,
+        sector_id                   VARCHAR NOT NULL,
+        as_of                       DATE NOT NULL,
+        cycle_state_json            VARCHAR NOT NULL,
+        macro_sensitivity_json      VARCHAR NOT NULL,
+        source_sector_snapshot_id   VARCHAR NOT NULL,
+        feature_version             VARCHAR NOT NULL,
+        status                      VARCHAR NOT NULL,
+        created_at                  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE (sector_id, as_of, feature_version)
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS sector_anomaly_events (
+        event_id                    VARCHAR PRIMARY KEY,
+        event_type                  VARCHAR NOT NULL,
+        sector_id                  VARCHAR NOT NULL,
+        chain_ids_json              VARCHAR NOT NULL,
+        source_asset_ids_json       VARCHAR NOT NULL,
+        affected_asset_ids_json     VARCHAR NOT NULL,
+        direction                   VARCHAR NOT NULL,
+        severity                    VARCHAR NOT NULL,
+        confidence                  DOUBLE NOT NULL,
+        event_time                  TIMESTAMP NOT NULL,
+        published_at                TIMESTAMP NOT NULL,
+        available_at                TIMESTAMP NOT NULL,
+        ingested_at                 TIMESTAMP NOT NULL,
+        as_of                       TIMESTAMP NOT NULL,
+        source_evidence_ids_json    VARCHAR NOT NULL,
+        summary                     VARCHAR NOT NULL,
+        propagation_hypothesis      VARCHAR,
+        status                      VARCHAR NOT NULL,
+        version                     VARCHAR NOT NULL,
+        created_at                  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        CHECK (confidence >= 0 AND confidence <= 1),
+        CHECK (available_at <= as_of),
+        CHECK (ingested_at <= as_of)
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS sector_anomaly_scopes (
+        event_id                    VARCHAR NOT NULL,
+        scope_id                    VARCHAR NOT NULL,
+        PRIMARY KEY (event_id, scope_id)
+    )
+    """,
+    """
     CREATE TABLE IF NOT EXISTS phase2_registry (
         module_name            VARCHAR PRIMARY KEY,
         api_path               VARCHAR NOT NULL,
@@ -518,5 +703,45 @@ INDEX_DDL = (
     """
     CREATE INDEX IF NOT EXISTS idx_report_jobs_status_created
     ON report_jobs (status, created_at)
+    """,
+    """
+    CREATE INDEX IF NOT EXISTS idx_sector_nodes_type_time
+    ON sector_nodes (node_type, valid_from, valid_to)
+    """,
+    """
+    CREATE INDEX IF NOT EXISTS idx_sector_edges_source_target
+    ON sector_edges (source_node_id, target_node_id, valid_from, valid_to)
+    """,
+    """
+    CREATE INDEX IF NOT EXISTS idx_sector_memberships_asset_time
+    ON sector_memberships (asset_id, valid_from, valid_to)
+    """,
+    """
+    CREATE INDEX IF NOT EXISTS idx_research_scopes_parent
+    ON research_scopes (parent_scope_id, valid_from, valid_to)
+    """,
+    """
+    CREATE INDEX IF NOT EXISTS idx_sector_benchmarks_time
+    ON sector_benchmark_mappings (sector_id, valid_from, valid_to)
+    """,
+    """
+    CREATE INDEX IF NOT EXISTS idx_sector_universe_as_of
+    ON sector_universe_snapshots (sector_id, as_of)
+    """,
+    """
+    CREATE INDEX IF NOT EXISTS idx_sector_research_as_of
+    ON sector_research_snapshots (sector_id, as_of)
+    """,
+    """
+    CREATE INDEX IF NOT EXISTS idx_sector_macro_as_of
+    ON sector_macro_snapshots (sector_id, as_of)
+    """,
+    """
+    CREATE INDEX IF NOT EXISTS idx_sector_anomalies_sector_time
+    ON sector_anomaly_events (sector_id, available_at, as_of)
+    """,
+    """
+    CREATE INDEX IF NOT EXISTS idx_sector_anomaly_scopes_scope
+    ON sector_anomaly_scopes (scope_id, event_id)
     """,
 )

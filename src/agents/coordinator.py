@@ -42,6 +42,8 @@ from src.schemas.agents import (
     RiskManagerRequest,
 )
 from src.schemas.research_data import DataCapability
+from src.schemas.sector_context import SectorContextUsageDiagnostic
+from src.services.sector_context import SectorContextProjector
 
 ANALYST_ORDER = (
     AgentName.FUNDAMENTAL_ANALYST,
@@ -367,6 +369,16 @@ class ResearchCoordinator:
             risk_manager=risk_result,
             missing_agents=missing_agents,
             uncertainties=_unique(uncertainties),
+            sector_context_usage=_sector_context_usage(
+                request,
+                {
+                    **analyst_results,
+                    AgentName.RESEARCH_MANAGER: research_result,
+                    AgentName.BULL_MANAGER: bull_result,
+                    AgentName.BEAR_MANAGER: bear_result,
+                    AgentName.RISK_MANAGER: risk_result,
+                },
+            ),
         )
 
     def _invoke(
@@ -396,6 +408,7 @@ class ResearchCoordinator:
             request.data_bundle,
             request.context_bundle,
             agent_name,
+            request.sector_context_bundle,
         )
 
     @staticmethod
@@ -411,6 +424,7 @@ class ResearchCoordinator:
             request.context_bundle,
             agent_name,
             analyst_outputs,
+            request.sector_context_bundle,
         )
 
     @staticmethod
@@ -571,3 +585,86 @@ def _validated_claims(
 
 def _unique(values: list[str]) -> list[str]:
     return list(dict.fromkeys(values))
+
+
+def _sector_context_usage(
+    request: ResearchTaskRequest,
+    results: dict[AgentName, AgentExecutionResult],
+) -> tuple[SectorContextUsageDiagnostic, ...]:
+    """Measure exact Sector Claim use without introducing trajectory storage."""
+
+    bundle = request.sector_context_bundle
+    if bundle is None:
+        return ()
+    claim_index: dict[str, ClaimEvidenceBinding] = {
+        claim.claim_id: claim
+        for claim in bundle.accepted_claims
+        if claim.claim_id is not None
+    }
+    claims_by_role: dict[AgentName, tuple[ClaimEvidenceBinding, ...]] = {}
+    for role, result in results.items():
+        claims = _validated_claims(result)
+        claims_by_role[role] = claims
+        claim_index.update(
+            {claim.claim_id: claim for claim in claims if claim.claim_id is not None}
+        )
+    sector_ids = {
+        claim.claim_id for claim in bundle.accepted_claims if claim.claim_id is not None
+    }
+
+    def sector_ancestors(claim_id: str, visited: set[str]) -> set[str]:
+        if claim_id in visited:
+            return set()
+        if claim_id in sector_ids:
+            return {claim_id}
+        claim = claim_index.get(claim_id)
+        if claim is None:
+            return set()
+        next_visited = {*visited, claim_id}
+        return set().union(
+            *(
+                sector_ancestors(parent, next_visited)
+                for parent in claim.upstream_claim_ids
+            )
+        )
+
+    diagnostics: list[SectorContextUsageDiagnostic] = []
+    for role in REQUIRED_AGENTS:
+        projection = SectorContextProjector.for_role(bundle, role)
+        provided = tuple(
+            item.claim_id
+            for item in (
+                projection.validated_claims
+                if projection.validated_claims
+                else projection.context_claims
+            )
+            if item.claim_id is not None
+        )
+        used = set()
+        for claim in claims_by_role.get(role, ()):
+            for upstream_id in claim.upstream_claim_ids:
+                used.update(sector_ancestors(upstream_id, set()))
+        used_ordered = tuple(item for item in provided if item in used)
+        provided_events = tuple(item.event_id for item in projection.event_references)
+        used_events = tuple(
+            event.event_id
+            for event in projection.event_references
+            if set(event.supporting_sector_claim_ids) & set(used_ordered)
+        )
+        serialized = json.dumps(
+            projection.model_dump(mode="json"),
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        diagnostics.append(
+            SectorContextUsageDiagnostic(
+                sector_context_id=bundle.context_id,
+                agent_role=role,
+                provided_sector_claim_ids=provided,
+                used_sector_claim_ids=used_ordered,
+                provided_event_ids=provided_events,
+                used_event_ids=used_events,
+                serialized_context_chars=len(serialized),
+            )
+        )
+    return tuple(diagnostics)

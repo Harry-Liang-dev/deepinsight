@@ -51,6 +51,21 @@ class BaseRepository:
         except duckdb.Error as exc:
             raise _repository_error(exc, operation="write") from None
 
+    def _executemany(
+        self,
+        sql: str,
+        parameter_rows: Sequence[Sequence[object]],
+    ) -> None:
+        """Execute one statement for many rows within one transaction."""
+
+        if not parameter_rows:
+            return
+        try:
+            with self._database.transaction() as connection:
+                connection.executemany(sql, parameter_rows)
+        except duckdb.Error as exc:
+            raise _repository_error(exc, operation="write") from None
+
     def _fetch_one(
         self,
         sql: str,

@@ -970,6 +970,12 @@ def _manager_inference_payload(
     coverage = coverage if isinstance(coverage, dict) else {}
     memory = context.get("memory")
     memory = memory if isinstance(memory, dict) else {}
+    sector_context = context.get("sector_context")
+    compact_sector_context: JsonValue = None
+    if isinstance(sector_context, dict):
+        compact_sector_context = _copy_json(sector_context)
+        compact_sector_context.pop("validated_claims", None)
+        compact_sector_context.pop("context_claims", None)
     projected["research_contract"] = {
         "schema_version": contract.get("schema_version"),
         "agent_name": contract.get("agent_name"),
@@ -978,6 +984,7 @@ def _manager_inference_payload(
             "missing_data": coverage.get("missing_data", []),
             "missing_context": coverage.get("missing_context", []),
             "memory_context": memory.get("items", []),
+            "sector_context": compact_sector_context,
         },
         "validated_upstream_claims": claims,
     }

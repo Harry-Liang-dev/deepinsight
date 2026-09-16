@@ -67,7 +67,7 @@ class MacroSeriesProvider(Protocol):
         series_ids: tuple[str, ...],
         start_date: date,
         end_date: date,
-        as_of: date,
+        as_of: date | datetime,
     ) -> Iterable[ProviderRecord]: ...
 
 
@@ -81,6 +81,16 @@ class SentimentRangeProvider(Protocol):
         start_date: date,
         end_date: date,
     ) -> Iterable[ProviderRecord]: ...
+
+
+def _macro_as_of_date(value: date | datetime) -> date:
+    """Normalize a macro cutoff to its global UTC calendar date."""
+
+    if isinstance(value, datetime):
+        if value.tzinfo is None or value.utcoffset() is None:
+            raise ValueError("macro as_of datetime must be timezone-aware")
+        return value.astimezone(UTC).date()
+    return value
 
 
 class IngestionRunError(RuntimeError):
@@ -109,7 +119,7 @@ class IngestionRequest:
     macro_series_ids: tuple[str, ...] = ()
     macro_start_date: date | None = None
     macro_end_date: date | None = None
-    macro_as_of: date | None = None
+    macro_as_of: date | datetime | None = None
     sentiment_start_date: date | None = None
     sentiment_end_date: date | None = None
 
@@ -156,7 +166,7 @@ class IngestionRequest:
         if (
             self.macro_end_date is not None
             and self.macro_as_of is not None
-            and self.macro_end_date > self.macro_as_of
+            and self.macro_end_date > _macro_as_of_date(self.macro_as_of)
         ):
             raise ValueError("macro end date cannot exceed as_of")
         if (self.sentiment_start_date is None) is not (self.sentiment_end_date is None):

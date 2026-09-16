@@ -536,6 +536,13 @@ def test_prompts_are_versioned_and_missing_prompt_is_explicit(tmp_path: Path) ->
         PROMPT_ROOT / "archive" / "agent_contract_candidate_v3"
     ).load(AgentName.RISK_MANAGER)
     assert candidate_v3.version == "v7"
+    manager = PromptLoader(PROMPT_ROOT).load(AgentName.RESEARCH_MANAGER)
+    assert manager.version == "v7"
+    assert "Industry Chain Claim" in manager.system_prompt
+    archived_manager = PromptLoader(
+        PROMPT_ROOT / "archive" / "research_manager_v6"
+    ).load(AgentName.RESEARCH_MANAGER)
+    assert archived_manager.version == "v6"
     with pytest.raises(PromptLoadError, match="unavailable"):
         PromptLoader(tmp_path).load(AgentName.RISK_MANAGER)
 

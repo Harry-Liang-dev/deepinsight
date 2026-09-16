@@ -1,0 +1,131 @@
+{
+  "dataset_schema_version": "research_dataset_sample_v1",
+  "sample_id": "research_sample_f1b426e6b3eea228bdc61dba",
+  "asset_id": "US:AAPL",
+  "market": "US",
+  "sector_id": "CONSUMER_ELECTRONICS",
+  "industry_chain_ids": [
+    "APPLE_CHAIN"
+  ],
+  "research_as_of": "2026-08-30T23:59:59.999999Z",
+  "research_state_id": "research_state_3da102d1a1515b82dbe4f9b7",
+  "research_episode_id": "research_episode_d4a588c6bac4fa6fe558cad5",
+  "data_snapshot_id": "rdb_2eb392bf5871eb865dd9f5d5",
+  "sector_context_id": "sector_context_1a8a5f251dda24246ea83161",
+  "memory_context_id": null,
+  "attribution_bundle_id": "research_attribution_2b5f4f002879d942f1b1c436",
+  "agent_run_ids": [
+    "fixed:fundamental_analyst",
+    "fixed:technical_text_analyst",
+    "fixed:sentiment_analyst",
+    "fixed:news_event_analyst",
+    "fixed:research_manager",
+    "fixed:bull_manager",
+    "fixed:bear_manager",
+    "fixed:risk_manager"
+  ],
+  "versions": {
+    "research_state_schema_version": "research_state_snapshot_v1",
+    "research_state_version": "research_state_v1",
+    "research_episode_schema_version": "research_episode_v1",
+    "research_episode_trace_quality": "partial",
+    "source_dataset_version": "phase4a_day36_fixed_real_snapshot_v1",
+    "attribution_version": "research_attribution_v1",
+    "model_versions": [
+      {
+        "name": "fundamental_analyst",
+        "version": "qwen3.7-flash"
+      },
+      {
+        "name": "technical_text_analyst",
+        "version": "qwen3.7-flash"
+      },
+      {
+        "name": "sentiment_analyst",
+        "version": "qwen3.7-flash"
+      },
+      {
+        "name": "news_event_analyst",
+        "version": "qwen3.7-flash"
+      },
+      {
+        "name": "research_manager",
+        "version": "qwen3.7-flash"
+      },
+      {
+        "name": "bull_manager",
+        "version": "qwen3.7-flash"
+      },
+      {
+        "name": "bear_manager",
+        "version": "qwen3.7-flash"
+      },
+      {
+        "name": "risk_manager",
+        "version": "qwen3.7-flash"
+      }
+    ],
+    "prompt_versions": [
+      {
+        "name": "fundamental_analyst",
+        "version": "v10"
+      },
+      {
+        "name": "technical_text_analyst",
+        "version": "v9"
+      },
+      {
+        "name": "sentiment_analyst",
+        "version": "v8"
+      },
+      {
+        "name": "news_event_analyst",
+        "version": "v9"
+      },
+      {
+        "name": "research_manager",
+        "version": "v6"
+      },
+      {
+        "name": "bull_manager",
+        "version": "v8"
+      },
+      {
+        "name": "bear_manager",
+        "version": "v10"
+      },
+      {
+        "name": "risk_manager",
+        "version": "v7"
+      }
+    ],
+    "feature_versions": [
+      {
+        "name": "research_state",
+        "version": "research_state_v1"
+      },
+      {
+        "name": "research_state_feature",
+        "version": "research_state_feature_v1"
+      }
+    ]
+  },
+  "label_status": "pending",
+  "label_ids": [],
+  "quality": {
+    "status": "partial",
+    "state_status": "partial",
+    "episode_status": "partial",
+    "sector_context_status": "available",
+    "memory_context_status": "not_available_in_source_run",
+    "attribution_status": "available",
+    "missing_reasons": [
+      "research_state_partial",
+      "research_episode_partial",
+      "memory_context_not_available_in_source_run"
+    ]
+  },
+  "dataset_build_version": "pit_research_dataset_build_v1",
+  "created_at": "2026-09-01T00:00:00Z",
+  "input_fingerprint": "f1b426e6b3eea228bdc61dbad792718a73b963a53644978680f36f8e62d0be07"
+}

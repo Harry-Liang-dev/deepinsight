@@ -131,6 +131,92 @@ def test_llm_judge_normalizes_exact_keyed_provider_response(
     assert all(item.score == 0.7 for item in checks)
 
 
+def test_judge_response_normalizes_keyed_shape_at_gateway_boundary() -> None:
+    """Gateway model validation must reach the exact-key compatibility path."""
+
+    keyed = {
+        check_id: {
+            "score": 0.8,
+            "reason": f"Evidence supports {check_id}.",
+            "evidence": [{"kind": "report_path", "locator": "report.report_json"}],
+        }
+        for check_id in _CHECKS
+    }
+
+    response = JudgeResponse.model_validate(keyed)
+
+    assert [item.check_id for item in response.metrics] == list(_CHECKS)
+
+
+def test_judge_response_rejects_incomplete_keyed_shape() -> None:
+    """Compatibility must not normalize an incomplete Provider response."""
+
+    keyed = {
+        check_id: {
+            "score": 0.8,
+            "reason": f"Evidence supports {check_id}.",
+            "evidence": [{"kind": "report_path", "locator": "report.report_json"}],
+        }
+        for check_id in tuple(_CHECKS)[:-1]
+    }
+
+    with pytest.raises(ValueError):
+        JudgeResponse.model_validate(keyed)
+
+
+def test_judge_response_normalizes_known_missing_data_evidence_alias() -> None:
+    """Qwen's exact missing-data label remains a diagnostic locator."""
+
+    metrics = [
+        {
+            "check_id": check_id,
+            "dimension": dimension,
+            "score": 0.8,
+            "reason": "Evidence-based assessment.",
+            "evidence": [
+                {
+                    "kind": (
+                        "known_missing_data"
+                        if check_id == "uncertainty_quality"
+                        else "report_path"
+                    ),
+                    "locator": (
+                        "known_missing_data"
+                        if check_id == "uncertainty_quality"
+                        else "report.report_json"
+                    ),
+                }
+            ],
+        }
+        for check_id, dimension in _CHECKS.items()
+    ]
+
+    response = JudgeResponse.model_validate({"metrics": metrics})
+
+    uncertainty = next(
+        item for item in response.metrics if item.check_id == "uncertainty_quality"
+    )
+    assert uncertainty.evidence[0].kind.value == "diagnostic"
+
+
+def test_judge_response_rejects_unknown_evidence_kind() -> None:
+    """Compatibility must not turn arbitrary evidence kinds into diagnostics."""
+
+    metrics = [
+        {
+            "check_id": check_id,
+            "dimension": dimension,
+            "score": 0.8,
+            "reason": "Evidence-based assessment.",
+            "evidence": [{"kind": "unknown_kind", "locator": "unknown"}],
+        }
+        for check_id, dimension in _CHECKS.items()
+    ]
+
+    with pytest.raises(ValueError):
+        JudgeResponse.model_validate({"metrics": metrics})
+
+
 @pytest.mark.parametrize(
     ("failure", "message"),
     [

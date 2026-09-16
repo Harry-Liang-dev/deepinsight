@@ -23,6 +23,7 @@ from src.schemas.market_data import (
     SentimentEvidenceRecord,
     SentimentSnapshotRecord,
 )
+from src.schemas.temporal import TemporalAccessMode
 
 _INSTRUMENT_COLUMNS = (
     "asset_id",
@@ -596,6 +597,7 @@ class MarketDataRepository(BaseRepository):
         *,
         end_date: date,
         as_of: datetime,
+        access_mode: TemporalAccessMode = TemporalAccessMode.HISTORICAL_REPLAY,
     ) -> list[MacroObservationRecord]:
         """Return the latest stored vintage known by the requested cutoff."""
 
@@ -603,6 +605,21 @@ class MarketDataRepository(BaseRepository):
             return []
         placeholders = ", ".join("?" for _ in series_keys)
         columns = _MACRO_COLUMNS
+        ingestion_predicate = (
+            "AND ingestion_ts <= ?"
+            if access_mode is TemporalAccessMode.HISTORICAL_REPLAY
+            else ""
+        )
+        newer_ingestion_predicate = (
+            "AND newer.ingestion_ts <= ?"
+            if access_mode is TemporalAccessMode.HISTORICAL_REPLAY
+            else ""
+        )
+        ingestion_parameters: tuple[object, ...] = (
+            (_database_timestamp(as_of),)
+            if access_mode is TemporalAccessMode.HISTORICAL_REPLAY
+            else ()
+        )
         rows = self._fetch_all(
             f"""
             SELECT {", ".join(columns)}
@@ -610,14 +627,14 @@ class MarketDataRepository(BaseRepository):
             WHERE series_key IN ({placeholders})
               AND observation_date <= ?
               AND realtime_start <= ?
-              AND ingestion_ts <= ?
+              {ingestion_predicate}
               AND realtime_start = (
                   SELECT max(newer.realtime_start)
                   FROM macro_series_vintages AS newer
                   WHERE newer.series_key = candidate.series_key
                     AND newer.observation_date = candidate.observation_date
                     AND newer.realtime_start <= ?
-                    AND newer.ingestion_ts <= ?
+                    {newer_ingestion_predicate}
               )
             ORDER BY series_key, observation_date
             """,
@@ -625,9 +642,9 @@ class MarketDataRepository(BaseRepository):
                 *series_keys,
                 end_date,
                 as_of.date(),
-                _database_timestamp(as_of),
+                *ingestion_parameters,
                 as_of.date(),
-                _database_timestamp(as_of),
+                *ingestion_parameters,
             ),
         )
         return [map_row(MacroObservationRecord, columns, row) for row in rows]
@@ -652,9 +669,25 @@ class MarketDataRepository(BaseRepository):
         *,
         start_at: datetime,
         as_of: datetime,
+        access_mode: TemporalAccessMode = TemporalAccessMode.HISTORICAL_REPLAY,
     ) -> list[SentimentSnapshotRecord]:
         """Return point-in-time community sentiment history."""
 
+        ingestion_predicate = (
+            "AND ingestion_ts <= ?"
+            if access_mode is TemporalAccessMode.HISTORICAL_REPLAY
+            else ""
+        )
+        parameters: tuple[object, ...] = (
+            str(asset_id),
+            _database_timestamp(start_at),
+            _database_timestamp(as_of),
+            *(
+                (_database_timestamp(as_of),)
+                if access_mode is TemporalAccessMode.HISTORICAL_REPLAY
+                else ()
+            ),
+        )
         rows = self._fetch_all(
             f"""
             SELECT {", ".join(_SENTIMENT_SNAPSHOT_COLUMNS)}
@@ -662,15 +695,10 @@ class MarketDataRepository(BaseRepository):
             WHERE asset_id = ?
               AND source_timestamp >= ?
               AND source_timestamp <= ?
-              AND ingestion_ts <= ?
+              {ingestion_predicate}
             ORDER BY source_timestamp, provider
             """,
-            (
-                str(asset_id),
-                _database_timestamp(start_at),
-                _database_timestamp(as_of),
-                _database_timestamp(as_of),
-            ),
+            parameters,
         )
         return [
             map_row(SentimentSnapshotRecord, _SENTIMENT_SNAPSHOT_COLUMNS, row)
@@ -697,9 +725,25 @@ class MarketDataRepository(BaseRepository):
         *,
         start_at: datetime,
         as_of: datetime,
+        access_mode: TemporalAccessMode = TemporalAccessMode.HISTORICAL_REPLAY,
     ) -> list[SentimentEvidenceRecord]:
         """Return attributable posts created and ingested by the cutoff."""
 
+        ingestion_predicate = (
+            "AND ingestion_ts <= ?"
+            if access_mode is TemporalAccessMode.HISTORICAL_REPLAY
+            else ""
+        )
+        parameters: tuple[object, ...] = (
+            str(asset_id),
+            _database_timestamp(start_at),
+            _database_timestamp(as_of),
+            *(
+                (_database_timestamp(as_of),)
+                if access_mode is TemporalAccessMode.HISTORICAL_REPLAY
+                else ()
+            ),
+        )
         rows = self._fetch_all(
             f"""
             SELECT {", ".join(_SENTIMENT_EVIDENCE_COLUMNS)}
@@ -707,15 +751,10 @@ class MarketDataRepository(BaseRepository):
             WHERE asset_id = ?
               AND created_at >= ?
               AND created_at <= ?
-              AND ingestion_ts <= ?
+              {ingestion_predicate}
             ORDER BY created_at, message_id
             """,
-            (
-                str(asset_id),
-                _database_timestamp(start_at),
-                _database_timestamp(as_of),
-                _database_timestamp(as_of),
-            ),
+            parameters,
         )
         return [
             map_row(SentimentEvidenceRecord, _SENTIMENT_EVIDENCE_COLUMNS, row)
@@ -737,9 +776,25 @@ class MarketDataRepository(BaseRepository):
         *,
         start_at: datetime,
         as_of: datetime,
+        access_mode: TemporalAccessMode = TemporalAccessMode.HISTORICAL_REPLAY,
     ) -> list[NewsEvidenceRecord]:
         """Return publication-time-safe canonical news records."""
 
+        ingestion_predicate = (
+            "AND ingestion_ts <= ?"
+            if access_mode is TemporalAccessMode.HISTORICAL_REPLAY
+            else ""
+        )
+        parameters: tuple[object, ...] = (
+            str(asset_id),
+            _database_timestamp(start_at),
+            _database_timestamp(as_of),
+            *(
+                (_database_timestamp(as_of),)
+                if access_mode is TemporalAccessMode.HISTORICAL_REPLAY
+                else ()
+            ),
+        )
         rows = self._fetch_all(
             f"""
             SELECT {", ".join(_NEWS_COLUMNS)}
@@ -747,15 +802,10 @@ class MarketDataRepository(BaseRepository):
             WHERE asset_id = ?
               AND created_at >= ?
               AND created_at <= ?
-              AND ingestion_ts <= ?
+              {ingestion_predicate}
             ORDER BY created_at, news_id
             """,
-            (
-                str(asset_id),
-                _database_timestamp(start_at),
-                _database_timestamp(as_of),
-                _database_timestamp(as_of),
-            ),
+            parameters,
         )
         return [map_row(NewsEvidenceRecord, _NEWS_COLUMNS, row) for row in rows]
 

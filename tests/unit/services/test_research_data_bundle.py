@@ -20,13 +20,18 @@ from src.schemas import (
     MissingDataReason,
     ResearchDataBundleRequest,
 )
+from src.schemas.temporal import TemporalAccessMode
 from src.services import ResearchDataBundleService
 
 ASSET_ID = AssetId("US:AAPL")
 INGESTED_AT = datetime(2026, 8, 7, 22, 0, tzinfo=UTC)
 
 
-def _builder(tmp_path: Path) -> tuple[ResearchDataBundleService, MarketDataRepository]:
+def _builder(
+    tmp_path: Path,
+    *,
+    temporal_access_mode: TemporalAccessMode = TemporalAccessMode.HISTORICAL_REPLAY,
+) -> tuple[ResearchDataBundleService, MarketDataRepository]:
     database = DuckDBDatabase(tmp_path / "research-data-bundle.duckdb")
     database.bootstrap()
     instruments = InstrumentRepository(database)
@@ -45,6 +50,7 @@ def _builder(tmp_path: Path) -> tuple[ResearchDataBundleService, MarketDataRepos
         ResearchDataBundleService(
             instruments=instruments,
             market_data=market_data,
+            temporal_access_mode=temporal_access_mode,
         ),
         market_data,
     )
@@ -202,6 +208,53 @@ def test_available_market_data_can_be_classified_stale(tmp_path: Path) -> None:
     assert bundle.technical_features.status is DataAvailabilityStatus.STALE
     assert bundle.technical_features.available_field_count == 15
     assert all(item.value is not None for item in bundle.technical_features.items)
+
+
+def test_live_acquisition_uses_source_availability_not_late_ingestion(
+    tmp_path: Path,
+) -> None:
+    """A live fetch after T may expose only source data already available at T."""
+
+    historical_builder, market_data = _builder(tmp_path)
+    market_data.upsert_eod_bar(
+        EodBarRecord(
+            asset_id=ASSET_ID,
+            trade_date=date(2026, 9, 15),
+            open=100.0,
+            high=102.0,
+            low=99.0,
+            close=101.0,
+            volume=1_000_000,
+            source_id="alpaca_market_data",
+            ingestion_ts=datetime(2026, 9, 16, 7, 0, tzinfo=UTC),
+        )
+    )
+    request = ResearchDataBundleRequest(
+        asset_id=ASSET_ID,
+        as_of=datetime(2026, 9, 16, 6, 0, tzinfo=UTC),
+        window_start=date(2026, 9, 15),
+        window_end=date(2026, 9, 15),
+        dataset_version="live-acquisition-temporal-fixture-v1",
+        requested_capabilities=(
+            DataCapability.ASSET_IDENTITY,
+            DataCapability.OHLCV,
+        ),
+    )
+
+    historical = historical_builder.build(request)
+    live, _ = _builder(
+        tmp_path,
+        temporal_access_mode=TemporalAccessMode.LIVE_ACQUISITION,
+    )
+    live_bundle = live.build(request)
+
+    assert historical.ohlcv.status is DataAvailabilityStatus.MISSING
+    assert live_bundle.ohlcv.status is DataAvailabilityStatus.PARTIAL
+    assert live_bundle.ohlcv.items
+    assert {item.observed_at for item in live_bundle.ohlcv.items} == {
+        datetime(2026, 9, 15, 20, 0, tzinfo=UTC)
+    }
+    assert all(item.observed_at <= request.as_of for item in live_bundle.ohlcv.items)
 
 
 def test_fmp_is_primary_and_conflicting_sec_metric_remains_audit_visible(

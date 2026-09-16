@@ -99,6 +99,72 @@ class JudgeResponse(DomainModel):
 
     metrics: list[JudgeMetric] = Field(min_length=1)
 
+    @model_validator(mode="before")
+    @classmethod
+    def normalize_exact_keyed_wire_response(cls, value: object) -> object:
+        """Accept only the known keyed Qwen compatibility representation."""
+
+        if not isinstance(value, dict):
+            return value
+        if "metrics" in value:
+            wire_metrics = value.get("metrics")
+            if not isinstance(wire_metrics, list):
+                return value
+            normalized = dict(value)
+            normalized["metrics"] = [
+                _normalize_judge_metric_evidence_kind(metric) for metric in wire_metrics
+            ]
+            return normalized
+        dimensions = {
+            "semantic_factuality": "factual_correctness",
+            "conclusion_evidence_consistency": ("conclusion_evidence_consistency"),
+            "bull_bear_balance": "bull_bear_balance",
+            "risk_identification_quality": "risk_identification_quality",
+            "uncertainty_quality": "uncertainty_expression",
+            "readability": "readability",
+        }
+        if set(value) != set(dimensions):
+            return value
+        normalized_metrics: list[object] = []
+        for check_id, dimension in dimensions.items():
+            metric = value.get(check_id)
+            if not isinstance(metric, dict):
+                return value
+            normalized_metrics.append(
+                {
+                    **metric,
+                    "check_id": check_id,
+                    "dimension": dimension,
+                }
+            )
+        return {
+            "metrics": [
+                _normalize_judge_metric_evidence_kind(metric)
+                for metric in normalized_metrics
+            ]
+        }
+
+
+def _normalize_judge_metric_evidence_kind(metric: object) -> object:
+    """Map one exact Provider alias onto the existing diagnostic category."""
+
+    if not isinstance(metric, dict):
+        return metric
+    evidence = metric.get("evidence")
+    if not isinstance(evidence, list):
+        return metric
+    normalized_metric = dict(metric)
+    normalized_evidence: list[object] = []
+    for item in evidence:
+        if not isinstance(item, dict) or item.get("kind") != "known_missing_data":
+            normalized_evidence.append(item)
+            continue
+        normalized_item = dict(item)
+        normalized_item["kind"] = "diagnostic"
+        normalized_evidence.append(normalized_item)
+    normalized_metric["evidence"] = normalized_evidence
+    return normalized_metric
+
 
 class EvaluationRuleSet(DomainModel):
     """Versioned thresholds, weights, time rules, and Judge prompt."""

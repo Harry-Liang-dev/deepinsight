@@ -1,0 +1,3351 @@
+{
+  "schema_version": "research_state_snapshot_v1",
+  "research_state_id": "research_state_fd95d91fbf0a635951884295",
+  "research_state_version": "research_state_v1",
+  "feature_version": "research_state_feature_v1",
+  "asset_id": "US:AAPL",
+  "research_as_of": "2026-08-14T23:59:59.999999Z",
+  "hierarchy": {
+    "macro_scope_ids": [
+      "MACRO:US"
+    ],
+    "sector_scope_id": null,
+    "industry_chain_scope_ids": [],
+    "asset_scope_id": "ASSET:US:AAPL"
+  },
+  "identity": {
+    "section_name": "identity",
+    "status": "present",
+    "features": [
+      {
+        "feature_name": "asset_identity.asset_id",
+        "value": "US:AAPL",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": "2026-08-14T23:59:59.999999Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_afebc1a4f41f88cf39cdffa7"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "asset_identity.company_name",
+        "value": "Apple Inc.",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": "2026-08-14T23:59:59.999999Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_577b04f1caa5bd406896b4d1"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "asset_identity.currency",
+        "value": "USD",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": "2026-08-14T23:59:59.999999Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_6ca2727d4a660703ff77423c"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "asset_identity.exchange_code",
+        "value": "NASDAQ",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": "2026-08-14T23:59:59.999999Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_295645ae935dfa51bc86c1e3"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "asset_identity.market",
+        "value": "US",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": "2026-08-14T23:59:59.999999Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_f7b0b10df548d0036a67296a"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "asset_identity.ticker",
+        "value": "AAPL",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": "2026-08-14T23:59:59.999999Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_8242f6485a158a460d6b6bcc"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      }
+    ],
+    "missing_reason": null
+  },
+  "macro_state": {
+    "section_name": "macro_state",
+    "status": "present",
+    "features": [
+      {
+        "feature_name": "macro_indicators.BAMLH0A0HYM2",
+        "value": 2.71,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-12T00:00:00Z",
+        "available_at": "2026-08-14T10:09:46.662560Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_97136e8149b0cac1602b870d"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "macro_indicators.CPIAUCSL",
+        "value": 332.813,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-07-01T00:00:00Z",
+        "available_at": "2026-08-14T10:09:17.751808Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_ea708c802eeaeef93eee692c"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "macro_indicators.DGS10",
+        "value": 4.68,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-12T00:00:00Z",
+        "available_at": "2026-08-14T10:09:04.859168Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_aeb24e7f4d8c2135fc62492d"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "macro_indicators.DGS2",
+        "value": 4.2,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-12T00:00:00Z",
+        "available_at": "2026-08-14T10:08:52.686719Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_5e99096d094d45bad90e7e57"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "macro_indicators.FEDFUNDS",
+        "value": 3.63,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-07-01T00:00:00Z",
+        "available_at": "2026-08-14T10:08:40.985886Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_7e2ba5cc8bbbc542213b859e"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "macro_indicators.GDP",
+        "value": 32475.21,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-04-01T00:00:00Z",
+        "available_at": "2026-08-14T10:09:19.652032Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_040e9b7d0bee7d33d16cf35a"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "macro_indicators.INDPRO",
+        "value": 102.6395,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-06-01T00:00:00Z",
+        "available_at": "2026-08-14T10:09:20.212612Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_7a897fb4da59ad6a6a5fdac6"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "macro_indicators.PAYEMS",
+        "value": 158858.0,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-07-01T00:00:00Z",
+        "available_at": "2026-08-14T10:09:19.467543Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_2826832476316867ad7e4a23"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "macro_indicators.PCEPILFE",
+        "value": 130.266,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-06-01T00:00:00Z",
+        "available_at": "2026-08-14T10:09:18.307376Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_c3081300fa9ce0d84d02a5fe"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "macro_indicators.T10Y2Y",
+        "value": 0.48,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-13T00:00:00Z",
+        "available_at": "2026-08-14T10:09:17.207016Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_51c582ef1ecd77e299eaeb31"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "macro_indicators.UNRATE",
+        "value": 4.1,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-07-01T00:00:00Z",
+        "available_at": "2026-08-14T10:09:18.869946Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_9226027b552734e1b0ade8d7"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "macro_indicators.VIXCLS",
+        "value": 14.55,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-12T00:00:00Z",
+        "available_at": "2026-08-14T10:09:33.318526Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_7554005263df2364f1477299"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "macro_indicators.core_pce",
+        "value": 130.266,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-06-01T00:00:00Z",
+        "available_at": "2026-08-14T10:09:18.307376Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_a3fd749b0da7324aa92d9e93"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "macro_indicators.cpi",
+        "value": 332.813,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-07-01T00:00:00Z",
+        "available_at": "2026-08-14T10:09:17.751808Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_7fb3ccaad10c377a7d2d3567"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "macro_indicators.fed_funds",
+        "value": 3.63,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-07-01T00:00:00Z",
+        "available_at": "2026-08-14T10:08:40.985886Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_481daf12660f596640c7ac2d"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "macro_indicators.gdp",
+        "value": 32475.21,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-04-01T00:00:00Z",
+        "available_at": "2026-08-14T10:09:19.652032Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_a1789529e86134c45f899d4b"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "macro_indicators.high_yield_spread",
+        "value": 2.71,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-12T00:00:00Z",
+        "available_at": "2026-08-14T10:09:46.662560Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_b394ec14e9dac36b7dc7531f"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "macro_indicators.industrial_production",
+        "value": 102.6395,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-06-01T00:00:00Z",
+        "available_at": "2026-08-14T10:09:20.212612Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_b97957314d2f01840f00918b"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "macro_indicators.payrolls",
+        "value": 158858.0,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-07-01T00:00:00Z",
+        "available_at": "2026-08-14T10:09:19.467543Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_72c7c4f422fff8083e64f7c4"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "macro_indicators.unemployment",
+        "value": 4.1,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-07-01T00:00:00Z",
+        "available_at": "2026-08-14T10:09:18.869946Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_29c8e01f38871b2f527659c3"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "macro_indicators.vix",
+        "value": 14.55,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-12T00:00:00Z",
+        "available_at": "2026-08-14T10:09:33.318526Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_5e44e6b54eebd2b900d3fdd6"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "macro_indicators.yield_10y",
+        "value": 4.68,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-12T00:00:00Z",
+        "available_at": "2026-08-14T10:09:04.859168Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_5c746728b9d56bc931bad525"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "macro_indicators.yield_2y",
+        "value": 4.2,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-12T00:00:00Z",
+        "available_at": "2026-08-14T10:08:52.686719Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_f26f890924919b4a9ccdcb4f"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "macro_indicators.yield_spread_10y2y",
+        "value": 0.48,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-13T00:00:00Z",
+        "available_at": "2026-08-14T10:09:17.207016Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_482b9c54d60680a3b307f95a"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      }
+    ],
+    "missing_reason": null
+  },
+  "sector_state": {
+    "section_name": "sector_state",
+    "status": "not_available_at_source_run",
+    "features": [],
+    "missing_reason": "Sector context was not persisted by the source research run."
+  },
+  "industry_chain_state": {
+    "section_name": "industry_chain_state",
+    "status": "not_available_at_source_run",
+    "features": [],
+    "missing_reason": "Sector context was not persisted by the source research run."
+  },
+  "fundamental_state": {
+    "section_name": "fundamental_state",
+    "status": "present",
+    "features": [
+      {
+        "feature_name": "claim.fundamental:canonical:balance_sheet_and_liquidity",
+        "value": "Balance Sheet and Liquidity: fundamentals.debt_to_equity 0.7841052827380952 ratio; fundamentals.current_ratio 1.0032948046555858 ratio",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": 0.5,
+        "quality": "pass",
+        "source_claim_ids": [
+          "fundamental:canonical:balance_sheet_and_liquidity"
+        ],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "claim.fundamental:canonical:growth",
+        "value": "Growth: fundamentals.revenue_yoy -0.015892574471146927 ratio; fundamentals.net_income_yoy 0.0071336804381635 ratio",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": 0.5,
+        "quality": "pass",
+        "source_claim_ids": [
+          "fundamental:canonical:growth"
+        ],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "claim.fundamental:canonical:margins",
+        "value": "Margins: fundamentals.gross_margin 0.4865291555900202 ratio; fundamentals.operating_margin 0.3317295848747812 ratio; fundamentals.net_margin 0.27618604910212224 ratio",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": 0.5,
+        "quality": "pass",
+        "source_claim_ids": [
+          "fundamental:canonical:margins"
+        ],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "claim.fundamental:canonical:profitability",
+        "value": "Profitability: fundamentals.roe 1.3718365457766524 ratio; fundamentals.roa 0.3363982195133406 ratio",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": 0.5,
+        "quality": "pass",
+        "source_claim_ids": [
+          "fundamental:canonical:profitability"
+        ],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "claim.fundamental:canonical:valuation",
+        "value": "Valuation: fundamentals.eps_ttm 8.775216496290799 USD/share USD; fundamentals.book_value_per_share 7.318011926480932 USD/share USD; fundamentals.market_cap 4483462292560.0 USD USD; fundamentals.pe_ttm 34.84703196347032 ratio; fundamentals.pb 41.71351496372768 ratio; fundamentals.earnings_yield 0.028746696246775862 ratio",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": 0.5,
+        "quality": "pass",
+        "source_claim_ids": [
+          "fundamental:canonical:valuation"
+        ],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "claim.fundamental:facts:0",
+        "value": "As of June 27, 2026, the Company had outstanding fixed-rate notes with varying maturities for an aggregate carrying amount of $ 82.3 billion.",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": 1.0,
+        "quality": "pass",
+        "source_claim_ids": [
+          "fundamental:facts:0"
+        ],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "claim.fundamental:facts:1",
+        "value": "During the nine months ended June 27, 2026, the Company repurchased 215 million shares of its common stock for $ 61.8 billion.",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": 1.0,
+        "quality": "pass",
+        "source_claim_ids": [
+          "fundamental:facts:1"
+        ],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "claim.fundamental:risk_points:0",
+        "value": "The Company is experiencing a period of supply constraints and increasing costs for components driven by factors such as industry supply-demand imbalances for components, including advanced semiconductors, storage (NAND) and memory (DRAN).",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": 1.0,
+        "quality": "pass",
+        "source_claim_ids": [
+          "fundamental:risk_points:0"
+        ],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "fundamentals.book_value_per_share",
+        "value": 7.318011926480932,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-06-27T00:00:00Z",
+        "available_at": "2026-07-31T06:01:02Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_2d2ccf555eab159f58a17321"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "fundamentals.current_assets",
+        "value": 149818000000.0,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-06-27T00:00:00Z",
+        "available_at": "2026-07-31T00:00:00Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_8295722e1d41c52cd3525aa3"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "fundamentals.current_liabilities",
+        "value": 149326000000.0,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-06-27T00:00:00Z",
+        "available_at": "2026-07-31T00:00:00Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_8ff437ccdd06c47386224545"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "fundamentals.current_ratio",
+        "value": 1.0032948046555858,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-06-27T00:00:00Z",
+        "available_at": "2026-07-31T06:01:02Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_3175fd7c71848958c89cc14a"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "fundamentals.debt_to_equity",
+        "value": 0.7841052827380952,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-06-27T00:00:00Z",
+        "available_at": "2026-07-31T06:01:02Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_844c2662c6bdd66dec2e6dea"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "fundamentals.earnings_yield",
+        "value": 0.028746696246775862,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-06-27T00:00:00Z",
+        "available_at": "2026-07-31T06:01:02Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_76fa04b713a22479302c7785"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "fundamentals.eps_basic",
+        "value": 2.03,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-06-27T00:00:00Z",
+        "available_at": "2026-07-31T00:00:00Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_b2bba5e6d60065585cb7a69d"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "fundamentals.eps_ttm",
+        "value": 8.775216496290799,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-06-27T00:00:00Z",
+        "available_at": "2026-07-31T06:01:02Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_85e562e61423c7a313645e1f"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "fundamentals.gross_margin",
+        "value": 0.4865291555900202,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-06-27T00:00:00Z",
+        "available_at": "2026-07-31T06:01:02Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_340d8ef0aa52ccfd35cbd91b"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "fundamentals.gross_profit",
+        "value": 54770000000.0,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-06-27T00:00:00Z",
+        "available_at": "2026-07-31T00:00:00Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_f41d3a0e11c491cafd6a840a"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "fundamentals.market_cap",
+        "value": 4483462292560.0,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-06-27T00:00:00Z",
+        "available_at": "2026-07-31T06:01:02Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_1167fe28ded1552f950ea06b"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "fundamentals.net_income",
+        "value": 29789000000.0,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-06-27T00:00:00Z",
+        "available_at": "2026-07-31T00:00:00Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_c46b10d09ef37cd229a61e6d"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "fundamentals.net_income_yoy",
+        "value": 0.0071336804381635,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-06-27T00:00:00Z",
+        "available_at": "2026-07-31T06:01:02Z",
+        "confidence": null,
+        "quality": "conflict",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_270335a333f51f82c17e9b44"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "fundamentals.net_margin",
+        "value": 0.27618604910212224,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-06-27T00:00:00Z",
+        "available_at": "2026-07-31T06:01:02Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_a48598544643e1a22b6f70ba"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "fundamentals.operating_cash_flow",
+        "value": 116996000000.0,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-06-27T00:00:00Z",
+        "available_at": "2026-07-31T00:00:00Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_d1565f38e2d7287b9204a778"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "fundamentals.operating_income",
+        "value": 35695000000.0,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-06-27T00:00:00Z",
+        "available_at": "2026-07-31T00:00:00Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_b5244b180a375eacb0e79148"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "fundamentals.operating_margin",
+        "value": 0.3317295848747812,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-06-27T00:00:00Z",
+        "available_at": "2026-07-31T06:01:02Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_3796cc28f744e2ef145cb02c"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "fundamentals.pb",
+        "value": 41.71351496372768,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-06-27T00:00:00Z",
+        "available_at": "2026-07-31T06:01:02Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_9a147e82c9e99552e370b3af"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "fundamentals.pe_ttm",
+        "value": 34.84703196347032,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-06-27T00:00:00Z",
+        "available_at": "2026-07-31T06:01:02Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_1aae82b97a9bf048ca98c60b"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "fundamentals.revenue",
+        "value": 109417000000.0,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-06-27T00:00:00Z",
+        "available_at": "2026-07-31T00:00:00Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_60b69932051dc713863877b5"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "fundamentals.revenue_yoy",
+        "value": -0.015892574471146927,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-06-27T00:00:00Z",
+        "available_at": "2026-07-31T06:01:02Z",
+        "confidence": null,
+        "quality": "conflict",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_1ad7070f54b974f9f6cad46c"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "fundamentals.roa",
+        "value": 0.3363982195133406,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-06-27T00:00:00Z",
+        "available_at": "2026-07-31T06:01:02Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_5382c5e11c129bf9d9b3735b"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "fundamentals.roe",
+        "value": 1.3718365457766524,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-06-27T00:00:00Z",
+        "available_at": "2026-07-31T06:01:02Z",
+        "confidence": null,
+        "quality": "conflict",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_25fc530a6fba70ccd8a6811f"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "fundamentals.shareholders_equity",
+        "value": 107520000000.0,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-06-27T00:00:00Z",
+        "available_at": "2026-07-31T00:00:00Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_3f9fa8b518f8e406ed374c83"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "fundamentals.shares_outstanding",
+        "value": 14594180000.0,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-07-17T00:00:00Z",
+        "available_at": "2026-07-31T00:00:00Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_e9265adc58ce4e897dc826fc"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "fundamentals.total_assets",
+        "value": 383266000000.0,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-06-27T00:00:00Z",
+        "available_at": "2026-07-31T00:00:00Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_5dca7abfd1fd1d2d594c11b0"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "fundamentals.total_debt",
+        "value": 82300000000.0,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-06-27T00:00:00Z",
+        "available_at": "2026-07-31T00:00:00Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_ab7e08ca9aba8f1f0821ff57"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "fundamentals.total_liabilities",
+        "value": 275746000000.0,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-06-27T00:00:00Z",
+        "available_at": "2026-07-31T00:00:00Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_7a020d1c49ed5f1fb7bf437e"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      }
+    ],
+    "missing_reason": null
+  },
+  "valuation_state": {
+    "section_name": "valuation_state",
+    "status": "present",
+    "features": [
+      {
+        "feature_name": "valuation.book_value_per_share",
+        "value": 7.318011926480932,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-06-27T00:00:00Z",
+        "available_at": "2026-07-31T06:01:02Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_14b08a82d1021899bce26b9b"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "valuation.earnings_yield",
+        "value": 0.028746696246775862,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-06-27T00:00:00Z",
+        "available_at": "2026-07-31T06:01:02Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_24e56e5edab12fa7aeb39943"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "valuation.eps_ttm",
+        "value": 8.775216496290799,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-06-27T00:00:00Z",
+        "available_at": "2026-07-31T06:01:02Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_00fd51081bfb6e53078ef672"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "valuation.market_cap",
+        "value": 4483462292560.0,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-06-27T00:00:00Z",
+        "available_at": "2026-07-31T06:01:02Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_f405c413a3da2ada0c290696"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "valuation.pb",
+        "value": 41.71351496372768,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-06-27T00:00:00Z",
+        "available_at": "2026-07-31T06:01:02Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_edc34facc805bc8b2cc64ecb"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "valuation.pe_ttm",
+        "value": 34.84703196347032,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-06-27T00:00:00Z",
+        "available_at": "2026-07-31T06:01:02Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_974abb468f4d5c5cd779d1ee"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      }
+    ],
+    "missing_reason": null
+  },
+  "technical_state": {
+    "section_name": "technical_state",
+    "status": "present",
+    "features": [
+      {
+        "feature_name": "claim.technical:canonical:drawdown",
+        "value": "Drawdown: technical_features.max_drawdown_60d -0.1268579768080078 ratio",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": 0.5,
+        "quality": "pass",
+        "source_claim_ids": [
+          "technical:canonical:drawdown"
+        ],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "claim.technical:canonical:momentum",
+        "value": "Momentum: technical_features.return_20d -0.08380097830327404 ratio; technical_features.rsi_14 29.486136783733812 ratio; technical_features.macd -2.337932010078532 USD USD",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": 0.5,
+        "quality": "pass",
+        "source_claim_ids": [
+          "technical:canonical:momentum"
+        ],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "claim.technical:canonical:relative_strength",
+        "value": "Relative Strength: technical_features.relative_strength_vs_spy -0.1155682924233512 ratio; technical_features.relative_strength_vs_qqq -0.11656393795144215 ratio; technical_features.relative_strength_vs_xlk -0.14760400814675578 ratio",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": 0.5,
+        "quality": "pass",
+        "source_claim_ids": [
+          "technical:canonical:relative_strength"
+        ],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "claim.technical:canonical:trend",
+        "value": "Trend: technical_features.trend_label up; technical_features.sma_20 319.77450000000005 USD USD; technical_features.sma_60 309.01 USD USD",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": 0.5,
+        "quality": "pass",
+        "source_claim_ids": [
+          "technical:canonical:trend"
+        ],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "claim.technical:canonical:volatility",
+        "value": "Volatility: technical_features.realized_vol_20d 0.3400518763460353 ratio; technical_features.realized_vol_60d 0.31977539311971426 ratio; technical_features.atr_14 8.746785714285721 USD USD",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": 0.5,
+        "quality": "pass",
+        "source_claim_ids": [
+          "technical:canonical:volatility"
+        ],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "claim.technical:canonical:volume",
+        "value": "Volume: technical_features.volume_ratio_20d 0.6951241901651664 ratio",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": 0.5,
+        "quality": "pass",
+        "source_claim_ids": [
+          "technical:canonical:volume"
+        ],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "claim.technical_text_analyst:key_points:0",
+        "value": "The ohlcv.volume on 2026-08-13 was 1348081.0 shares.",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": 0.5,
+        "quality": "pass",
+        "source_claim_ids": [
+          "technical_text_analyst:key_points:0"
+        ],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "technical_features.atr_14",
+        "value": 8.746785714285721,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-13T00:00:00Z",
+        "available_at": "2026-08-14T10:07:59.293664Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_76da0851c2491940b38a3f8f"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "technical_features.close",
+        "value": 305.305,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-13T00:00:00Z",
+        "available_at": "2026-08-14T10:07:59.293664Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_36c5dd53845b97eea40d10b9"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "technical_features.distance_to_sma20",
+        "value": -0.045249073956804,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-13T00:00:00Z",
+        "available_at": "2026-08-14T10:07:59.293664Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_0e90e6d9b92d2bf2729acfc2"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "technical_features.distance_to_sma60",
+        "value": -0.01198990323937732,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-13T00:00:00Z",
+        "available_at": "2026-08-14T10:07:59.293664Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_cff7201f31eddc15fb67a0dc"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "technical_features.macd",
+        "value": -2.337932010078532,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-13T00:00:00Z",
+        "available_at": "2026-08-14T10:07:59.293664Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_e2fadb898cf02d058639cd47"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "technical_features.max_drawdown_60d",
+        "value": -0.1268579768080078,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-13T00:00:00Z",
+        "available_at": "2026-08-14T10:07:59.293664Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_a2406ae201aa685049051fc6"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "technical_features.realized_vol_20d",
+        "value": 0.3400518763460353,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-13T00:00:00Z",
+        "available_at": "2026-08-14T10:07:59.293664Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_4a7946eb0af45265b07a75d8"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "technical_features.realized_vol_60d",
+        "value": 0.31977539311971426,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-13T00:00:00Z",
+        "available_at": "2026-08-14T10:07:59.293664Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_898947c4ac8cd60195a1c0e4"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "technical_features.relative_strength_vs_qqq",
+        "value": -0.11656393795144215,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-13T00:00:00Z",
+        "available_at": "2026-08-14T10:08:00.674545Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_846276dd144b530291bcbd73"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "technical_features.relative_strength_vs_spy",
+        "value": -0.1155682924233512,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-13T00:00:00Z",
+        "available_at": "2026-08-14T10:08:02.079832Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_7da073c8eb69bcb07cc38008"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "technical_features.relative_strength_vs_xlk",
+        "value": -0.14760400814675578,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-13T00:00:00Z",
+        "available_at": "2026-08-14T10:08:03.512808Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_24fc04df31821cdeb43c37c6"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "technical_features.return_1d",
+        "value": 0.010274652547981544,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-13T00:00:00Z",
+        "available_at": "2026-08-14T10:07:59.293664Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_9904e3853e0987c1b5d925e8"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "technical_features.return_20d",
+        "value": -0.08380097830327404,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-13T00:00:00Z",
+        "available_at": "2026-08-14T10:07:59.293664Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_ec264d909cd32032cce73c35"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "technical_features.return_5d",
+        "value": -0.022867658825411974,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-13T00:00:00Z",
+        "available_at": "2026-08-14T10:07:59.293664Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_0fd37fbf77a9b33b6ecfcfc4"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "technical_features.return_60d",
+        "value": 0.025029377203290126,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-13T00:00:00Z",
+        "available_at": "2026-08-14T10:07:59.293664Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_7987ca6907a3c274111e163d"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "technical_features.rsi_14",
+        "value": 29.486136783733812,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-13T00:00:00Z",
+        "available_at": "2026-08-14T10:07:59.293664Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_d8fcfc05cd52910ad716302b"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "technical_features.sma_20",
+        "value": 319.77450000000005,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-13T00:00:00Z",
+        "available_at": "2026-08-14T10:07:59.293664Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_8c8681a8b4db50e65b475206"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "technical_features.sma_60",
+        "value": 309.01,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-13T00:00:00Z",
+        "available_at": "2026-08-14T10:07:59.293664Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_9fc466f4b79a11e73f068b06"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "technical_features.trend_label",
+        "value": "up",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-13T00:00:00Z",
+        "available_at": "2026-08-14T10:07:59.293664Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_8348fa9918eb6b121fe6f5f6"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "technical_features.volume_ratio_20d",
+        "value": 0.6951241901651664,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-13T00:00:00Z",
+        "available_at": "2026-08-14T10:07:59.293664Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_ccf90da056c39e192a15a28b"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      }
+    ],
+    "missing_reason": null
+  },
+  "sentiment_state": {
+    "section_name": "sentiment_state",
+    "status": "present",
+    "features": [
+      {
+        "feature_name": "claim.sentiment_analyst:facts:0",
+        "value": "The community_label is BULLISH as of 2026-08-14T10:09:46.745283Z, up from Slightly Bullish on 2026-08-13T03:59:59Z.",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": 0.5,
+        "quality": "pass",
+        "source_claim_ids": [
+          "sentiment_analyst:facts:0"
+        ],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "claim.sentiment_analyst:facts:1",
+        "value": "On 2026-08-14, the community_bullish_pct was 71.89 and the community_bearish_pct was 28.110000000000003.",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": 0.5,
+        "quality": "pass",
+        "source_claim_ids": [
+          "sentiment_analyst:facts:1"
+        ],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "claim.sentiment_analyst:facts:2",
+        "value": "The community_score was 60.0 on 2026-08-14T10:09:46.745283Z, compared to 69.0 on 2026-08-13T03:59:59Z and 90.0 on 2026-08-06T03:59:59Z.",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": 0.5,
+        "quality": "pass",
+        "source_claim_ids": [
+          "sentiment_analyst:facts:2"
+        ],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "claim.sentiment_analyst:key_points:0",
+        "value": "Sentiment change recorded a ratio of 11.0 on 2026-08-14T10:09:46.745283Z.",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": 0.5,
+        "quality": "pass",
+        "source_claim_ids": [
+          "sentiment_analyst:key_points:0"
+        ],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "claim.sentiment_analyst:key_points:1",
+        "value": "Attention change recorded a ratio of -9.0 on 2026-08-14T10:09:46.745283Z.",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": 0.5,
+        "quality": "pass",
+        "source_claim_ids": [
+          "sentiment_analyst:key_points:1"
+        ],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "claim.sentiment_analyst:risk_points:0",
+        "value": "Community messages discussed Elliottwave Forecast signals an extended downside path for Apple stock on 14 August.",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": 0.5,
+        "quality": "pass",
+        "source_claim_ids": [
+          "sentiment_analyst:risk_points:0"
+        ],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "claim.sentiment_analyst:risk_points:1",
+        "value": "News indicated that rising component costs and memory inflation trigger smartphone price hikes and falling sales in the U.S. and China, per Counterpoint.",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": 0.5,
+        "quality": "pass",
+        "source_claim_ids": [
+          "sentiment_analyst:risk_points:1"
+        ],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "sentiment_evidence.attention_change",
+        "value": -9.0,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-14T10:09:46.745283Z",
+        "available_at": "2026-08-14T10:10:03.099177Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_3c4aac172daa6a6621d4bcb2"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "sentiment_evidence.community_bearish_pct",
+        "value": 28.110000000000003,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-14T10:09:46.745283Z",
+        "available_at": "2026-08-14T10:10:03.099177Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_0f5b6eb42dd96b9897e266a2"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "sentiment_evidence.community_bullish_pct",
+        "value": 71.89,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-14T10:09:46.745283Z",
+        "available_at": "2026-08-14T10:10:03.099177Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_9f39ebd759ecb89927b1a189"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "sentiment_evidence.community_label",
+        "value": "BULLISH",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T10:09:46.745283Z",
+        "available_at": "2026-08-14T10:10:03.099177Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_af5a7c5d7ce3f1ca3f0dc042"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "sentiment_evidence.community_message",
+        "value": "$AAPL its boring.  Not even moving now. 0.70 $ move . 🫩",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-13T18:31:22Z",
+        "available_at": "2026-08-14T10:10:06.125846Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_41dcc7eac11601f0b80b3356"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "sentiment_evidence.community_message_volume_label",
+        "value": "LOW",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T10:09:46.745283Z",
+        "available_at": "2026-08-14T10:10:03.099177Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_9ffbe745925fd08eed77c1da"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "sentiment_evidence.community_message_volume_score",
+        "value": 43.0,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-14T10:09:46.745283Z",
+        "available_at": "2026-08-14T10:10:03.099177Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_76bcad4de840c134c97e7dfe"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "sentiment_evidence.community_score",
+        "value": 60.0,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-14T10:09:46.745283Z",
+        "available_at": "2026-08-14T10:10:03.099177Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_483048be2e7f603d0291d3a8"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "sentiment_evidence.dispersion",
+        "value": 0.5622,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-14T10:09:46.745283Z",
+        "available_at": "2026-08-14T10:10:03.099177Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_882c6d73f484a2e07941b3e0"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "sentiment_evidence.dominant_topics",
+        "value": "$AAPL, $SPY, $QQQ, $AMD, $TSLA",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T10:08:37Z",
+        "available_at": "2026-08-14T10:10:06.125846Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_5dfed76b3f08df5681f337c8"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "sentiment_evidence.sentiment_change",
+        "value": 11.0,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-14T10:09:46.745283Z",
+        "available_at": "2026-08-14T10:10:03.099177Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_0352a8c0c3f792d63bb4ff85"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      }
+    ],
+    "missing_reason": null
+  },
+  "event_state": {
+    "section_name": "event_state",
+    "status": "present",
+    "features": [
+      {
+        "feature_name": "claim.news_event:macro:financial_stress",
+        "value": "Financial Stress: macro_indicators.vix 14.55 Index; macro_indicators.high_yield_spread 2.71 Percent",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": 0.5,
+        "quality": "pass",
+        "source_claim_ids": [
+          "news_event:macro:financial_stress"
+        ],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "claim.news_event:macro:growth",
+        "value": "Growth: macro_indicators.gdp 32475.21 Billions of Dollars; macro_indicators.industrial_production 102.6395 Index 2017=100",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": 0.5,
+        "quality": "pass",
+        "source_claim_ids": [
+          "news_event:macro:growth"
+        ],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "claim.news_event:macro:inflation",
+        "value": "Inflation: macro_indicators.cpi 332.813 Index 1982-1984=100; macro_indicators.core_pce 130.266 Index 2017=100",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": 0.5,
+        "quality": "pass",
+        "source_claim_ids": [
+          "news_event:macro:inflation"
+        ],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "claim.news_event:macro:labor",
+        "value": "Labor: macro_indicators.unemployment 4.1 Percent; macro_indicators.payrolls 158858.0 Thousands of Persons",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": 0.5,
+        "quality": "pass",
+        "source_claim_ids": [
+          "news_event:macro:labor"
+        ],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "claim.news_event:macro:rates",
+        "value": "Rates: macro_indicators.fed_funds 3.63 Percent; macro_indicators.yield_2y 4.2 Percent; macro_indicators.yield_10y 4.68 Percent; macro_indicators.yield_spread_10y2y 0.48 Percent",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": 0.5,
+        "quality": "pass",
+        "source_claim_ids": [
+          "news_event:macro:rates"
+        ],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "claim.news_event_analyst:facts:0",
+        "value": "For the nine months ended June 27, 2026, Apple repurchased 215 million shares of common stock for $ 61.8 billion.",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": 0.5,
+        "quality": "pass",
+        "source_claim_ids": [
+          "news_event_analyst:facts:0"
+        ],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "claim.news_event_analyst:facts:1",
+        "value": "As of June 27, 2026, Apple had an aggregate carrying amount of outstanding fixed-rate notes of $ 82.3 billion.",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": 0.5,
+        "quality": "pass",
+        "source_claim_ids": [
+          "news_event_analyst:facts:1"
+        ],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "claim.news_event_analyst:facts:2",
+        "value": "Apple announced the opening of a 20,000-Square-Foot Advanced Manufacturing Center in Houston where Mac Mini production will begin this year.",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": 0.5,
+        "quality": "pass",
+        "source_claim_ids": [
+          "news_event_analyst:facts:2"
+        ],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "claim.news_event_analyst:key_points:0",
+        "value": "During the third quarter of 2026, Apple announced iOS 27, macOS 27 Golden Gate, iPadOS 27, watchOS 27, visionOS 27 and tvOS 27, and introduced Siri AI.",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": 0.5,
+        "quality": "pass",
+        "source_claim_ids": [
+          "news_event_analyst:key_points:0"
+        ],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "claim.news_event_analyst:risk_points:0",
+        "value": "Apple is experiencing supply constraints and increasing costs for components such as advanced semiconductors, storage (NAND) and memory (DRM), which it expects to intensify.",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": 0.5,
+        "quality": "pass",
+        "source_claim_ids": [
+          "news_event_analyst:risk_points:0"
+        ],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "claim.news_event_analyst:risk_points:1",
+        "value": "The Ninth Circuit Court upheld a 2025 Injunction preventing Apple from imposing commissions on link-out purchases but remanded the case for further modification; Apple filed a petition for Supreme Court review on May 21, 2026.",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": 0.5,
+        "quality": "pass",
+        "source_claim_ids": [
+          "news_event_analyst:risk_points:1"
+        ],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "claim.news_event_analyst:risk_points:2",
+        "value": "Rising component costs and memory inflation are triggering smartphone price hikes and falling sales in the U.S. and China, per Counterpoint.",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": 0.5,
+        "quality": "pass",
+        "source_claim_ids": [
+          "news_event_analyst:risk_points:2"
+        ],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      }
+    ],
+    "missing_reason": null
+  },
+  "market_context_state": {
+    "section_name": "market_context_state",
+    "status": "present",
+    "features": [
+      {
+        "feature_name": "industry_sector_context.excess_return_vs_sector",
+        "value": -0.15865237419588474,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-13T00:00:00Z",
+        "available_at": "2026-08-14T10:08:03.512808Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_ad7544c50b4365a226ecc636"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "industry_sector_context.relative_strength_sector",
+        "value": -0.14760400814675578,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-13T00:00:00Z",
+        "available_at": "2026-08-14T10:08:03.512808Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_99393a4f9a842dc7c77de75b"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "industry_sector_context.sector_return_20d",
+        "value": 0.0748513958926107,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-13T00:00:00Z",
+        "available_at": "2026-08-14T10:08:03.512808Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_c2cfdc6a6e056a406fbb6b54"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "industry_sector_context.sector_volatility",
+        "value": 0.33357791499023426,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-13T00:00:00Z",
+        "available_at": "2026-08-14T10:08:03.512808Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_1d9b267b00c8ec4addb0acb0"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "market_context.asset_return_20d",
+        "value": -0.08380097830327404,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-13T00:00:00Z",
+        "available_at": "2026-08-14T10:08:03.512808Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_f606150e791aa7f18c953304"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "market_context.benchmark_trend",
+        "value": "up",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-13T00:00:00Z",
+        "available_at": "2026-08-14T10:08:03.512808Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_386c1259c89960b0f4a9bca3"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "market_context.excess_return_vs_growth",
+        "value": -0.12088680834307985,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-13T00:00:00Z",
+        "available_at": "2026-08-14T10:08:03.512808Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_bcb633229c004ebcdf7b3e71"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "market_context.excess_return_vs_market",
+        "value": -0.1197193130349854,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-13T00:00:00Z",
+        "available_at": "2026-08-14T10:08:03.512808Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_fd473188645d63a4ebb86076"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "market_context.growth_return_20d",
+        "value": 0.03708583003980581,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-13T00:00:00Z",
+        "available_at": "2026-08-14T10:08:03.512808Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_730fde34ef5964fc4313c0d1"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "market_context.market_return_20d",
+        "value": 0.035918334731711354,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-13T00:00:00Z",
+        "available_at": "2026-08-14T10:08:03.512808Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_8e5b701424f465346cb39cc1"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "market_context.market_volatility",
+        "value": 0.1389212794411503,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-13T00:00:00Z",
+        "available_at": "2026-08-14T10:08:03.512808Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_ea02df6c68aa04eed0e4114c"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "market_context.relative_strength_growth",
+        "value": -0.11656393795144215,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-13T00:00:00Z",
+        "available_at": "2026-08-14T10:08:03.512808Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_c021e9d811b8476396f68e4f"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "market_context.relative_strength_market",
+        "value": -0.1155682924233512,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-13T00:00:00Z",
+        "available_at": "2026-08-14T10:08:03.512808Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_e6c367fd0ecd61c9fbd625bc"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      }
+    ],
+    "missing_reason": null
+  },
+  "debate_state": {
+    "section_name": "debate_state",
+    "status": "present",
+    "features": [
+      {
+        "feature_name": "claim.bear:bear_thesis:0",
+        "value": "The valuation premium is exposed to multiple downside vectors: fundamental revenue contraction, technical momentum deterioration with relative underperformance against major benchmarks, and structural supply chain cost inflation that threatens margins and volume.",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": 0.5,
+        "quality": "pass",
+        "source_claim_ids": [
+          "bear:bear_thesis:0"
+        ],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "claim.bear:invalidators:0",
+        "value": "Thesis invalidated if the company successfully mitigates component supply constraints, thereby preventing margin compression and stabilizing sales volume in key markets like the U.S. and China.",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": 0.5,
+        "quality": "pass",
+        "source_claim_ids": [
+          "bear:invalidators:0"
+        ],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "claim.bear:invalidators:1",
+        "value": "Thesis invalidated if technical indicators signal a reversal of the negative momentum divergence, evidenced by a recovery in relative strength versus the broader market and technology sector benchmarks.",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": 0.5,
+        "quality": "pass",
+        "source_claim_ids": [
+          "bear:invalidators:1"
+        ],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "claim.bull:bull_thesis:0",
+        "value": "The Company's massive capital return program, evidenced by significant share repurchases over the trailing period, combined with industry-leading profitability margins and returns on equity, provides a structural floor for intrinsic value despite near-term revenue contraction.",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [
+          "bull:bull_thesis:0"
+        ],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "claim.bull:bull_thesis:1",
+        "value": "Recent shifts in community sentiment toward bullishness suggest a potential reversal of recent underperformance against major market benchmarks, indicating that negative technical momentum may be exhausted.",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [
+          "bull:bull_thesis:1"
+        ],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "claim.bull:bull_thesis:2",
+        "value": "Strategic investments in advanced manufacturing infrastructure demonstrate long-term operational resilience and capacity expansion, offsetting concerns regarding component supply constraints.",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [
+          "bull:bull_thesis:2"
+        ],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "claim.bull:conditions_required:0",
+        "value": "The thesis requires confirmation that the current underperformance relative to broader technology indices stabilizes and reverses.",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [
+          "bull:conditions_required:0"
+        ],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "claim.bull:conditions_required:1",
+        "value": "Sustained investor confidence must be maintained as attention metrics currently show a decline.",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [
+          "bull:conditions_required:1"
+        ],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "claim.bull:invalidators:0",
+        "value": "A deterioration in gross or operating margins would invalidate the premise of superior profitability supporting valuation multiples.",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [
+          "bull:invalidators:0"
+        ],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "claim.bull:invalidators:1",
+        "value": "Escalation of component cost inflation leading to unmitigated price hikes and falling sales volume in key markets would negate margin stability.",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [
+          "bull:invalidators:1"
+        ],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      }
+    ],
+    "missing_reason": null
+  },
+  "risk_state": {
+    "section_name": "risk_state",
+    "status": "present",
+    "features": [
+      {
+        "feature_name": "claim.risk:confirmed_risks:0",
+        "value": "The company faces confirmed downside risk from supply constraints and increasing costs for components such as advanced semiconductors, storage, and memory, which industry analysts indicate are triggering smartphone price hikes and falling sales in key markets like the U.S. and China.",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [
+          "risk:confirmed_risks:0"
+        ],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "claim.risk:confirmed_risks:1",
+        "value": "Regulatory risk is confirmed by the Ninth Circuit Court's decision to remand the case regarding link-out purchase commissions for further modification after upholding an injunction, with Apple having filed a petition for Supreme Court review.",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [
+          "risk:confirmed_risks:1"
+        ],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "claim.risk:scenario_risks:0",
+        "value": "If component cost inflation intensifies beyond current levels, it may lead to unmitigated margin compression and volume declines that could invalidate the valuation premium supported by high profitability metrics.",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [
+          "risk:scenario_risks:0"
+        ],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "claim.risk:scenario_risks:1",
+        "value": "A failure to stabilize relative strength against broader market indices could result in continued underperformance, challenging the thesis that bullish sentiment shifts will drive a technical reversal.",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [
+          "risk:scenario_risks:1"
+        ],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "claim.risk:watch_items:0",
+        "value": "Monitor attention metrics which have shown a decline despite positive sentiment shifts, as sustained investor confidence requires stable or rising engagement levels.",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [
+          "risk:watch_items:0"
+        ],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      }
+    ],
+    "missing_reason": null
+  },
+  "thesis_state": {
+    "section_name": "thesis_state",
+    "status": "present",
+    "features": [
+      {
+        "feature_name": "claim.research:summary_points:0",
+        "value": "Apple reported revenue decline and net income growth for the trailing twelve months, alongside high profitability margins (gross 0.4865291555900202, operating 0.3317295848747812, net 0.27618604910212224) and strong returns on equity (1.3718365457766524) and assets (0.3363982195133406).",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [
+          "research:summary_points:0"
+        ],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "claim.research:summary_points:1",
+        "value": "The company maintains a market capitalization of 4483462292560.0 USD with valuation multiples including a P/E ratio of 34.84703196347032 and a P/B ratio of 41.71351496372768, supported by a book value per share of 7.318011926480932 USD.",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [
+          "research:summary_points:1"
+        ],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "claim.research:summary_points:2",
+        "value": "Supply chain risks are present due to constraints and increasing costs for components like advanced semiconductors and memory, which industry analysts note may trigger price hikes and falling sales in key markets.",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [
+          "research:summary_points:2"
+        ],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "claim.research:summary_points:3",
+        "value": "Relative strength indicators show underperformance against major benchmarks, with relative strength vs SPY at -0.1155682924233512 ratio, vs QQQ at -0.11656393795144215 ratio, and vs XLK at -0.14760400814675578 ratio.",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [
+          "research:summary_points:3"
+        ],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "claim.research:summary_points:4",
+        "value": "Social sentiment has shifted to BULLISH as of 2026-08-14T10:09:46.745283Z, with community_bullish_pct at 71.89 and community_bearish_pct at 28.110000000000003, although attention metrics showed a change ratio of -9.0.",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [
+          "research:summary_points:4"
+        ],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      }
+    ],
+    "missing_reason": null
+  },
+  "data_quality_state": {
+    "section_name": "data_quality_state",
+    "status": "present",
+    "features": [
+      {
+        "feature_name": "capability.asset_identity",
+        "value": "present",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [
+          "rdb_0d8108c7792bdbbdf887d7da"
+        ],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "capability.corporate_events",
+        "value": "present",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [
+          "rdb_0d8108c7792bdbbdf887d7da"
+        ],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "capability.filings",
+        "value": "present",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [
+          "rdb_0d8108c7792bdbbdf887d7da"
+        ],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "capability.fundamentals",
+        "value": "present",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": null,
+        "quality": "conflict",
+        "source_claim_ids": [],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [
+          "rdb_0d8108c7792bdbbdf887d7da"
+        ],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "capability.industry_sector_context",
+        "value": "present",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [
+          "rdb_0d8108c7792bdbbdf887d7da"
+        ],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "capability.macro_indicators",
+        "value": "present",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [
+          "rdb_0d8108c7792bdbbdf887d7da"
+        ],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "capability.market_context",
+        "value": "present",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [
+          "rdb_0d8108c7792bdbbdf887d7da"
+        ],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "capability.news_evidence",
+        "value": "present",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [
+          "rdb_0d8108c7792bdbbdf887d7da"
+        ],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "capability.ohlcv",
+        "value": "partial",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": null,
+        "quality": "warning",
+        "source_claim_ids": [],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [
+          "rdb_0d8108c7792bdbbdf887d7da"
+        ],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "capability.sentiment_evidence",
+        "value": "present",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [
+          "rdb_0d8108c7792bdbbdf887d7da"
+        ],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "capability.technical_features",
+        "value": "present",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [
+          "rdb_0d8108c7792bdbbdf887d7da"
+        ],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "capability.valuation",
+        "value": "present",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-14T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [
+          "rdb_0d8108c7792bdbbdf887d7da"
+        ],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      }
+    ],
+    "missing_reason": null
+  },
+  "memory_context_state": {
+    "section_name": "memory_context_state",
+    "status": "not_available_at_source_run",
+    "features": [],
+    "missing_reason": "Structured Memory retrieval context was not persisted by the source run."
+  },
+  "lineage": {
+    "source_run_id": "20260814T100747Z",
+    "data_bundle_id": "rdb_0d8108c7792bdbbdf887d7da",
+    "data_snapshot_id": null,
+    "dataset_version": "live_aapl_fmp_completeness_v1",
+    "sector_context_id": null,
+    "memory_context_id": null,
+    "agent_run_ids": [
+      "task_2d59d86f9997478bb72638faaac73b88:bear_manager",
+      "task_2d59d86f9997478bb72638faaac73b88:bull_manager",
+      "task_2d59d86f9997478bb72638faaac73b88:fundamental_analyst",
+      "task_2d59d86f9997478bb72638faaac73b88:news_event_analyst",
+      "task_2d59d86f9997478bb72638faaac73b88:research_manager",
+      "task_2d59d86f9997478bb72638faaac73b88:risk_manager",
+      "task_2d59d86f9997478bb72638faaac73b88:sentiment_analyst",
+      "task_2d59d86f9997478bb72638faaac73b88:technical_text_analyst"
+    ],
+    "versions": [
+      {
+        "component": "prompt",
+        "name": "bear_manager",
+        "version": "v10"
+      },
+      {
+        "component": "prompt",
+        "name": "bull_manager",
+        "version": "v8"
+      },
+      {
+        "component": "prompt",
+        "name": "fundamental_analyst",
+        "version": "v10"
+      },
+      {
+        "component": "prompt",
+        "name": "news_event_analyst",
+        "version": "v9"
+      },
+      {
+        "component": "prompt",
+        "name": "research_manager",
+        "version": "v6"
+      },
+      {
+        "component": "prompt",
+        "name": "risk_manager",
+        "version": "v7"
+      },
+      {
+        "component": "prompt",
+        "name": "sentiment_analyst",
+        "version": "v8"
+      },
+      {
+        "component": "prompt",
+        "name": "technical_text_analyst",
+        "version": "v9"
+      },
+      {
+        "component": "model",
+        "name": "bear_manager",
+        "version": "qwen3.7-flash"
+      },
+      {
+        "component": "model",
+        "name": "bull_manager",
+        "version": "qwen3.7-flash"
+      },
+      {
+        "component": "model",
+        "name": "fundamental_analyst",
+        "version": "qwen3.7-flash"
+      },
+      {
+        "component": "model",
+        "name": "news_event_analyst",
+        "version": "qwen3.7-flash"
+      },
+      {
+        "component": "model",
+        "name": "research_manager",
+        "version": "qwen3.7-flash"
+      },
+      {
+        "component": "model",
+        "name": "risk_manager",
+        "version": "qwen3.7-flash"
+      },
+      {
+        "component": "model",
+        "name": "sentiment_analyst",
+        "version": "qwen3.7-flash"
+      },
+      {
+        "component": "model",
+        "name": "technical_text_analyst",
+        "version": "qwen3.7-flash"
+      }
+    ],
+    "input_fingerprint": "fd95d91fbf0a635951884295a3ebbca8616ac3d0d9270f0f7ef0ca117d563905"
+  }
+}

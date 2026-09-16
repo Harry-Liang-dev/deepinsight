@@ -1,0 +1,11 @@
+{
+  "manifest_schema_version": "research_dataset_manifest_v1",
+  "manifest_id": "research_dataset_manifest_50d6956ce34618a8ab3cf5e2",
+  "sample_id": "research_sample_f1b426e6b3eea228bdc61dba",
+  "sample_artifact": "data/research_dataset/day42/phase4a_aapl_sector_aware.research_dataset_sample.json",
+  "repository_table": "research_dataset_samples",
+  "dataset_schema_version": "research_dataset_sample_v1",
+  "dataset_build_version": "pit_research_dataset_build_v1",
+  "input_fingerprint": "f1b426e6b3eea228bdc61dbad792718a73b963a53644978680f36f8e62d0be07",
+  "created_at": "2026-09-01T00:00:00Z"
+}

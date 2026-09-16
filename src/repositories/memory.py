@@ -12,6 +12,7 @@ from src.repositories.base import (
 )
 from src.repositories.records import MemoryItemRecord
 from src.schemas.common import SourceReference
+from src.schemas.memory import LearningMemoryMetadata
 
 _MEMORY_COLUMNS = (
     "memory_id",
@@ -30,6 +31,7 @@ _MEMORY_COLUMNS = (
     "created_by",
     "created_at",
     "expires_at",
+    "metadata_json",
 )
 
 
@@ -47,7 +49,11 @@ class MemoryItemRepository(BaseRepository):
                 the record.
         """
 
-        columns = _MEMORY_COLUMNS[:14] + ("expires_at",)
+        columns = _MEMORY_COLUMNS[:14] + (
+            "created_at",
+            "expires_at",
+            "metadata_json",
+        )
         self._execute(
             f"""
             INSERT INTO memory_items ({", ".join(columns)})
@@ -72,7 +78,13 @@ class MemoryItemRepository(BaseRepository):
                 record.faiss_namespace,
                 record.faiss_vector_id,
                 record.created_by,
+                _utc_naive(record.created_at or record.effective_ts),
                 (None if record.expires_at is None else _utc_naive(record.expires_at)),
+                (
+                    None
+                    if record.metadata is None
+                    else encode_json(record.metadata.model_dump(mode="json"))
+                ),
             ),
         )
 
@@ -160,10 +172,16 @@ def _placeholders(count: int) -> str:
 def _map_memory_row(row: tuple[object, ...]) -> MemoryItemRecord:
     values = dict(zip(_MEMORY_COLUMNS, row, strict=True))
     raw_source = values.pop("source_ref_json")
+    raw_metadata = values.pop("metadata_json")
     values["source_ref"] = (
         None
         if raw_source is None
         else SourceReference.model_validate(decode_json_object(raw_source))
+    )
+    values["metadata"] = (
+        None
+        if raw_metadata is None
+        else LearningMemoryMetadata.model_validate(decode_json_object(raw_metadata))
     )
     return MemoryItemRecord.model_validate(values)
 

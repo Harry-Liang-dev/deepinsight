@@ -1,0 +1,1673 @@
+{
+  "attribution_bundle_id": "research_attribution_2b5f4f002879d942f1b1c436",
+  "attribution_version": "research_attribution_v1",
+  "attributions": [
+    {
+      "agent_role": "fundamental_analyst",
+      "agent_run_id": "fixed:fundamental_analyst",
+      "attribution_id": "context_attribution_3fe5e2281c45dc0ba5315686",
+      "attribution_version": "research_attribution_v1",
+      "claim_link_status": "complete",
+      "context_id": "sector:S03:claim:4",
+      "context_type": "sector_claim",
+      "episode_id": "research_episode_d4a588c6bac4fa6fe558cad5",
+      "future_usefulness_score": null,
+      "future_usefulness_status": "not_available",
+      "outcome_status": "not_available",
+      "provided": true,
+      "rank": null,
+      "rejected_by_claim_ids": [],
+      "research_as_of": "2026-08-30T23:59:59.999999Z",
+      "retrieval_id": null,
+      "retrieval_reason": null,
+      "retrieval_score": null,
+      "schema_version": "research_context_attribution_v1",
+      "scope_id": "SECTOR:CONSUMER_ELECTRONICS",
+      "scope_type": "sector",
+      "selected": true,
+      "source_references": [
+        {
+          "document_id": "sector_anomaly_771da1bb2bc3292eb404c399",
+          "excerpt_ref": "event:sector_anomaly_771da1bb2bc3292eb404c399",
+          "provider": "sector_anomaly_radar",
+          "source_url": null
+        },
+        {
+          "document_id": "sector_anomaly_bb7ab79794f81cd05b3cbfbc",
+          "excerpt_ref": "event:sector_anomaly_bb7ab79794f81cd05b3cbfbc",
+          "provider": "sector_anomaly_radar",
+          "source_url": null
+        }
+      ],
+      "temporal": {
+        "as_of": "2026-08-30T23:59:59.999999Z",
+        "available_at": "2026-08-30T23:59:59.999999Z",
+        "effective_from": null,
+        "effective_to": null,
+        "event_time": null,
+        "ingested_at": null,
+        "period_end": null,
+        "period_start": null,
+        "published_at": null,
+        "source_kind": "sector_research_claim"
+      },
+      "used": false,
+      "used_by_claim_ids": []
+    },
+    {
+      "agent_role": "technical_text_analyst",
+      "agent_run_id": "fixed:technical_text_analyst",
+      "attribution_id": "context_attribution_2927e44588abd8629f8102d6",
+      "attribution_version": "research_attribution_v1",
+      "claim_link_status": "complete",
+      "context_id": "sector:S03:claim:4",
+      "context_type": "sector_claim",
+      "episode_id": "research_episode_d4a588c6bac4fa6fe558cad5",
+      "future_usefulness_score": null,
+      "future_usefulness_status": "not_available",
+      "outcome_status": "not_available",
+      "provided": true,
+      "rank": null,
+      "rejected_by_claim_ids": [],
+      "research_as_of": "2026-08-30T23:59:59.999999Z",
+      "retrieval_id": null,
+      "retrieval_reason": null,
+      "retrieval_score": null,
+      "schema_version": "research_context_attribution_v1",
+      "scope_id": "SECTOR:CONSUMER_ELECTRONICS",
+      "scope_type": "sector",
+      "selected": true,
+      "source_references": [
+        {
+          "document_id": "sector_anomaly_771da1bb2bc3292eb404c399",
+          "excerpt_ref": "event:sector_anomaly_771da1bb2bc3292eb404c399",
+          "provider": "sector_anomaly_radar",
+          "source_url": null
+        },
+        {
+          "document_id": "sector_anomaly_bb7ab79794f81cd05b3cbfbc",
+          "excerpt_ref": "event:sector_anomaly_bb7ab79794f81cd05b3cbfbc",
+          "provider": "sector_anomaly_radar",
+          "source_url": null
+        }
+      ],
+      "temporal": {
+        "as_of": "2026-08-30T23:59:59.999999Z",
+        "available_at": "2026-08-30T23:59:59.999999Z",
+        "effective_from": null,
+        "effective_to": null,
+        "event_time": null,
+        "ingested_at": null,
+        "period_end": null,
+        "period_start": null,
+        "published_at": null,
+        "source_kind": "sector_research_claim"
+      },
+      "used": false,
+      "used_by_claim_ids": []
+    },
+    {
+      "agent_role": "technical_text_analyst",
+      "agent_run_id": "fixed:technical_text_analyst",
+      "attribution_id": "context_attribution_db8405917d8bb950b8cdb0f2",
+      "attribution_version": "research_attribution_v1",
+      "claim_link_status": "complete",
+      "context_id": "sector:S03:claim:5",
+      "context_type": "sector_claim",
+      "episode_id": "research_episode_d4a588c6bac4fa6fe558cad5",
+      "future_usefulness_score": null,
+      "future_usefulness_status": "not_available",
+      "outcome_status": "not_available",
+      "provided": true,
+      "rank": null,
+      "rejected_by_claim_ids": [],
+      "research_as_of": "2026-08-30T23:59:59.999999Z",
+      "retrieval_id": null,
+      "retrieval_reason": null,
+      "retrieval_score": null,
+      "schema_version": "research_context_attribution_v1",
+      "scope_id": "SECTOR:CONSUMER_ELECTRONICS",
+      "scope_type": "sector",
+      "selected": true,
+      "source_references": [
+        {
+          "document_id": "sector_research_911e01891594d47f32eb27a3",
+          "excerpt_ref": "sector_research_911e01891594d47f32eb27a3:breadth:advance_decline_ratio",
+          "provider": "sector_state_operator",
+          "source_url": null
+        },
+        {
+          "document_id": "sector_research_911e01891594d47f32eb27a3",
+          "excerpt_ref": "sector_research_911e01891594d47f32eb27a3:fundamental:median_gross_margin",
+          "provider": "sector_state_operator",
+          "source_url": null
+        },
+        {
+          "document_id": "sector_research_911e01891594d47f32eb27a3",
+          "excerpt_ref": "sector_research_911e01891594d47f32eb27a3:valuation:median_pe",
+          "provider": "sector_state_operator",
+          "source_url": null
+        },
+        {
+          "document_id": "sector_research_911e01891594d47f32eb27a3",
+          "excerpt_ref": "sector_research_911e01891594d47f32eb27a3:market:return_1d",
+          "provider": "sector_state_operator",
+          "source_url": null
+        },
+        {
+          "document_id": "sector_universe_ca18d65255e304b91ba8ca63",
+          "excerpt_ref": "sector_universe_ca18d65255e304b91ba8ca63:coverage",
+          "provider": "sector_universe_service",
+          "source_url": null
+        }
+      ],
+      "temporal": {
+        "as_of": "2026-08-30T23:59:59.999999Z",
+        "available_at": "2026-08-30T23:59:59.999999Z",
+        "effective_from": null,
+        "effective_to": null,
+        "event_time": null,
+        "ingested_at": null,
+        "period_end": null,
+        "period_start": null,
+        "published_at": null,
+        "source_kind": "sector_research_claim"
+      },
+      "used": false,
+      "used_by_claim_ids": []
+    },
+    {
+      "agent_role": "sentiment_analyst",
+      "agent_run_id": "fixed:sentiment_analyst",
+      "attribution_id": "context_attribution_48d7431b3d032c366192d5c4",
+      "attribution_version": "research_attribution_v1",
+      "claim_link_status": "complete",
+      "context_id": "sector:S03:claim:4",
+      "context_type": "sector_claim",
+      "episode_id": "research_episode_d4a588c6bac4fa6fe558cad5",
+      "future_usefulness_score": null,
+      "future_usefulness_status": "not_available",
+      "outcome_status": "not_available",
+      "provided": true,
+      "rank": null,
+      "rejected_by_claim_ids": [],
+      "research_as_of": "2026-08-30T23:59:59.999999Z",
+      "retrieval_id": null,
+      "retrieval_reason": null,
+      "retrieval_score": null,
+      "schema_version": "research_context_attribution_v1",
+      "scope_id": "SECTOR:CONSUMER_ELECTRONICS",
+      "scope_type": "sector",
+      "selected": true,
+      "source_references": [
+        {
+          "document_id": "sector_anomaly_771da1bb2bc3292eb404c399",
+          "excerpt_ref": "event:sector_anomaly_771da1bb2bc3292eb404c399",
+          "provider": "sector_anomaly_radar",
+          "source_url": null
+        },
+        {
+          "document_id": "sector_anomaly_bb7ab79794f81cd05b3cbfbc",
+          "excerpt_ref": "event:sector_anomaly_bb7ab79794f81cd05b3cbfbc",
+          "provider": "sector_anomaly_radar",
+          "source_url": null
+        }
+      ],
+      "temporal": {
+        "as_of": "2026-08-30T23:59:59.999999Z",
+        "available_at": "2026-08-30T23:59:59.999999Z",
+        "effective_from": null,
+        "effective_to": null,
+        "event_time": null,
+        "ingested_at": null,
+        "period_end": null,
+        "period_start": null,
+        "published_at": null,
+        "source_kind": "sector_research_claim"
+      },
+      "used": false,
+      "used_by_claim_ids": []
+    },
+    {
+      "agent_role": "news_event_analyst",
+      "agent_run_id": "fixed:news_event_analyst",
+      "attribution_id": "context_attribution_2cea09d49640b0c0316815a8",
+      "attribution_version": "research_attribution_v1",
+      "claim_link_status": "complete",
+      "context_id": "sector:S03:claim:0",
+      "context_type": "sector_claim",
+      "episode_id": "research_episode_d4a588c6bac4fa6fe558cad5",
+      "future_usefulness_score": null,
+      "future_usefulness_status": "not_available",
+      "outcome_status": "not_available",
+      "provided": true,
+      "rank": null,
+      "rejected_by_claim_ids": [],
+      "research_as_of": "2026-08-30T23:59:59.999999Z",
+      "retrieval_id": null,
+      "retrieval_reason": null,
+      "retrieval_score": null,
+      "schema_version": "research_context_attribution_v1",
+      "scope_id": "SECTOR:CONSUMER_ELECTRONICS",
+      "scope_type": "sector",
+      "selected": true,
+      "source_references": [
+        {
+          "document_id": "US:AAPL",
+          "excerpt_ref": "membership:US:AAPL:S03:phase4_day30_seed_v1",
+          "provider": "phase4_day30_test_seed",
+          "source_url": null
+        },
+        {
+          "document_id": "aapl-apple-chain",
+          "excerpt_ref": "edge:aapl-apple-chain:phase4_day30_seed_v1",
+          "provider": "phase4_day30_test_seed",
+          "source_url": null
+        },
+        {
+          "document_id": "chain-apple-sector",
+          "excerpt_ref": "edge:chain-apple-sector:phase4_day30_seed_v1",
+          "provider": "phase4_day30_test_seed",
+          "source_url": null
+        },
+        {
+          "document_id": "APPLE_CHAIN",
+          "excerpt_ref": "chain:APPLE_CHAIN:phase4_day30_seed_v1",
+          "provider": "sector_ontology",
+          "source_url": null
+        }
+      ],
+      "temporal": {
+        "as_of": "2026-08-30T23:59:59.999999Z",
+        "available_at": "2026-08-30T23:59:59.999999Z",
+        "effective_from": null,
+        "effective_to": null,
+        "event_time": null,
+        "ingested_at": null,
+        "period_end": null,
+        "period_start": null,
+        "published_at": null,
+        "source_kind": "sector_research_claim"
+      },
+      "used": false,
+      "used_by_claim_ids": []
+    },
+    {
+      "agent_role": "news_event_analyst",
+      "agent_run_id": "fixed:news_event_analyst",
+      "attribution_id": "context_attribution_71f6cc285729a64c4aa3ef91",
+      "attribution_version": "research_attribution_v1",
+      "claim_link_status": "complete",
+      "context_id": "sector:S03:claim:4",
+      "context_type": "sector_claim",
+      "episode_id": "research_episode_d4a588c6bac4fa6fe558cad5",
+      "future_usefulness_score": null,
+      "future_usefulness_status": "not_available",
+      "outcome_status": "not_available",
+      "provided": true,
+      "rank": null,
+      "rejected_by_claim_ids": [],
+      "research_as_of": "2026-08-30T23:59:59.999999Z",
+      "retrieval_id": null,
+      "retrieval_reason": null,
+      "retrieval_score": null,
+      "schema_version": "research_context_attribution_v1",
+      "scope_id": "SECTOR:CONSUMER_ELECTRONICS",
+      "scope_type": "sector",
+      "selected": true,
+      "source_references": [
+        {
+          "document_id": "sector_anomaly_771da1bb2bc3292eb404c399",
+          "excerpt_ref": "event:sector_anomaly_771da1bb2bc3292eb404c399",
+          "provider": "sector_anomaly_radar",
+          "source_url": null
+        },
+        {
+          "document_id": "sector_anomaly_bb7ab79794f81cd05b3cbfbc",
+          "excerpt_ref": "event:sector_anomaly_bb7ab79794f81cd05b3cbfbc",
+          "provider": "sector_anomaly_radar",
+          "source_url": null
+        }
+      ],
+      "temporal": {
+        "as_of": "2026-08-30T23:59:59.999999Z",
+        "available_at": "2026-08-30T23:59:59.999999Z",
+        "effective_from": null,
+        "effective_to": null,
+        "event_time": null,
+        "ingested_at": null,
+        "period_end": null,
+        "period_start": null,
+        "published_at": null,
+        "source_kind": "sector_research_claim"
+      },
+      "used": false,
+      "used_by_claim_ids": []
+    },
+    {
+      "agent_role": "news_event_analyst",
+      "agent_run_id": "fixed:news_event_analyst",
+      "attribution_id": "context_attribution_6570e008fc585be30abdd97b",
+      "attribution_version": "research_attribution_v1",
+      "claim_link_status": "complete",
+      "context_id": "sector_anomaly_771da1bb2bc3292eb404c399",
+      "context_type": "radar_event",
+      "episode_id": "research_episode_d4a588c6bac4fa6fe558cad5",
+      "future_usefulness_score": null,
+      "future_usefulness_status": "not_available",
+      "outcome_status": "not_available",
+      "provided": true,
+      "rank": null,
+      "rejected_by_claim_ids": [],
+      "research_as_of": "2026-08-30T23:59:59.999999Z",
+      "retrieval_id": null,
+      "retrieval_reason": null,
+      "retrieval_score": null,
+      "schema_version": "research_context_attribution_v1",
+      "scope_id": "SECTOR:CONSUMER_ELECTRONICS",
+      "scope_type": "sector",
+      "selected": true,
+      "source_references": [
+        {
+          "document_id": "sector_anomaly_771da1bb2bc3292eb404c399",
+          "excerpt_ref": "event:sector_anomaly_771da1bb2bc3292eb404c399",
+          "provider": "sector_anomaly_radar",
+          "source_url": null
+        },
+        {
+          "document_id": "sector_anomaly_bb7ab79794f81cd05b3cbfbc",
+          "excerpt_ref": "event:sector_anomaly_bb7ab79794f81cd05b3cbfbc",
+          "provider": "sector_anomaly_radar",
+          "source_url": null
+        }
+      ],
+      "temporal": {
+        "as_of": null,
+        "available_at": "2026-08-30T23:59:59.999999Z",
+        "effective_from": null,
+        "effective_to": null,
+        "event_time": "2026-08-30T23:59:59.999999Z",
+        "ingested_at": null,
+        "period_end": null,
+        "period_start": null,
+        "published_at": null,
+        "source_kind": "sector_anomaly"
+      },
+      "used": false,
+      "used_by_claim_ids": []
+    },
+    {
+      "agent_role": "news_event_analyst",
+      "agent_run_id": "fixed:news_event_analyst",
+      "attribution_id": "context_attribution_402d1dedb4184636c46dad65",
+      "attribution_version": "research_attribution_v1",
+      "claim_link_status": "complete",
+      "context_id": "sector_anomaly_bb7ab79794f81cd05b3cbfbc",
+      "context_type": "radar_event",
+      "episode_id": "research_episode_d4a588c6bac4fa6fe558cad5",
+      "future_usefulness_score": null,
+      "future_usefulness_status": "not_available",
+      "outcome_status": "not_available",
+      "provided": true,
+      "rank": null,
+      "rejected_by_claim_ids": [],
+      "research_as_of": "2026-08-30T23:59:59.999999Z",
+      "retrieval_id": null,
+      "retrieval_reason": null,
+      "retrieval_score": null,
+      "schema_version": "research_context_attribution_v1",
+      "scope_id": "SECTOR:CONSUMER_ELECTRONICS",
+      "scope_type": "sector",
+      "selected": true,
+      "source_references": [
+        {
+          "document_id": "sector_anomaly_771da1bb2bc3292eb404c399",
+          "excerpt_ref": "event:sector_anomaly_771da1bb2bc3292eb404c399",
+          "provider": "sector_anomaly_radar",
+          "source_url": null
+        },
+        {
+          "document_id": "sector_anomaly_bb7ab79794f81cd05b3cbfbc",
+          "excerpt_ref": "event:sector_anomaly_bb7ab79794f81cd05b3cbfbc",
+          "provider": "sector_anomaly_radar",
+          "source_url": null
+        }
+      ],
+      "temporal": {
+        "as_of": null,
+        "available_at": "2026-08-30T23:59:59.999999Z",
+        "effective_from": null,
+        "effective_to": null,
+        "event_time": "2026-08-30T23:59:59.999999Z",
+        "ingested_at": null,
+        "period_end": null,
+        "period_start": null,
+        "published_at": null,
+        "source_kind": "sector_anomaly"
+      },
+      "used": false,
+      "used_by_claim_ids": []
+    },
+    {
+      "agent_role": "research_manager",
+      "agent_run_id": "fixed:research_manager",
+      "attribution_id": "context_attribution_b311fbdd21f3399370673979",
+      "attribution_version": "research_attribution_v1",
+      "claim_link_status": "not_available_at_source_run",
+      "context_id": "sector:S03:claim:0",
+      "context_type": "sector_claim",
+      "episode_id": "research_episode_d4a588c6bac4fa6fe558cad5",
+      "future_usefulness_score": null,
+      "future_usefulness_status": "not_available",
+      "outcome_status": "not_available",
+      "provided": true,
+      "rank": null,
+      "rejected_by_claim_ids": [],
+      "research_as_of": "2026-08-30T23:59:59.999999Z",
+      "retrieval_id": null,
+      "retrieval_reason": null,
+      "retrieval_score": null,
+      "schema_version": "research_context_attribution_v1",
+      "scope_id": "SECTOR:CONSUMER_ELECTRONICS",
+      "scope_type": "sector",
+      "selected": true,
+      "source_references": [
+        {
+          "document_id": "US:AAPL",
+          "excerpt_ref": "membership:US:AAPL:S03:phase4_day30_seed_v1",
+          "provider": "phase4_day30_test_seed",
+          "source_url": null
+        },
+        {
+          "document_id": "aapl-apple-chain",
+          "excerpt_ref": "edge:aapl-apple-chain:phase4_day30_seed_v1",
+          "provider": "phase4_day30_test_seed",
+          "source_url": null
+        },
+        {
+          "document_id": "chain-apple-sector",
+          "excerpt_ref": "edge:chain-apple-sector:phase4_day30_seed_v1",
+          "provider": "phase4_day30_test_seed",
+          "source_url": null
+        },
+        {
+          "document_id": "APPLE_CHAIN",
+          "excerpt_ref": "chain:APPLE_CHAIN:phase4_day30_seed_v1",
+          "provider": "sector_ontology",
+          "source_url": null
+        }
+      ],
+      "temporal": {
+        "as_of": "2026-08-30T23:59:59.999999Z",
+        "available_at": "2026-08-30T23:59:59.999999Z",
+        "effective_from": null,
+        "effective_to": null,
+        "event_time": null,
+        "ingested_at": null,
+        "period_end": null,
+        "period_start": null,
+        "published_at": null,
+        "source_kind": "sector_research_claim"
+      },
+      "used": true,
+      "used_by_claim_ids": []
+    },
+    {
+      "agent_role": "research_manager",
+      "agent_run_id": "fixed:research_manager",
+      "attribution_id": "context_attribution_b9cfbc110be5773b25ae7b33",
+      "attribution_version": "research_attribution_v1",
+      "claim_link_status": "not_available_at_source_run",
+      "context_id": "sector:S03:claim:1",
+      "context_type": "sector_claim",
+      "episode_id": "research_episode_d4a588c6bac4fa6fe558cad5",
+      "future_usefulness_score": null,
+      "future_usefulness_status": "not_available",
+      "outcome_status": "not_available",
+      "provided": true,
+      "rank": null,
+      "rejected_by_claim_ids": [],
+      "research_as_of": "2026-08-30T23:59:59.999999Z",
+      "retrieval_id": null,
+      "retrieval_reason": null,
+      "retrieval_score": null,
+      "schema_version": "research_context_attribution_v1",
+      "scope_id": "SECTOR:CONSUMER_ELECTRONICS",
+      "scope_type": "sector",
+      "selected": true,
+      "source_references": [
+        {
+          "document_id": "sector_macro_6d2024cddc32ff01a3eed137",
+          "excerpt_ref": "sector_macro_6d2024cddc32ff01a3eed137:macro:financial_stress:BAMLH0A0HYM2",
+          "provider": "sector_macro_operator",
+          "source_url": null
+        },
+        {
+          "document_id": "sector_macro_6d2024cddc32ff01a3eed137",
+          "excerpt_ref": "sector_macro_6d2024cddc32ff01a3eed137:macro:financial_stress:VIXCLS",
+          "provider": "sector_macro_operator",
+          "source_url": null
+        }
+      ],
+      "temporal": {
+        "as_of": "2026-08-30T23:59:59.999999Z",
+        "available_at": "2026-08-30T23:59:59.999999Z",
+        "effective_from": null,
+        "effective_to": null,
+        "event_time": null,
+        "ingested_at": null,
+        "period_end": null,
+        "period_start": null,
+        "published_at": null,
+        "source_kind": "sector_research_claim"
+      },
+      "used": true,
+      "used_by_claim_ids": []
+    },
+    {
+      "agent_role": "research_manager",
+      "agent_run_id": "fixed:research_manager",
+      "attribution_id": "context_attribution_5b4712fb515ce730733f061d",
+      "attribution_version": "research_attribution_v1",
+      "claim_link_status": "complete",
+      "context_id": "sector:S03:claim:2",
+      "context_type": "sector_claim",
+      "episode_id": "research_episode_d4a588c6bac4fa6fe558cad5",
+      "future_usefulness_score": null,
+      "future_usefulness_status": "not_available",
+      "outcome_status": "not_available",
+      "provided": true,
+      "rank": null,
+      "rejected_by_claim_ids": [],
+      "research_as_of": "2026-08-30T23:59:59.999999Z",
+      "retrieval_id": null,
+      "retrieval_reason": null,
+      "retrieval_score": null,
+      "schema_version": "research_context_attribution_v1",
+      "scope_id": "SECTOR:CONSUMER_ELECTRONICS",
+      "scope_type": "sector",
+      "selected": true,
+      "source_references": [
+        {
+          "document_id": "sector_macro_6d2024cddc32ff01a3eed137",
+          "excerpt_ref": "sector_macro_6d2024cddc32ff01a3eed137:sensitivity:BAMLH0A0HYM2",
+          "provider": "sector_macro_operator",
+          "source_url": null
+        },
+        {
+          "document_id": "sector_macro_6d2024cddc32ff01a3eed137",
+          "excerpt_ref": "sector_macro_6d2024cddc32ff01a3eed137:sensitivity:CPIAUCSL",
+          "provider": "sector_macro_operator",
+          "source_url": null
+        }
+      ],
+      "temporal": {
+        "as_of": "2026-08-30T23:59:59.999999Z",
+        "available_at": "2026-08-30T23:59:59.999999Z",
+        "effective_from": null,
+        "effective_to": null,
+        "event_time": null,
+        "ingested_at": null,
+        "period_end": null,
+        "period_start": null,
+        "published_at": null,
+        "source_kind": "sector_research_claim"
+      },
+      "used": false,
+      "used_by_claim_ids": []
+    },
+    {
+      "agent_role": "research_manager",
+      "agent_run_id": "fixed:research_manager",
+      "attribution_id": "context_attribution_0ec1f7416b7fbd550e815f75",
+      "attribution_version": "research_attribution_v1",
+      "claim_link_status": "not_available_at_source_run",
+      "context_id": "sector:S03:claim:3",
+      "context_type": "sector_claim",
+      "episode_id": "research_episode_d4a588c6bac4fa6fe558cad5",
+      "future_usefulness_score": null,
+      "future_usefulness_status": "not_available",
+      "outcome_status": "not_available",
+      "provided": true,
+      "rank": null,
+      "rejected_by_claim_ids": [],
+      "research_as_of": "2026-08-30T23:59:59.999999Z",
+      "retrieval_id": null,
+      "retrieval_reason": null,
+      "retrieval_score": null,
+      "schema_version": "research_context_attribution_v1",
+      "scope_id": "SECTOR:CONSUMER_ELECTRONICS",
+      "scope_type": "sector",
+      "selected": true,
+      "source_references": [
+        {
+          "document_id": "sector_macro_6d2024cddc32ff01a3eed137",
+          "excerpt_ref": "sector_macro_6d2024cddc32ff01a3eed137:sensitivity:INDPRO",
+          "provider": "sector_macro_operator",
+          "source_url": null
+        }
+      ],
+      "temporal": {
+        "as_of": "2026-08-30T23:59:59.999999Z",
+        "available_at": "2026-08-30T23:59:59.999999Z",
+        "effective_from": null,
+        "effective_to": null,
+        "event_time": null,
+        "ingested_at": null,
+        "period_end": null,
+        "period_start": null,
+        "published_at": null,
+        "source_kind": "sector_research_claim"
+      },
+      "used": true,
+      "used_by_claim_ids": []
+    },
+    {
+      "agent_role": "research_manager",
+      "agent_run_id": "fixed:research_manager",
+      "attribution_id": "context_attribution_621fd42e63653e792d68c397",
+      "attribution_version": "research_attribution_v1",
+      "claim_link_status": "not_available_at_source_run",
+      "context_id": "sector:S03:claim:4",
+      "context_type": "sector_claim",
+      "episode_id": "research_episode_d4a588c6bac4fa6fe558cad5",
+      "future_usefulness_score": null,
+      "future_usefulness_status": "not_available",
+      "outcome_status": "not_available",
+      "provided": true,
+      "rank": null,
+      "rejected_by_claim_ids": [],
+      "research_as_of": "2026-08-30T23:59:59.999999Z",
+      "retrieval_id": null,
+      "retrieval_reason": null,
+      "retrieval_score": null,
+      "schema_version": "research_context_attribution_v1",
+      "scope_id": "SECTOR:CONSUMER_ELECTRONICS",
+      "scope_type": "sector",
+      "selected": true,
+      "source_references": [
+        {
+          "document_id": "sector_anomaly_771da1bb2bc3292eb404c399",
+          "excerpt_ref": "event:sector_anomaly_771da1bb2bc3292eb404c399",
+          "provider": "sector_anomaly_radar",
+          "source_url": null
+        },
+        {
+          "document_id": "sector_anomaly_bb7ab79794f81cd05b3cbfbc",
+          "excerpt_ref": "event:sector_anomaly_bb7ab79794f81cd05b3cbfbc",
+          "provider": "sector_anomaly_radar",
+          "source_url": null
+        }
+      ],
+      "temporal": {
+        "as_of": "2026-08-30T23:59:59.999999Z",
+        "available_at": "2026-08-30T23:59:59.999999Z",
+        "effective_from": null,
+        "effective_to": null,
+        "event_time": null,
+        "ingested_at": null,
+        "period_end": null,
+        "period_start": null,
+        "published_at": null,
+        "source_kind": "sector_research_claim"
+      },
+      "used": true,
+      "used_by_claim_ids": []
+    },
+    {
+      "agent_role": "research_manager",
+      "agent_run_id": "fixed:research_manager",
+      "attribution_id": "context_attribution_364649e24b99b3c4c22f405a",
+      "attribution_version": "research_attribution_v1",
+      "claim_link_status": "complete",
+      "context_id": "sector:S03:claim:5",
+      "context_type": "sector_claim",
+      "episode_id": "research_episode_d4a588c6bac4fa6fe558cad5",
+      "future_usefulness_score": null,
+      "future_usefulness_status": "not_available",
+      "outcome_status": "not_available",
+      "provided": true,
+      "rank": null,
+      "rejected_by_claim_ids": [],
+      "research_as_of": "2026-08-30T23:59:59.999999Z",
+      "retrieval_id": null,
+      "retrieval_reason": null,
+      "retrieval_score": null,
+      "schema_version": "research_context_attribution_v1",
+      "scope_id": "SECTOR:CONSUMER_ELECTRONICS",
+      "scope_type": "sector",
+      "selected": true,
+      "source_references": [
+        {
+          "document_id": "sector_research_911e01891594d47f32eb27a3",
+          "excerpt_ref": "sector_research_911e01891594d47f32eb27a3:breadth:advance_decline_ratio",
+          "provider": "sector_state_operator",
+          "source_url": null
+        },
+        {
+          "document_id": "sector_research_911e01891594d47f32eb27a3",
+          "excerpt_ref": "sector_research_911e01891594d47f32eb27a3:fundamental:median_gross_margin",
+          "provider": "sector_state_operator",
+          "source_url": null
+        },
+        {
+          "document_id": "sector_research_911e01891594d47f32eb27a3",
+          "excerpt_ref": "sector_research_911e01891594d47f32eb27a3:valuation:median_pe",
+          "provider": "sector_state_operator",
+          "source_url": null
+        },
+        {
+          "document_id": "sector_research_911e01891594d47f32eb27a3",
+          "excerpt_ref": "sector_research_911e01891594d47f32eb27a3:market:return_1d",
+          "provider": "sector_state_operator",
+          "source_url": null
+        },
+        {
+          "document_id": "sector_universe_ca18d65255e304b91ba8ca63",
+          "excerpt_ref": "sector_universe_ca18d65255e304b91ba8ca63:coverage",
+          "provider": "sector_universe_service",
+          "source_url": null
+        }
+      ],
+      "temporal": {
+        "as_of": "2026-08-30T23:59:59.999999Z",
+        "available_at": "2026-08-30T23:59:59.999999Z",
+        "effective_from": null,
+        "effective_to": null,
+        "event_time": null,
+        "ingested_at": null,
+        "period_end": null,
+        "period_start": null,
+        "published_at": null,
+        "source_kind": "sector_research_claim"
+      },
+      "used": false,
+      "used_by_claim_ids": []
+    },
+    {
+      "agent_role": "research_manager",
+      "agent_run_id": "fixed:research_manager",
+      "attribution_id": "context_attribution_9a0957c16e97b524a273d5ae",
+      "attribution_version": "research_attribution_v1",
+      "claim_link_status": "not_available_at_source_run",
+      "context_id": "sector_anomaly_771da1bb2bc3292eb404c399",
+      "context_type": "radar_event",
+      "episode_id": "research_episode_d4a588c6bac4fa6fe558cad5",
+      "future_usefulness_score": null,
+      "future_usefulness_status": "not_available",
+      "outcome_status": "not_available",
+      "provided": true,
+      "rank": null,
+      "rejected_by_claim_ids": [],
+      "research_as_of": "2026-08-30T23:59:59.999999Z",
+      "retrieval_id": null,
+      "retrieval_reason": null,
+      "retrieval_score": null,
+      "schema_version": "research_context_attribution_v1",
+      "scope_id": "SECTOR:CONSUMER_ELECTRONICS",
+      "scope_type": "sector",
+      "selected": true,
+      "source_references": [
+        {
+          "document_id": "sector_anomaly_771da1bb2bc3292eb404c399",
+          "excerpt_ref": "event:sector_anomaly_771da1bb2bc3292eb404c399",
+          "provider": "sector_anomaly_radar",
+          "source_url": null
+        },
+        {
+          "document_id": "sector_anomaly_bb7ab79794f81cd05b3cbfbc",
+          "excerpt_ref": "event:sector_anomaly_bb7ab79794f81cd05b3cbfbc",
+          "provider": "sector_anomaly_radar",
+          "source_url": null
+        }
+      ],
+      "temporal": {
+        "as_of": null,
+        "available_at": "2026-08-30T23:59:59.999999Z",
+        "effective_from": null,
+        "effective_to": null,
+        "event_time": "2026-08-30T23:59:59.999999Z",
+        "ingested_at": null,
+        "period_end": null,
+        "period_start": null,
+        "published_at": null,
+        "source_kind": "sector_anomaly"
+      },
+      "used": true,
+      "used_by_claim_ids": []
+    },
+    {
+      "agent_role": "research_manager",
+      "agent_run_id": "fixed:research_manager",
+      "attribution_id": "context_attribution_361962a3b856a1acf61f32f6",
+      "attribution_version": "research_attribution_v1",
+      "claim_link_status": "not_available_at_source_run",
+      "context_id": "sector_anomaly_bb7ab79794f81cd05b3cbfbc",
+      "context_type": "radar_event",
+      "episode_id": "research_episode_d4a588c6bac4fa6fe558cad5",
+      "future_usefulness_score": null,
+      "future_usefulness_status": "not_available",
+      "outcome_status": "not_available",
+      "provided": true,
+      "rank": null,
+      "rejected_by_claim_ids": [],
+      "research_as_of": "2026-08-30T23:59:59.999999Z",
+      "retrieval_id": null,
+      "retrieval_reason": null,
+      "retrieval_score": null,
+      "schema_version": "research_context_attribution_v1",
+      "scope_id": "SECTOR:CONSUMER_ELECTRONICS",
+      "scope_type": "sector",
+      "selected": true,
+      "source_references": [
+        {
+          "document_id": "sector_anomaly_771da1bb2bc3292eb404c399",
+          "excerpt_ref": "event:sector_anomaly_771da1bb2bc3292eb404c399",
+          "provider": "sector_anomaly_radar",
+          "source_url": null
+        },
+        {
+          "document_id": "sector_anomaly_bb7ab79794f81cd05b3cbfbc",
+          "excerpt_ref": "event:sector_anomaly_bb7ab79794f81cd05b3cbfbc",
+          "provider": "sector_anomaly_radar",
+          "source_url": null
+        }
+      ],
+      "temporal": {
+        "as_of": null,
+        "available_at": "2026-08-30T23:59:59.999999Z",
+        "effective_from": null,
+        "effective_to": null,
+        "event_time": "2026-08-30T23:59:59.999999Z",
+        "ingested_at": null,
+        "period_end": null,
+        "period_start": null,
+        "published_at": null,
+        "source_kind": "sector_anomaly"
+      },
+      "used": true,
+      "used_by_claim_ids": []
+    },
+    {
+      "agent_role": "bull_manager",
+      "agent_run_id": "fixed:bull_manager",
+      "attribution_id": "context_attribution_a03d59428b99cbb184cb4bbd",
+      "attribution_version": "research_attribution_v1",
+      "claim_link_status": "not_available_at_source_run",
+      "context_id": "sector:S03:claim:0",
+      "context_type": "sector_claim",
+      "episode_id": "research_episode_d4a588c6bac4fa6fe558cad5",
+      "future_usefulness_score": null,
+      "future_usefulness_status": "not_available",
+      "outcome_status": "not_available",
+      "provided": true,
+      "rank": null,
+      "rejected_by_claim_ids": [],
+      "research_as_of": "2026-08-30T23:59:59.999999Z",
+      "retrieval_id": null,
+      "retrieval_reason": null,
+      "retrieval_score": null,
+      "schema_version": "research_context_attribution_v1",
+      "scope_id": "SECTOR:CONSUMER_ELECTRONICS",
+      "scope_type": "sector",
+      "selected": true,
+      "source_references": [
+        {
+          "document_id": "US:AAPL",
+          "excerpt_ref": "membership:US:AAPL:S03:phase4_day30_seed_v1",
+          "provider": "phase4_day30_test_seed",
+          "source_url": null
+        },
+        {
+          "document_id": "aapl-apple-chain",
+          "excerpt_ref": "edge:aapl-apple-chain:phase4_day30_seed_v1",
+          "provider": "phase4_day30_test_seed",
+          "source_url": null
+        },
+        {
+          "document_id": "chain-apple-sector",
+          "excerpt_ref": "edge:chain-apple-sector:phase4_day30_seed_v1",
+          "provider": "phase4_day30_test_seed",
+          "source_url": null
+        },
+        {
+          "document_id": "APPLE_CHAIN",
+          "excerpt_ref": "chain:APPLE_CHAIN:phase4_day30_seed_v1",
+          "provider": "sector_ontology",
+          "source_url": null
+        }
+      ],
+      "temporal": {
+        "as_of": "2026-08-30T23:59:59.999999Z",
+        "available_at": "2026-08-30T23:59:59.999999Z",
+        "effective_from": null,
+        "effective_to": null,
+        "event_time": null,
+        "ingested_at": null,
+        "period_end": null,
+        "period_start": null,
+        "published_at": null,
+        "source_kind": "sector_research_claim"
+      },
+      "used": true,
+      "used_by_claim_ids": []
+    },
+    {
+      "agent_role": "bull_manager",
+      "agent_run_id": "fixed:bull_manager",
+      "attribution_id": "context_attribution_fc5c2f1c13ad0d461fd6dd38",
+      "attribution_version": "research_attribution_v1",
+      "claim_link_status": "not_available_at_source_run",
+      "context_id": "sector:S03:claim:1",
+      "context_type": "sector_claim",
+      "episode_id": "research_episode_d4a588c6bac4fa6fe558cad5",
+      "future_usefulness_score": null,
+      "future_usefulness_status": "not_available",
+      "outcome_status": "not_available",
+      "provided": true,
+      "rank": null,
+      "rejected_by_claim_ids": [],
+      "research_as_of": "2026-08-30T23:59:59.999999Z",
+      "retrieval_id": null,
+      "retrieval_reason": null,
+      "retrieval_score": null,
+      "schema_version": "research_context_attribution_v1",
+      "scope_id": "SECTOR:CONSUMER_ELECTRONICS",
+      "scope_type": "sector",
+      "selected": true,
+      "source_references": [
+        {
+          "document_id": "sector_macro_6d2024cddc32ff01a3eed137",
+          "excerpt_ref": "sector_macro_6d2024cddc32ff01a3eed137:macro:financial_stress:BAMLH0A0HYM2",
+          "provider": "sector_macro_operator",
+          "source_url": null
+        },
+        {
+          "document_id": "sector_macro_6d2024cddc32ff01a3eed137",
+          "excerpt_ref": "sector_macro_6d2024cddc32ff01a3eed137:macro:financial_stress:VIXCLS",
+          "provider": "sector_macro_operator",
+          "source_url": null
+        }
+      ],
+      "temporal": {
+        "as_of": "2026-08-30T23:59:59.999999Z",
+        "available_at": "2026-08-30T23:59:59.999999Z",
+        "effective_from": null,
+        "effective_to": null,
+        "event_time": null,
+        "ingested_at": null,
+        "period_end": null,
+        "period_start": null,
+        "published_at": null,
+        "source_kind": "sector_research_claim"
+      },
+      "used": true,
+      "used_by_claim_ids": []
+    },
+    {
+      "agent_role": "bull_manager",
+      "agent_run_id": "fixed:bull_manager",
+      "attribution_id": "context_attribution_16cd0f04af1ff4c1eddec2e4",
+      "attribution_version": "research_attribution_v1",
+      "claim_link_status": "not_available_at_source_run",
+      "context_id": "sector:S03:claim:5",
+      "context_type": "sector_claim",
+      "episode_id": "research_episode_d4a588c6bac4fa6fe558cad5",
+      "future_usefulness_score": null,
+      "future_usefulness_status": "not_available",
+      "outcome_status": "not_available",
+      "provided": true,
+      "rank": null,
+      "rejected_by_claim_ids": [],
+      "research_as_of": "2026-08-30T23:59:59.999999Z",
+      "retrieval_id": null,
+      "retrieval_reason": null,
+      "retrieval_score": null,
+      "schema_version": "research_context_attribution_v1",
+      "scope_id": "SECTOR:CONSUMER_ELECTRONICS",
+      "scope_type": "sector",
+      "selected": true,
+      "source_references": [
+        {
+          "document_id": "sector_research_911e01891594d47f32eb27a3",
+          "excerpt_ref": "sector_research_911e01891594d47f32eb27a3:breadth:advance_decline_ratio",
+          "provider": "sector_state_operator",
+          "source_url": null
+        },
+        {
+          "document_id": "sector_research_911e01891594d47f32eb27a3",
+          "excerpt_ref": "sector_research_911e01891594d47f32eb27a3:fundamental:median_gross_margin",
+          "provider": "sector_state_operator",
+          "source_url": null
+        },
+        {
+          "document_id": "sector_research_911e01891594d47f32eb27a3",
+          "excerpt_ref": "sector_research_911e01891594d47f32eb27a3:valuation:median_pe",
+          "provider": "sector_state_operator",
+          "source_url": null
+        },
+        {
+          "document_id": "sector_research_911e01891594d47f32eb27a3",
+          "excerpt_ref": "sector_research_911e01891594d47f32eb27a3:market:return_1d",
+          "provider": "sector_state_operator",
+          "source_url": null
+        },
+        {
+          "document_id": "sector_universe_ca18d65255e304b91ba8ca63",
+          "excerpt_ref": "sector_universe_ca18d65255e304b91ba8ca63:coverage",
+          "provider": "sector_universe_service",
+          "source_url": null
+        }
+      ],
+      "temporal": {
+        "as_of": "2026-08-30T23:59:59.999999Z",
+        "available_at": "2026-08-30T23:59:59.999999Z",
+        "effective_from": null,
+        "effective_to": null,
+        "event_time": null,
+        "ingested_at": null,
+        "period_end": null,
+        "period_start": null,
+        "published_at": null,
+        "source_kind": "sector_research_claim"
+      },
+      "used": true,
+      "used_by_claim_ids": []
+    },
+    {
+      "agent_role": "bear_manager",
+      "agent_run_id": "fixed:bear_manager",
+      "attribution_id": "context_attribution_d98bfa520c94b81eb0ccc8d4",
+      "attribution_version": "research_attribution_v1",
+      "claim_link_status": "complete",
+      "context_id": "sector:S03:claim:2",
+      "context_type": "sector_claim",
+      "episode_id": "research_episode_d4a588c6bac4fa6fe558cad5",
+      "future_usefulness_score": null,
+      "future_usefulness_status": "not_available",
+      "outcome_status": "not_available",
+      "provided": true,
+      "rank": null,
+      "rejected_by_claim_ids": [],
+      "research_as_of": "2026-08-30T23:59:59.999999Z",
+      "retrieval_id": null,
+      "retrieval_reason": null,
+      "retrieval_score": null,
+      "schema_version": "research_context_attribution_v1",
+      "scope_id": "SECTOR:CONSUMER_ELECTRONICS",
+      "scope_type": "sector",
+      "selected": true,
+      "source_references": [
+        {
+          "document_id": "sector_macro_6d2024cddc32ff01a3eed137",
+          "excerpt_ref": "sector_macro_6d2024cddc32ff01a3eed137:sensitivity:BAMLH0A0HYM2",
+          "provider": "sector_macro_operator",
+          "source_url": null
+        },
+        {
+          "document_id": "sector_macro_6d2024cddc32ff01a3eed137",
+          "excerpt_ref": "sector_macro_6d2024cddc32ff01a3eed137:sensitivity:CPIAUCSL",
+          "provider": "sector_macro_operator",
+          "source_url": null
+        }
+      ],
+      "temporal": {
+        "as_of": "2026-08-30T23:59:59.999999Z",
+        "available_at": "2026-08-30T23:59:59.999999Z",
+        "effective_from": null,
+        "effective_to": null,
+        "event_time": null,
+        "ingested_at": null,
+        "period_end": null,
+        "period_start": null,
+        "published_at": null,
+        "source_kind": "sector_research_claim"
+      },
+      "used": false,
+      "used_by_claim_ids": []
+    },
+    {
+      "agent_role": "bear_manager",
+      "agent_run_id": "fixed:bear_manager",
+      "attribution_id": "context_attribution_88844140b8b578a872914f38",
+      "attribution_version": "research_attribution_v1",
+      "claim_link_status": "complete",
+      "context_id": "sector:S03:claim:3",
+      "context_type": "sector_claim",
+      "episode_id": "research_episode_d4a588c6bac4fa6fe558cad5",
+      "future_usefulness_score": null,
+      "future_usefulness_status": "not_available",
+      "outcome_status": "not_available",
+      "provided": true,
+      "rank": null,
+      "rejected_by_claim_ids": [],
+      "research_as_of": "2026-08-30T23:59:59.999999Z",
+      "retrieval_id": null,
+      "retrieval_reason": null,
+      "retrieval_score": null,
+      "schema_version": "research_context_attribution_v1",
+      "scope_id": "SECTOR:CONSUMER_ELECTRONICS",
+      "scope_type": "sector",
+      "selected": true,
+      "source_references": [
+        {
+          "document_id": "sector_macro_6d2024cddc32ff01a3eed137",
+          "excerpt_ref": "sector_macro_6d2024cddc32ff01a3eed137:sensitivity:INDPRO",
+          "provider": "sector_macro_operator",
+          "source_url": null
+        }
+      ],
+      "temporal": {
+        "as_of": "2026-08-30T23:59:59.999999Z",
+        "available_at": "2026-08-30T23:59:59.999999Z",
+        "effective_from": null,
+        "effective_to": null,
+        "event_time": null,
+        "ingested_at": null,
+        "period_end": null,
+        "period_start": null,
+        "published_at": null,
+        "source_kind": "sector_research_claim"
+      },
+      "used": false,
+      "used_by_claim_ids": []
+    },
+    {
+      "agent_role": "bear_manager",
+      "agent_run_id": "fixed:bear_manager",
+      "attribution_id": "context_attribution_7b6d2365eef2d1fc5e9b25e8",
+      "attribution_version": "research_attribution_v1",
+      "claim_link_status": "complete",
+      "context_id": "sector:S03:claim:4",
+      "context_type": "sector_claim",
+      "episode_id": "research_episode_d4a588c6bac4fa6fe558cad5",
+      "future_usefulness_score": null,
+      "future_usefulness_status": "not_available",
+      "outcome_status": "not_available",
+      "provided": true,
+      "rank": null,
+      "rejected_by_claim_ids": [],
+      "research_as_of": "2026-08-30T23:59:59.999999Z",
+      "retrieval_id": null,
+      "retrieval_reason": null,
+      "retrieval_score": null,
+      "schema_version": "research_context_attribution_v1",
+      "scope_id": "SECTOR:CONSUMER_ELECTRONICS",
+      "scope_type": "sector",
+      "selected": true,
+      "source_references": [
+        {
+          "document_id": "sector_anomaly_771da1bb2bc3292eb404c399",
+          "excerpt_ref": "event:sector_anomaly_771da1bb2bc3292eb404c399",
+          "provider": "sector_anomaly_radar",
+          "source_url": null
+        },
+        {
+          "document_id": "sector_anomaly_bb7ab79794f81cd05b3cbfbc",
+          "excerpt_ref": "event:sector_anomaly_bb7ab79794f81cd05b3cbfbc",
+          "provider": "sector_anomaly_radar",
+          "source_url": null
+        }
+      ],
+      "temporal": {
+        "as_of": "2026-08-30T23:59:59.999999Z",
+        "available_at": "2026-08-30T23:59:59.999999Z",
+        "effective_from": null,
+        "effective_to": null,
+        "event_time": null,
+        "ingested_at": null,
+        "period_end": null,
+        "period_start": null,
+        "published_at": null,
+        "source_kind": "sector_research_claim"
+      },
+      "used": false,
+      "used_by_claim_ids": []
+    },
+    {
+      "agent_role": "bear_manager",
+      "agent_run_id": "fixed:bear_manager",
+      "attribution_id": "context_attribution_d149255b86f56bfabe4194f6",
+      "attribution_version": "research_attribution_v1",
+      "claim_link_status": "complete",
+      "context_id": "sector:S03:claim:5",
+      "context_type": "sector_claim",
+      "episode_id": "research_episode_d4a588c6bac4fa6fe558cad5",
+      "future_usefulness_score": null,
+      "future_usefulness_status": "not_available",
+      "outcome_status": "not_available",
+      "provided": true,
+      "rank": null,
+      "rejected_by_claim_ids": [],
+      "research_as_of": "2026-08-30T23:59:59.999999Z",
+      "retrieval_id": null,
+      "retrieval_reason": null,
+      "retrieval_score": null,
+      "schema_version": "research_context_attribution_v1",
+      "scope_id": "SECTOR:CONSUMER_ELECTRONICS",
+      "scope_type": "sector",
+      "selected": true,
+      "source_references": [
+        {
+          "document_id": "sector_research_911e01891594d47f32eb27a3",
+          "excerpt_ref": "sector_research_911e01891594d47f32eb27a3:breadth:advance_decline_ratio",
+          "provider": "sector_state_operator",
+          "source_url": null
+        },
+        {
+          "document_id": "sector_research_911e01891594d47f32eb27a3",
+          "excerpt_ref": "sector_research_911e01891594d47f32eb27a3:fundamental:median_gross_margin",
+          "provider": "sector_state_operator",
+          "source_url": null
+        },
+        {
+          "document_id": "sector_research_911e01891594d47f32eb27a3",
+          "excerpt_ref": "sector_research_911e01891594d47f32eb27a3:valuation:median_pe",
+          "provider": "sector_state_operator",
+          "source_url": null
+        },
+        {
+          "document_id": "sector_research_911e01891594d47f32eb27a3",
+          "excerpt_ref": "sector_research_911e01891594d47f32eb27a3:market:return_1d",
+          "provider": "sector_state_operator",
+          "source_url": null
+        },
+        {
+          "document_id": "sector_universe_ca18d65255e304b91ba8ca63",
+          "excerpt_ref": "sector_universe_ca18d65255e304b91ba8ca63:coverage",
+          "provider": "sector_universe_service",
+          "source_url": null
+        }
+      ],
+      "temporal": {
+        "as_of": "2026-08-30T23:59:59.999999Z",
+        "available_at": "2026-08-30T23:59:59.999999Z",
+        "effective_from": null,
+        "effective_to": null,
+        "event_time": null,
+        "ingested_at": null,
+        "period_end": null,
+        "period_start": null,
+        "published_at": null,
+        "source_kind": "sector_research_claim"
+      },
+      "used": false,
+      "used_by_claim_ids": []
+    },
+    {
+      "agent_role": "risk_manager",
+      "agent_run_id": "fixed:risk_manager",
+      "attribution_id": "context_attribution_069b4dbc44eb014f1fef8661",
+      "attribution_version": "research_attribution_v1",
+      "claim_link_status": "complete",
+      "context_id": "sector:S03:claim:0",
+      "context_type": "sector_claim",
+      "episode_id": "research_episode_d4a588c6bac4fa6fe558cad5",
+      "future_usefulness_score": null,
+      "future_usefulness_status": "not_available",
+      "outcome_status": "not_available",
+      "provided": true,
+      "rank": null,
+      "rejected_by_claim_ids": [],
+      "research_as_of": "2026-08-30T23:59:59.999999Z",
+      "retrieval_id": null,
+      "retrieval_reason": null,
+      "retrieval_score": null,
+      "schema_version": "research_context_attribution_v1",
+      "scope_id": "SECTOR:CONSUMER_ELECTRONICS",
+      "scope_type": "sector",
+      "selected": true,
+      "source_references": [
+        {
+          "document_id": "US:AAPL",
+          "excerpt_ref": "membership:US:AAPL:S03:phase4_day30_seed_v1",
+          "provider": "phase4_day30_test_seed",
+          "source_url": null
+        },
+        {
+          "document_id": "aapl-apple-chain",
+          "excerpt_ref": "edge:aapl-apple-chain:phase4_day30_seed_v1",
+          "provider": "phase4_day30_test_seed",
+          "source_url": null
+        },
+        {
+          "document_id": "chain-apple-sector",
+          "excerpt_ref": "edge:chain-apple-sector:phase4_day30_seed_v1",
+          "provider": "phase4_day30_test_seed",
+          "source_url": null
+        },
+        {
+          "document_id": "APPLE_CHAIN",
+          "excerpt_ref": "chain:APPLE_CHAIN:phase4_day30_seed_v1",
+          "provider": "sector_ontology",
+          "source_url": null
+        }
+      ],
+      "temporal": {
+        "as_of": "2026-08-30T23:59:59.999999Z",
+        "available_at": "2026-08-30T23:59:59.999999Z",
+        "effective_from": null,
+        "effective_to": null,
+        "event_time": null,
+        "ingested_at": null,
+        "period_end": null,
+        "period_start": null,
+        "published_at": null,
+        "source_kind": "sector_research_claim"
+      },
+      "used": false,
+      "used_by_claim_ids": []
+    },
+    {
+      "agent_role": "risk_manager",
+      "agent_run_id": "fixed:risk_manager",
+      "attribution_id": "context_attribution_8a3ff16a9df9da462d99c509",
+      "attribution_version": "research_attribution_v1",
+      "claim_link_status": "not_available_at_source_run",
+      "context_id": "sector:S03:claim:1",
+      "context_type": "sector_claim",
+      "episode_id": "research_episode_d4a588c6bac4fa6fe558cad5",
+      "future_usefulness_score": null,
+      "future_usefulness_status": "not_available",
+      "outcome_status": "not_available",
+      "provided": true,
+      "rank": null,
+      "rejected_by_claim_ids": [],
+      "research_as_of": "2026-08-30T23:59:59.999999Z",
+      "retrieval_id": null,
+      "retrieval_reason": null,
+      "retrieval_score": null,
+      "schema_version": "research_context_attribution_v1",
+      "scope_id": "SECTOR:CONSUMER_ELECTRONICS",
+      "scope_type": "sector",
+      "selected": true,
+      "source_references": [
+        {
+          "document_id": "sector_macro_6d2024cddc32ff01a3eed137",
+          "excerpt_ref": "sector_macro_6d2024cddc32ff01a3eed137:macro:financial_stress:BAMLH0A0HYM2",
+          "provider": "sector_macro_operator",
+          "source_url": null
+        },
+        {
+          "document_id": "sector_macro_6d2024cddc32ff01a3eed137",
+          "excerpt_ref": "sector_macro_6d2024cddc32ff01a3eed137:macro:financial_stress:VIXCLS",
+          "provider": "sector_macro_operator",
+          "source_url": null
+        }
+      ],
+      "temporal": {
+        "as_of": "2026-08-30T23:59:59.999999Z",
+        "available_at": "2026-08-30T23:59:59.999999Z",
+        "effective_from": null,
+        "effective_to": null,
+        "event_time": null,
+        "ingested_at": null,
+        "period_end": null,
+        "period_start": null,
+        "published_at": null,
+        "source_kind": "sector_research_claim"
+      },
+      "used": true,
+      "used_by_claim_ids": []
+    },
+    {
+      "agent_role": "risk_manager",
+      "agent_run_id": "fixed:risk_manager",
+      "attribution_id": "context_attribution_60ab1d31a33f06dc64d07946",
+      "attribution_version": "research_attribution_v1",
+      "claim_link_status": "not_available_at_source_run",
+      "context_id": "sector:S03:claim:2",
+      "context_type": "sector_claim",
+      "episode_id": "research_episode_d4a588c6bac4fa6fe558cad5",
+      "future_usefulness_score": null,
+      "future_usefulness_status": "not_available",
+      "outcome_status": "not_available",
+      "provided": true,
+      "rank": null,
+      "rejected_by_claim_ids": [],
+      "research_as_of": "2026-08-30T23:59:59.999999Z",
+      "retrieval_id": null,
+      "retrieval_reason": null,
+      "retrieval_score": null,
+      "schema_version": "research_context_attribution_v1",
+      "scope_id": "SECTOR:CONSUMER_ELECTRONICS",
+      "scope_type": "sector",
+      "selected": true,
+      "source_references": [
+        {
+          "document_id": "sector_macro_6d2024cddc32ff01a3eed137",
+          "excerpt_ref": "sector_macro_6d2024cddc32ff01a3eed137:sensitivity:BAMLH0A0HYM2",
+          "provider": "sector_macro_operator",
+          "source_url": null
+        },
+        {
+          "document_id": "sector_macro_6d2024cddc32ff01a3eed137",
+          "excerpt_ref": "sector_macro_6d2024cddc32ff01a3eed137:sensitivity:CPIAUCSL",
+          "provider": "sector_macro_operator",
+          "source_url": null
+        }
+      ],
+      "temporal": {
+        "as_of": "2026-08-30T23:59:59.999999Z",
+        "available_at": "2026-08-30T23:59:59.999999Z",
+        "effective_from": null,
+        "effective_to": null,
+        "event_time": null,
+        "ingested_at": null,
+        "period_end": null,
+        "period_start": null,
+        "published_at": null,
+        "source_kind": "sector_research_claim"
+      },
+      "used": true,
+      "used_by_claim_ids": []
+    },
+    {
+      "agent_role": "risk_manager",
+      "agent_run_id": "fixed:risk_manager",
+      "attribution_id": "context_attribution_9e764229e483b934f0420814",
+      "attribution_version": "research_attribution_v1",
+      "claim_link_status": "complete",
+      "context_id": "sector:S03:claim:3",
+      "context_type": "sector_claim",
+      "episode_id": "research_episode_d4a588c6bac4fa6fe558cad5",
+      "future_usefulness_score": null,
+      "future_usefulness_status": "not_available",
+      "outcome_status": "not_available",
+      "provided": true,
+      "rank": null,
+      "rejected_by_claim_ids": [],
+      "research_as_of": "2026-08-30T23:59:59.999999Z",
+      "retrieval_id": null,
+      "retrieval_reason": null,
+      "retrieval_score": null,
+      "schema_version": "research_context_attribution_v1",
+      "scope_id": "SECTOR:CONSUMER_ELECTRONICS",
+      "scope_type": "sector",
+      "selected": true,
+      "source_references": [
+        {
+          "document_id": "sector_macro_6d2024cddc32ff01a3eed137",
+          "excerpt_ref": "sector_macro_6d2024cddc32ff01a3eed137:sensitivity:INDPRO",
+          "provider": "sector_macro_operator",
+          "source_url": null
+        }
+      ],
+      "temporal": {
+        "as_of": "2026-08-30T23:59:59.999999Z",
+        "available_at": "2026-08-30T23:59:59.999999Z",
+        "effective_from": null,
+        "effective_to": null,
+        "event_time": null,
+        "ingested_at": null,
+        "period_end": null,
+        "period_start": null,
+        "published_at": null,
+        "source_kind": "sector_research_claim"
+      },
+      "used": false,
+      "used_by_claim_ids": []
+    },
+    {
+      "agent_role": "risk_manager",
+      "agent_run_id": "fixed:risk_manager",
+      "attribution_id": "context_attribution_598cc67b098d5e3d142e0dd7",
+      "attribution_version": "research_attribution_v1",
+      "claim_link_status": "not_available_at_source_run",
+      "context_id": "sector:S03:claim:4",
+      "context_type": "sector_claim",
+      "episode_id": "research_episode_d4a588c6bac4fa6fe558cad5",
+      "future_usefulness_score": null,
+      "future_usefulness_status": "not_available",
+      "outcome_status": "not_available",
+      "provided": true,
+      "rank": null,
+      "rejected_by_claim_ids": [],
+      "research_as_of": "2026-08-30T23:59:59.999999Z",
+      "retrieval_id": null,
+      "retrieval_reason": null,
+      "retrieval_score": null,
+      "schema_version": "research_context_attribution_v1",
+      "scope_id": "SECTOR:CONSUMER_ELECTRONICS",
+      "scope_type": "sector",
+      "selected": true,
+      "source_references": [
+        {
+          "document_id": "sector_anomaly_771da1bb2bc3292eb404c399",
+          "excerpt_ref": "event:sector_anomaly_771da1bb2bc3292eb404c399",
+          "provider": "sector_anomaly_radar",
+          "source_url": null
+        },
+        {
+          "document_id": "sector_anomaly_bb7ab79794f81cd05b3cbfbc",
+          "excerpt_ref": "event:sector_anomaly_bb7ab79794f81cd05b3cbfbc",
+          "provider": "sector_anomaly_radar",
+          "source_url": null
+        }
+      ],
+      "temporal": {
+        "as_of": "2026-08-30T23:59:59.999999Z",
+        "available_at": "2026-08-30T23:59:59.999999Z",
+        "effective_from": null,
+        "effective_to": null,
+        "event_time": null,
+        "ingested_at": null,
+        "period_end": null,
+        "period_start": null,
+        "published_at": null,
+        "source_kind": "sector_research_claim"
+      },
+      "used": true,
+      "used_by_claim_ids": []
+    },
+    {
+      "agent_role": "risk_manager",
+      "agent_run_id": "fixed:risk_manager",
+      "attribution_id": "context_attribution_6291a23d18365c73a3a29a7b",
+      "attribution_version": "research_attribution_v1",
+      "claim_link_status": "not_available_at_source_run",
+      "context_id": "sector_anomaly_771da1bb2bc3292eb404c399",
+      "context_type": "radar_event",
+      "episode_id": "research_episode_d4a588c6bac4fa6fe558cad5",
+      "future_usefulness_score": null,
+      "future_usefulness_status": "not_available",
+      "outcome_status": "not_available",
+      "provided": true,
+      "rank": null,
+      "rejected_by_claim_ids": [],
+      "research_as_of": "2026-08-30T23:59:59.999999Z",
+      "retrieval_id": null,
+      "retrieval_reason": null,
+      "retrieval_score": null,
+      "schema_version": "research_context_attribution_v1",
+      "scope_id": "SECTOR:CONSUMER_ELECTRONICS",
+      "scope_type": "sector",
+      "selected": true,
+      "source_references": [
+        {
+          "document_id": "sector_anomaly_771da1bb2bc3292eb404c399",
+          "excerpt_ref": "event:sector_anomaly_771da1bb2bc3292eb404c399",
+          "provider": "sector_anomaly_radar",
+          "source_url": null
+        },
+        {
+          "document_id": "sector_anomaly_bb7ab79794f81cd05b3cbfbc",
+          "excerpt_ref": "event:sector_anomaly_bb7ab79794f81cd05b3cbfbc",
+          "provider": "sector_anomaly_radar",
+          "source_url": null
+        }
+      ],
+      "temporal": {
+        "as_of": null,
+        "available_at": "2026-08-30T23:59:59.999999Z",
+        "effective_from": null,
+        "effective_to": null,
+        "event_time": "2026-08-30T23:59:59.999999Z",
+        "ingested_at": null,
+        "period_end": null,
+        "period_start": null,
+        "published_at": null,
+        "source_kind": "sector_anomaly"
+      },
+      "used": true,
+      "used_by_claim_ids": []
+    },
+    {
+      "agent_role": "risk_manager",
+      "agent_run_id": "fixed:risk_manager",
+      "attribution_id": "context_attribution_5ff0690090e7663babe9194f",
+      "attribution_version": "research_attribution_v1",
+      "claim_link_status": "not_available_at_source_run",
+      "context_id": "sector_anomaly_bb7ab79794f81cd05b3cbfbc",
+      "context_type": "radar_event",
+      "episode_id": "research_episode_d4a588c6bac4fa6fe558cad5",
+      "future_usefulness_score": null,
+      "future_usefulness_status": "not_available",
+      "outcome_status": "not_available",
+      "provided": true,
+      "rank": null,
+      "rejected_by_claim_ids": [],
+      "research_as_of": "2026-08-30T23:59:59.999999Z",
+      "retrieval_id": null,
+      "retrieval_reason": null,
+      "retrieval_score": null,
+      "schema_version": "research_context_attribution_v1",
+      "scope_id": "SECTOR:CONSUMER_ELECTRONICS",
+      "scope_type": "sector",
+      "selected": true,
+      "source_references": [
+        {
+          "document_id": "sector_anomaly_771da1bb2bc3292eb404c399",
+          "excerpt_ref": "event:sector_anomaly_771da1bb2bc3292eb404c399",
+          "provider": "sector_anomaly_radar",
+          "source_url": null
+        },
+        {
+          "document_id": "sector_anomaly_bb7ab79794f81cd05b3cbfbc",
+          "excerpt_ref": "event:sector_anomaly_bb7ab79794f81cd05b3cbfbc",
+          "provider": "sector_anomaly_radar",
+          "source_url": null
+        }
+      ],
+      "temporal": {
+        "as_of": null,
+        "available_at": "2026-08-30T23:59:59.999999Z",
+        "effective_from": null,
+        "effective_to": null,
+        "event_time": "2026-08-30T23:59:59.999999Z",
+        "ingested_at": null,
+        "period_end": null,
+        "period_start": null,
+        "published_at": null,
+        "source_kind": "sector_anomaly"
+      },
+      "used": true,
+      "used_by_claim_ids": []
+    }
+  ],
+  "episode_id": "research_episode_d4a588c6bac4fa6fe558cad5",
+  "input_fingerprint": "2b5f4f002879d942f1b1c4363d862c36ddf6b81d38d8c9c6c8a6ca3b8643dca1",
+  "research_as_of": "2026-08-30T23:59:59.999999Z",
+  "retrieval_records": [],
+  "schema_version": "research_episode_attribution_v1"
+}

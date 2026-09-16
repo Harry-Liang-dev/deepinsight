@@ -304,7 +304,7 @@ def test_future_context_and_event_cannot_enter_asset_research() -> None:
     dumped["active_events"][0]["available_at"] = (
         AS_OF + timedelta(seconds=1)
     ).isoformat()
-    with pytest.raises(ValidationError, match="future Sector event"):
+    with pytest.raises(ValidationError, match="future_available"):
         SectorContextBundle.model_validate(dumped)
 
 

@@ -26,7 +26,9 @@ from src.schemas.memory import (
     MemoryWriteRequest,
     MemoryWriteResult,
 )
+from src.schemas.temporal import temporal_access_decision, utc_from_storage
 from src.services.embedding import EmbeddingService, EmbeddingServiceError
+from src.services.temporal import temporal_metadata_for
 
 
 class MemoryServiceError(RuntimeError):
@@ -113,6 +115,7 @@ class MemoryService:
             faiss_vector_id=vector_id,
             created_by=request.created_by,
             created_at=self._clock(),
+            metadata=request.metadata,
         )
         try:
             self._duckdb_repo.insert(record)
@@ -176,7 +179,12 @@ class MemoryService:
             if request.asset_ids is None
             else {str(asset_id) for asset_id in request.asset_ids}
         )
-        now = self._clock()
+        scope_ids = None if request.scope_ids is None else set(request.scope_ids)
+        usage_classes = (
+            None if request.usage_classes is None else set(request.usage_classes)
+        )
+        episode_ids = None if request.episode_ids is None else set(request.episode_ids)
+        cutoff = utc_from_storage(request.as_of or self._clock())
         results: list[MemorySearchResult] = []
         for candidate in candidates:
             try:
@@ -204,9 +212,24 @@ class MemoryService:
                 record_asset = None if record.asset_id is None else str(record.asset_id)
                 if record_asset not in asset_ids:
                     continue
-            if record.expires_at is not None and _as_utc(record.expires_at) <= _as_utc(
-                now
+            if scope_ids is not None and (
+                record.metadata is None or record.metadata.scope_id not in scope_ids
             ):
+                continue
+            if usage_classes is not None and (
+                record.metadata is None
+                or record.metadata.usage_class not in usage_classes
+            ):
+                continue
+            if episode_ids is not None and (
+                record.metadata is None or record.metadata.episode_id not in episode_ids
+            ):
+                continue
+            temporal_decision = temporal_access_decision(
+                temporal_metadata_for(record),
+                cutoff,
+            )
+            if not temporal_decision.usable:
                 continue
             if record.source_ref is None:
                 raise MemoryConsistencyError(
@@ -224,12 +247,17 @@ class MemoryService:
                     namespace_key=record.namespace_key,
                     summary_text=record.summary_text,
                     score=candidate.score,
-                    effective_ts=record.effective_ts,
+                    effective_ts=utc_from_storage(record.effective_ts),
+                    available_at=(
+                        temporal_decision.usable_at
+                        or utc_from_storage(record.effective_ts)
+                    ),
                     asset_id=record.asset_id,
                     memory_type=record.memory_type,
                     importance_score=record.importance_score,
                     source_ref_json=record.source_ref,
                     created_by=record.created_by,
+                    metadata=record.metadata,
                 )
             )
             if len(results) == request.top_k:
@@ -352,9 +380,3 @@ def _vector_metadata(
         "namespace_key": namespace_key,
         "asset_id": asset_id,
     }
-
-
-def _as_utc(value: datetime) -> datetime:
-    if value.tzinfo is None:
-        return value.replace(tzinfo=UTC)
-    return value.astimezone(UTC)

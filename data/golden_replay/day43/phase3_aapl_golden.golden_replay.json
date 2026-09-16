@@ -1,0 +1,174 @@
+{
+  "manifest_schema_version": "golden_replay_manifest_v1",
+  "replay_id": "golden_replay_cebec632adbd5d09f334c4f8",
+  "replay_name": "phase3_aapl_golden",
+  "source_run_id": "20260814T100747Z",
+  "asset_id": "US:AAPL",
+  "research_as_of": "2026-08-14T23:59:59.999999Z",
+  "source_artifact_ids": [
+    "data/live_acceptance/20260814T100747Z/research_data_bundle.json",
+    "data/live_acceptance/20260814T100747Z/duckdb/platform.duckdb",
+    "data/live_acceptance/20260814T100747Z/run_manifest.json",
+    "data/research_state/day38/phase3_aapl_golden.research_state.json",
+    "data/research_episode/day39/phase3_aapl_golden.research_episode.json",
+    "data/research_dataset/day42/phase3_aapl_golden.research_dataset_sample.json"
+  ],
+  "research_state_id": "research_state_fd95d91fbf0a635951884295",
+  "research_episode_id": "research_episode_67b3b89872e7d4246c37d7da",
+  "research_dataset_sample_id": "research_sample_4b98c4b3f722981a81d51f5d",
+  "retrieval_ids": [],
+  "attribution_ids": [],
+  "accepted_claim_count": 54,
+  "rejected_claim_count": 2,
+  "final_research_claim_count": 20,
+  "sector_claims_provided": 0,
+  "sector_claims_used": 0,
+  "events_provided": 0,
+  "events_used": 0,
+  "memory_retrieval_count": 0,
+  "memory_empty_valid": false,
+  "memory_status": "not_available_at_source_run",
+  "temporal_validation_status": "pass",
+  "provider_call_count": 0,
+  "llm_call_count": 0,
+  "versions": [
+    {
+      "component": "temporal_contract",
+      "version": "temporal_contract_v1"
+    },
+    {
+      "component": "research_state_schema",
+      "version": "research_state_snapshot_v1"
+    },
+    {
+      "component": "research_state",
+      "version": "research_state_v1"
+    },
+    {
+      "component": "research_state_feature",
+      "version": "research_state_feature_v1"
+    },
+    {
+      "component": "research_episode_schema",
+      "version": "research_episode_v1"
+    },
+    {
+      "component": "research_dataset_schema",
+      "version": "research_dataset_sample_v1"
+    },
+    {
+      "component": "research_dataset_build",
+      "version": "pit_research_dataset_build_v1"
+    }
+  ],
+  "determinism_checks": [
+    {
+      "check_name": "research_state_semantic_identity",
+      "status": "pass",
+      "evidence_ids": [
+        "research_state_fd95d91fbf0a635951884295"
+      ],
+      "details": "Repeated frozen-artifact build produced the same identity."
+    },
+    {
+      "check_name": "research_episode_identity",
+      "status": "pass",
+      "evidence_ids": [
+        "research_episode_67b3b89872e7d4246c37d7da"
+      ],
+      "details": "Repeated frozen-artifact build produced the same identity."
+    },
+    {
+      "check_name": "research_dataset_sample_identity",
+      "status": "pass",
+      "evidence_ids": [
+        "research_sample_4b98c4b3f722981a81d51f5d"
+      ],
+      "details": "Repeated frozen-artifact build produced the same identity."
+    }
+  ],
+  "leakage_checks": [
+    {
+      "check_name": "future_news",
+      "status": "pass",
+      "evidence_ids": [
+        "future_available"
+      ],
+      "details": "Rejected by Unified Temporal Contract: future_available"
+    },
+    {
+      "check_name": "future_radar_event",
+      "status": "pass",
+      "evidence_ids": [
+        "future_available"
+      ],
+      "details": "Rejected by Unified Temporal Contract: future_available"
+    },
+    {
+      "check_name": "future_memory",
+      "status": "pass",
+      "evidence_ids": [
+        "future_available"
+      ],
+      "details": "Rejected by Unified Temporal Contract: future_available"
+    },
+    {
+      "check_name": "future_sector_membership",
+      "status": "pass",
+      "evidence_ids": [
+        "not_yet_effective"
+      ],
+      "details": "Rejected by Unified Temporal Contract: not_yet_effective"
+    },
+    {
+      "check_name": "future_filing",
+      "status": "pass",
+      "evidence_ids": [
+        "future_available"
+      ],
+      "details": "Rejected by Unified Temporal Contract: future_available"
+    }
+  ],
+  "traceability_examples": [
+    {
+      "trace_name": "deterministic_feature_to_evidence_provider",
+      "status": "complete",
+      "reference_path": [
+        "feature:fundamental_state:fundamentals.book_value_per_share",
+        "ev_2d2ccf555eab159f58a17321",
+        "US:AAPL|2026-06-27|TTM_STANDARDIZED"
+      ],
+      "terminal_providers": [
+        "financial_modeling_prep"
+      ],
+      "limitation": null
+    },
+    {
+      "trace_name": "asset_manager_claim_to_analyst_evidence",
+      "status": "complete",
+      "reference_path": [
+        "research:summary_points:0",
+        "fundamental:canonical:growth",
+        "ev_1ad7070f54b974f9f6cad46c"
+      ],
+      "terminal_providers": [
+        "financial_modeling_prep"
+      ],
+      "limitation": null
+    },
+    {
+      "trace_name": "dataset_to_episode_to_state",
+      "status": "complete",
+      "reference_path": [
+        "research_sample_4b98c4b3f722981a81d51f5d",
+        "research_episode_67b3b89872e7d4246c37d7da",
+        "research_state_fd95d91fbf0a635951884295"
+      ],
+      "terminal_providers": [],
+      "limitation": null
+    }
+  ],
+  "replay_status": "pass",
+  "created_at": "2026-09-01T12:00:00Z",
+  "input_fingerprint": "cebec632adbd5d09f334c4f88a8a3a45c4965abe8973222cd41d2dc4cc238627"
+}

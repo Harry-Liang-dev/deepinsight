@@ -5,7 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 from collections.abc import Sequence
-from datetime import UTC, date, datetime, time
+from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import cast
 
@@ -13,6 +13,7 @@ from src.agents import (
     SectorResearchAgent,
     SectorResearchPromptLoader,
 )
+from src.agents.sector_research import SECTOR_RESEARCH_PROMPT_VERSION
 from src.core import load_settings
 from src.memory.contracts import (
     MissingContext,
@@ -40,10 +41,12 @@ from src.schemas.sector_research import (
     SectorResearchInput,
 )
 from src.services import (
+    LLMFailureMetadata,
     LLMGateway,
     build_configured_llm_provider,
     build_sector_ontology_seed_v1,
 )
+from src.services.research_clock import parse_research_clock
 
 _SECTORS = (
     SectorId.SEMICONDUCTORS_AI_COMPUTE,
@@ -77,6 +80,18 @@ class _MemoryCache:
         """Retain one credential-free cache record."""
 
         self.records[record.cache_key] = record
+
+
+class _FailureCollector:
+    """Retain credential-free Gateway failures for the smoke manifest."""
+
+    def __init__(self) -> None:
+        self.records: list[LLMFailureMetadata] = []
+
+    def record_failure(self, metadata: LLMFailureMetadata) -> None:
+        """Append one immutable diagnostic emitted by the Gateway."""
+
+        self.records.append(metadata)
 
 
 class _FixedSectorGateway:
@@ -163,6 +178,12 @@ def _parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--live", action="store_true")
     parser.add_argument("--model")
+    parser.add_argument("--as-of", type=parse_research_clock)
+    parser.add_argument(
+        "--sector",
+        choices=[item.value for item in _SECTORS],
+        help="Run one Sector only; omitted keeps the three-Sector smoke.",
+    )
     return parser
 
 
@@ -185,11 +206,27 @@ def main(argv: Sequence[str] | None = None) -> int:
     if as_of is None:
         print(json.dumps({"status": "configuration_error", "reason": "state missing"}))
         return 2
-    research_as_of = datetime.combine(as_of, time.max, tzinfo=UTC)
+    clock = args.as_of
+    if clock is not None and clock.snapshot_date != as_of:
+        print(
+            json.dumps(
+                {
+                    "status": "configuration_error",
+                    "reason": "as-of instant and source snapshot date differ",
+                }
+            )
+        )
+        return 2
+    research_as_of = (
+        clock.research_as_of
+        if clock is not None
+        else parse_research_clock(as_of.isoformat()).research_as_of
+    )
 
     provider_name = "fake"
     model_name = args.model or "fixed-sector-smoke-v1"
     gateway: _FixedSectorGateway | LLMGateway = _FixedSectorGateway()
+    failure_collector: _FailureCollector | None = None
     if args.live:
         settings = load_settings()
         try:
@@ -197,10 +234,16 @@ def main(argv: Sequence[str] | None = None) -> int:
         except ValueError:
             print(json.dumps({"status": "not_configured", "provider": "llm"}))
             return 2
-        gateway = LLMGateway(_MemoryCache(), provider=configured.provider)
+        failure_collector = _FailureCollector()
+        gateway = LLMGateway(
+            _MemoryCache(),
+            provider=configured.provider,
+            failure_sink=failure_collector,
+        )
         provider_name = configured.provider_name.value
         model_name = args.model or configured.model_default
 
+    selected_sectors = _SECTORS if args.sector is None else (SectorId(args.sector),)
     inputs = [
         _build_input(
             sector_id,
@@ -209,21 +252,31 @@ def main(argv: Sequence[str] | None = None) -> int:
             macro=macro,
             radar=radar,
         )
-        for sector_id in _SECTORS
+        for sector_id in selected_sectors
     ]
     agent = SectorResearchAgent(
         gateway,
         SectorResearchPromptLoader(args.prompt_root),
     )
     results = []
+    gateway_failures: list[LLMFailureMetadata | None] = []
     try:
         for research_input in inputs:
+            failure_count = (
+                0 if failure_collector is None else len(failure_collector.records)
+            )
             result = agent.run(
                 run_id=f"sector-research-{research_input.sector_id.value}",
                 model_name=model_name,
                 research_input=research_input,
             )
             results.append(result)
+            gateway_failures.append(
+                failure_collector.records[-1]
+                if failure_collector is not None
+                and len(failure_collector.records) > failure_count
+                else None
+            )
     except Exception as exc:  # pragma: no cover - live provider boundary
         print(
             json.dumps(
@@ -238,15 +291,37 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 1
 
     summaries = [
-        _result_summary(research_input, result)
-        for research_input, result in zip(inputs, results, strict=True)
+        _result_summary(
+            research_input,
+            result,
+            provider=provider_name,
+            model=model_name,
+            gateway_failure=gateway_failure,
+        )
+        for research_input, result, gateway_failure in zip(
+            inputs,
+            results,
+            gateway_failures,
+            strict=True,
+        )
     ]
     stamp = datetime.now(UTC)
     run_dir = args.output_root / stamp.strftime("%Y%m%dT%H%M%SZ")
     run_dir.mkdir(parents=True, exist_ok=False)
     output_files: dict[str, str] = {}
+    validation_files: dict[str, str] = {}
     for research_input, result in zip(inputs, results, strict=True):
         if result.output is None:
+            artifact = result.diagnostics.get("validation_artifact")
+            if isinstance(artifact, dict):
+                validation_path = run_dir / (
+                    f"{research_input.sector_id.value}.validation.json"
+                )
+                validation_path.write_text(
+                    json.dumps(artifact, indent=2, sort_keys=True),
+                    encoding="utf-8",
+                )
+                validation_files[research_input.sector_id.value] = str(validation_path)
             continue
         output_path = run_dir / f"{research_input.sector_id.value}.output.json"
         output_path.write_text(
@@ -266,11 +341,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         "provider": provider_name,
         "provider_real": args.live,
         "model": model_name,
-        "prompt_version": "sector_research_prompt_v1",
+        "prompt_version": SECTOR_RESEARCH_PROMPT_VERSION,
         "schema_version": "sector_research_output_v1",
         "source_databases": [str(path) for path in source_paths],
         "memory_context": "explicit_empty_with_missing_context",
         "output_files": output_files,
+        "validation_files": validation_files,
+        "gates": _gate_summary(summaries),
         "sectors": summaries,
     }
     (run_dir / "manifest.json").write_text(
@@ -435,13 +512,30 @@ def _category_for_kind(kind: str) -> str:
     }[kind]
 
 
-def _result_summary(research_input: SectorResearchInput, result: object) -> JsonObject:
+def _result_summary(
+    research_input: SectorResearchInput,
+    result: object,
+    *,
+    provider: str,
+    model: str,
+    gateway_failure: LLMFailureMetadata | None = None,
+) -> JsonObject:
     typed = cast("SectorResearchExecutionResult", result)
     if typed.output is None:
         return {
             "sector_id": research_input.sector_id.value,
             "status": typed.status.value,
             "error_code": None if typed.error is None else typed.error.code,
+            "error_message_safe": (
+                gateway_failure.error_message_safe
+                if gateway_failure is not None
+                else None if typed.error is None else typed.error.message
+            ),
+            "configuration_stage": (
+                None if gateway_failure is None else gateway_failure.configuration_stage
+            ),
+            "provider": provider,
+            "model": model,
             "error_details": None if typed.error is None else typed.error.details,
         }
     output = typed.output
@@ -475,6 +569,9 @@ def _result_summary(research_input: SectorResearchInput, result: object) -> Json
             if research_input.benchmark_mapping is None
             else research_input.benchmark_mapping.status.value
         ),
+        "candidate_claims": len(output.claims) + len(output.rejected_claims),
+        "accepted_claims": len(output.claims),
+        "quarantined_claims": len(output.rejected_claims),
         "valid_claims": len(output.claims),
         "rejected_claims": len(output.rejected_claims),
         "numeric_claims": sum(bool(item.numeric_literals) for item in output.claims),
@@ -485,7 +582,60 @@ def _result_summary(research_input: SectorResearchInput, result: object) -> Json
         "high_radar_events": len(high_ids),
         "high_radar_events_cited": len(high_ids & cited_ids),
         "partial_claims_with_disclosure": len(partial_claims),
+        "partial_evidence_disclosure_status": "PASS",
+        "cycle_assessment_status": output.cycle_assessment.status.value,
+        "effective_supporting_claim_ids": list(
+            output.cycle_assessment.supporting_claim_ids
+        ),
+        "dropped_support_claim_paths": list(
+            output.cycle_assessment.dropped_support_claim_paths
+        ),
+        "retry_count": (
+            None
+            if typed.llm_run_metadata is None
+            else typed.llm_run_metadata.retry_count
+        ),
+        "mandatory_event_coverage_matrix": typed.diagnostics.get(
+            "mandatory_event_coverage_matrix",
+            [],
+        ),
+        "future_leakage_count": _future_event_timestamp_count(research_input),
         "missing_data": list(output.missing_data),
+    }
+
+
+def _future_event_timestamp_count(research_input: SectorResearchInput) -> int:
+    """Count Radar timestamps beyond the canonical research cutoff."""
+
+    timestamp_fields = (
+        "event_time",
+        "published_at",
+        "available_at",
+        "ingested_at",
+        "as_of",
+    )
+    return sum(
+        timestamp > research_input.research_as_of
+        for event in research_input.anomaly_events
+        for field in timestamp_fields
+        if isinstance((timestamp := getattr(event, field)), datetime)
+    )
+
+
+def _gate_summary(summaries: list[JsonObject]) -> JsonObject:
+    """Separate Gateway initialization from Sector contract validation."""
+
+    error_codes = {item.get("error_code") for item in summaries}
+    gateway_failed = bool(
+        error_codes.intersection({"configuration_error", "credential_not_configured"})
+    )
+    return {
+        "gateway_initialization": "FAIL" if gateway_failed else "PASS",
+        "sector_validation": (
+            "NOT_REACHED"
+            if gateway_failed
+            else "FAIL" if "sector_research_validation" in error_codes else "PASS"
+        ),
     }
 
 

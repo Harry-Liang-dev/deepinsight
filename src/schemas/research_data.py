@@ -11,6 +11,7 @@ from pydantic import Field, field_validator, model_validator
 from src.models.identifiers import AssetId
 from src.models.types import DomainModel
 from src.schemas.common import SourceReference
+from src.schemas.temporal import TemporalMetadata, validate_temporal_access
 
 
 class DataCapability(StrEnum):
@@ -298,6 +299,14 @@ class ResearchDataSection(DomainModel):
             raise ValueError("available field count must match unique evidence paths")
         if self.status is DataAvailabilityStatus.PARTIAL and not self.missing_data:
             raise ValueError("partial section requires missing-data entries")
+        for item in self.items:
+            validate_temporal_access(
+                TemporalMetadata(
+                    event_time=item.effective_at,
+                    available_at=item.observed_at,
+                ),
+                self.as_of,
+            )
         return self
 
 
@@ -390,6 +399,4 @@ class ResearchDataBundle(DomainModel):
                 raise ValueError(f"{field_name} has the wrong capability")
             if section.as_of != self.as_of:
                 raise ValueError(f"{field_name} has a different as_of")
-            if any(item.effective_at > self.as_of for item in section.items):
-                raise ValueError(f"{field_name} contains future Evidence")
         return self

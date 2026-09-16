@@ -23,6 +23,7 @@ from src.core.settings import (
     QwenSettings,
 )
 from src.models.types import JsonObject
+from src.services.provider_transport import resolve_provider_transport_config
 
 _SAFE_PROVIDER_METADATA = re.compile(r"^[A-Za-z0-9_.\[\]-]{1,128}$")
 _API_KEY_DISCLOSURE = re.compile(
@@ -108,6 +109,7 @@ class LLMProviderError(RuntimeError):
         provider_retry_after: object = None,
         provider_rate_limit_reset_requests: object = None,
         provider_rate_limit_reset_tokens: object = None,
+        configuration_stage: object = None,
         retry_count: int = 0,
         api_key: str | None = None,
     ) -> None:
@@ -125,11 +127,13 @@ class LLMProviderError(RuntimeError):
             provider_retry_after: Optional Retry-After header.
             provider_rate_limit_reset_requests: Optional request-limit reset.
             provider_rate_limit_reset_tokens: Optional token-limit reset.
+            configuration_stage: Optional safe provider configuration stage.
             retry_count: Number of additional transport attempts already made.
             api_key: Optional credential to redact from diagnostics.
         """
 
-        super().__init__(message)
+        safe_message = _safe_provider_message(message, api_key=api_key)
+        super().__init__(safe_message or "LLM provider request failed")
         self.provider_code = _safe_provider_metadata(provider_code)
         self.provider_param = _safe_provider_metadata(provider_param)
         self.provider_type = _safe_provider_metadata(provider_type)
@@ -154,6 +158,7 @@ class LLMProviderError(RuntimeError):
         self.provider_rate_limit_reset_tokens = _safe_provider_metadata(
             provider_rate_limit_reset_tokens
         )
+        self.configuration_stage = _safe_provider_metadata(configuration_stage)
         self.retry_count = retry_count if 0 <= retry_count <= 100 else 0
 
 
@@ -662,13 +667,30 @@ class OpenAIProvider:
         secret = self._settings.api_key
         if secret is None or not secret.get_secret_value().strip():
             raise CredentialNotConfigured(
-                f"{self._provider_label} API key is not configured"
+                f"{self._provider_label} API key is not configured",
+                configuration_stage="credential_resolution",
             )
 
         try:
-            if self._base_url is None:
+            transport = resolve_provider_transport_config()
+            http_client = transport.build_http_client()
+            if self._base_url is None and http_client is None:
                 sdk_client = OpenAI(
                     api_key=secret.get_secret_value(),
+                    timeout=float(self._settings.timeout_seconds),
+                    max_retries=0,
+                )
+            elif self._base_url is None:
+                sdk_client = OpenAI(
+                    api_key=secret.get_secret_value(),
+                    timeout=float(self._settings.timeout_seconds),
+                    max_retries=0,
+                    http_client=http_client,
+                )
+            elif http_client is None:
+                sdk_client = OpenAI(
+                    api_key=secret.get_secret_value(),
+                    base_url=self._base_url,
                     timeout=float(self._settings.timeout_seconds),
                     max_retries=0,
                 )
@@ -678,6 +700,7 @@ class OpenAIProvider:
                     base_url=self._base_url,
                     timeout=float(self._settings.timeout_seconds),
                     max_retries=0,
+                    http_client=http_client,
                 )
             self._client = cast(_OpenAIClient, sdk_client)
         except ValueError as exc:
@@ -685,14 +708,17 @@ class OpenAIProvider:
             if "socks" in message or "socksio" in message:
                 raise LLMConfigurationError(
                     f"{self._provider_label} client initialization requires "
-                    "HTTPX SOCKS support"
+                    "HTTPX SOCKS support",
+                    configuration_stage="client_initialization",
                 ) from None
             raise LLMConfigurationError(
-                f"{self._provider_label} client initialization failed"
+                f"{self._provider_label} client initialization failed",
+                configuration_stage="client_initialization",
             ) from None
         except Exception:
             raise LLMConfigurationError(
-                f"{self._provider_label} client initialization failed"
+                f"{self._provider_label} client initialization failed",
+                configuration_stage="client_initialization",
             ) from None
         return self._client
 
@@ -732,7 +758,10 @@ class QwenProvider(OpenAIProvider):
 
         secret = settings.api_key
         if secret is None or not secret.get_secret_value().strip():
-            raise CredentialNotConfigured("Qwen API key is not configured")
+            raise CredentialNotConfigured(
+                "Qwen API key is not configured",
+                configuration_stage="credential_resolution",
+            )
         super().__init__(
             settings,
             request_extra_body={"enable_thinking": settings.enable_thinking},

@@ -7,10 +7,12 @@ import re
 from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from copy import deepcopy
 from dataclasses import dataclass
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, time
 from html.parser import HTMLParser
 from typing import NoReturn
 from urllib.parse import urlencode
+from xml.etree import ElementTree
+from zoneinfo import ZoneInfo
 
 from src.adapters.base import (
     BaseProviderAdapter,
@@ -430,6 +432,40 @@ class SECEDGARAdapter(BaseProviderAdapter):
         return dict(decoded)
 
 
+class FREDProviderRequestError(ProviderUnavailableError):
+    """Sanitized structured FRED HTTP failure without credential values."""
+
+    def __init__(
+        self,
+        *,
+        status_code: int,
+        fred_error_code: int | str | None,
+        fred_error_message_safe: str,
+        request_parameter_names: tuple[str, ...],
+        realtime_start: str | None,
+        realtime_end: str | None,
+    ) -> None:
+        """Store safe provider diagnostics for operators and tests."""
+
+        self.provider = "fred"
+        self.status_code = status_code
+        self.fred_error_code = fred_error_code
+        self.fred_error_message_safe = fred_error_message_safe
+        self.request_parameter_names = request_parameter_names
+        self.realtime_start = realtime_start
+        self.realtime_end = realtime_end
+        message = {
+            "provider": self.provider,
+            "status_code": self.status_code,
+            "fred_error_code": self.fred_error_code,
+            "fred_error_message_safe": self.fred_error_message_safe,
+            "request_parameter_names": self.request_parameter_names,
+            "realtime_start": self.realtime_start,
+            "realtime_end": self.realtime_end,
+        }
+        super().__init__(json.dumps(message, sort_keys=True))
+
+
 class FREDAdapter(BaseProviderAdapter):
     """Official FRED/ALFRED point-in-time macro-series adapter."""
 
@@ -437,6 +473,9 @@ class FREDAdapter(BaseProviderAdapter):
     market_scope = "US"
     access_mode = "official"
     _API_ROOT = "https://api.stlouisfed.org/fred"
+    PROVIDER_TIMEZONE = "America/Chicago"
+    REALTIME_SEMANTICS_VERSION = "fred_provider_calendar_closed_v1"
+    _PROVIDER_TIMEZONE = ZoneInfo(PROVIDER_TIMEZONE)
     DEFAULT_SERIES = (
         "FEDFUNDS",
         "DGS2",
@@ -505,6 +544,9 @@ class FREDAdapter(BaseProviderAdapter):
             "series_count": len(self.DEFAULT_SERIES),
             "max_retries": self._max_retries,
             "requests_per_second": self._requests_per_second,
+            "provider_timezone": self.PROVIDER_TIMEZONE,
+            "realtime_semantics": self.REALTIME_SEMANTICS_VERSION,
+            "realtime_precision": "date",
         }
 
     def fetch_instruments(self) -> Iterable[ProviderRecord]:
@@ -538,14 +580,16 @@ class FREDAdapter(BaseProviderAdapter):
         series_ids: Sequence[str],
         start_date: date,
         end_date: date,
-        as_of: date,
+        as_of: date | datetime,
     ) -> Iterable[ProviderRecord]:
         """Return approved observations as they were known on ``as_of``."""
 
         if end_date < start_date:
             raise ValueError("FRED end_date cannot precede start_date")
-        if end_date > as_of:
+        global_as_of_date = _global_as_of_date(as_of)
+        if end_date > global_as_of_date:
             raise ValueError("FRED observation window cannot exceed as_of")
+        realtime_cutoff = self.provider_realtime_cutoff(as_of)
         approved = tuple(series_ids) if series_ids else self.DEFAULT_SERIES
         unsupported = sorted(set(approved) - set(self.DEFAULT_SERIES))
         if unsupported:
@@ -573,8 +617,8 @@ class FREDAdapter(BaseProviderAdapter):
                     ("series_id", series_id),
                     ("observation_start", start_date.isoformat()),
                     ("observation_end", end_date.isoformat()),
-                    ("realtime_start", as_of.isoformat()),
-                    ("realtime_end", as_of.isoformat()),
+                    ("realtime_start", realtime_cutoff.isoformat()),
+                    ("realtime_end", realtime_cutoff.isoformat()),
                     ("sort_order", "asc"),
                     ("limit", 100000),
                 ),
@@ -601,6 +645,15 @@ class FREDAdapter(BaseProviderAdapter):
                     raise ProviderUnavailableError(
                         "FRED observation is missing date lineage"
                     )
+                if observation_date > end_date:
+                    raise ProviderUnavailableError(
+                        "FRED observation exceeds the requested observation window"
+                    )
+                if realtime_start != realtime_cutoff or realtime_end != realtime_cutoff:
+                    raise ProviderUnavailableError(
+                        "FRED observation vintage metadata does not match the "
+                        "provider cutoff"
+                    )
                 records.append(
                     {
                         "series_id": series_id,
@@ -614,11 +667,27 @@ class FREDAdapter(BaseProviderAdapter):
                         "realtime_end": realtime_end.isoformat(),
                         "source_locator": (
                             f"fred:series:{series_id}:observation:"
-                            f"{observation_date.isoformat()}:vintage:{as_of.isoformat()}"
+                            f"{observation_date.isoformat()}:vintage:"
+                            f"{realtime_cutoff.isoformat()}"
                         ),
                     }
                 )
         return records
+
+    @classmethod
+    def provider_realtime_cutoff(cls, research_as_of: date | datetime) -> date:
+        """Project a global instant onto FRED's America/Chicago calendar.
+
+        Date-only inputs retain the established historical ALFRED replay
+        contract. Runtime callers should pass a timezone-aware instant so DST
+        and the UTC/provider date boundary are handled deterministically.
+        """
+
+        if isinstance(research_as_of, datetime):
+            if research_as_of.tzinfo is None or research_as_of.utcoffset() is None:
+                raise ValueError("FRED research_as_of datetime must be timezone-aware")
+            return research_as_of.astimezone(cls._PROVIDER_TIMEZONE).date()
+        return research_as_of
 
     def _load_json(
         self,
@@ -633,6 +702,14 @@ class FREDAdapter(BaseProviderAdapter):
                 self._http_client.get_text(
                     f"{self._API_ROOT}/{path}?{query}",
                     accept="application/json",
+                    status_error_factory=lambda status_code, body: (
+                        _fred_request_error(
+                            status_code=status_code,
+                            body=body,
+                            parameters=parameters,
+                            api_key=self._api_key,
+                        )
+                    ),
                 )
             )
         except (TypeError, ValueError) as exc:
@@ -640,6 +717,78 @@ class FREDAdapter(BaseProviderAdapter):
         if not isinstance(payload, dict):
             raise ProviderUnavailableError("FRED response must be an object")
         return dict(payload)
+
+
+def _global_as_of_date(research_as_of: date | datetime) -> date:
+    """Return the UTC calendar date without consulting host-local time."""
+
+    if isinstance(research_as_of, datetime):
+        if research_as_of.tzinfo is None or research_as_of.utcoffset() is None:
+            raise ValueError("FRED research_as_of datetime must be timezone-aware")
+        return research_as_of.astimezone(UTC).date()
+    return research_as_of
+
+
+def _fred_request_error(
+    *,
+    status_code: int,
+    body: str,
+    parameters: Sequence[tuple[str, str | int]],
+    api_key: str,
+) -> FREDProviderRequestError:
+    """Convert a FRED JSON/XML error into credential-safe diagnostics."""
+
+    error_code, error_message = _fred_error_fields(body)
+    safe_message = " ".join(error_message.split())[:500]
+    if api_key:
+        safe_message = safe_message.replace(api_key, "[REDACTED]")
+    safe_message = re.sub(
+        r"(?i)(api_key\s*[=:]\s*)[^&\s]+",
+        r"\1[REDACTED]",
+        safe_message,
+    )
+    if not safe_message:
+        safe_message = "FRED returned an unspecified error"
+    parameter_values = dict(parameters)
+    return FREDProviderRequestError(
+        status_code=status_code,
+        fred_error_code=error_code,
+        fred_error_message_safe=safe_message,
+        request_parameter_names=tuple(
+            sorted({name for name, _ in parameters} | {"api_key", "file_type"})
+        ),
+        realtime_start=_optional_parameter_text(parameter_values.get("realtime_start")),
+        realtime_end=_optional_parameter_text(parameter_values.get("realtime_end")),
+    )
+
+
+def _fred_error_fields(body: str) -> tuple[int | str | None, str]:
+    """Read only FRED's documented safe error code and message fields."""
+
+    try:
+        payload = json.loads(body)
+    except (TypeError, ValueError):
+        payload = None
+    if isinstance(payload, dict):
+        code = payload.get("error_code")
+        message = payload.get("error_message")
+        return (
+            code if isinstance(code, int | str) else None,
+            message if isinstance(message, str) else "",
+        )
+    try:
+        root = ElementTree.fromstring(body)
+    except ElementTree.ParseError:
+        return None, ""
+    code = root.attrib.get("code") or root.findtext("error_code")
+    message = root.attrib.get("message") or root.findtext("error_message") or ""
+    return code, message
+
+
+def _optional_parameter_text(value: str | int | None) -> str | None:
+    if value is None:
+        return None
+    return str(value)
 
 
 class AlpacaAdapter(BaseProviderAdapter):
@@ -650,6 +799,7 @@ class AlpacaAdapter(BaseProviderAdapter):
     access_mode = "official"
     _BARS_PATH = "/v2/stocks/bars"
     _NEWS_PATH = "/v1beta1/news"
+    _NEWS_WINDOW_SEMANTICS = "alpaca_news_created_at_utc_closed_day_v1"
     _FEEDS = frozenset({"iex", "sip"})
     _ADJUSTMENTS = frozenset({"raw", "split", "dividend", "spin-off", "all"})
 
@@ -741,6 +891,16 @@ class AlpacaAdapter(BaseProviderAdapter):
         self._max_pages = max_pages
         self._news_page_limit = news_page_limit
         self._include_news_content = include_news_content
+        self._last_news_fetch_diagnostics: JsonObject = {
+            "window_semantics": self._NEWS_WINDOW_SEMANTICS,
+            "status": "not_run",
+            "provider_returned_count": 0,
+            "accepted_count": 0,
+            "filtered_count": 0,
+            "rejected_count": 0,
+            "filter_reasons": {},
+            "page_count": 0,
+        }
         self._http_client = ProviderHTTPClient(
             user_agent=user_agent,
             request_timeout=request_timeout,
@@ -770,6 +930,11 @@ class AlpacaAdapter(BaseProviderAdapter):
             "capabilities": ["eod_bars", "news"],
             "coverage_scope": _alpaca_coverage_scope(self._feed),
         }
+
+    def news_fetch_diagnostics(self) -> JsonObject:
+        """Return credential-free statistics for the latest News fetch."""
+
+        return deepcopy(self._last_news_fetch_diagnostics)
 
     def fetch_instruments(self) -> Iterable[ProviderRecord]:
         """Return no instrument master data from the historical-bars endpoint."""
@@ -884,17 +1049,28 @@ class AlpacaAdapter(BaseProviderAdapter):
         start_date: date,
         end_date: date,
     ) -> Iterable[ProviderRecord]:
-        """Return paginated, source-attributed official Alpaca News records."""
+        """Return Alpaca News published inside an inclusive UTC date window.
+
+        Alpaca can return an older article when ``updated_at`` is inside the
+        provider query window. Such before-start publication overfetch is
+        filtered deterministically. A creation or update after the inclusive
+        end-of-day research cutoff is rejected rather than filtered.
+        """
 
         if end_date < start_date:
             raise ValueError("Alpaca news end_date cannot precede start_date")
         symbol_to_asset = _alpaca_symbol_mapping(asset_ids)
         if not symbol_to_asset:
             return ()
+        window_start, window_end = _alpaca_news_window(start_date, end_date)
         records: list[ProviderRecord] = []
         page_token: str | None = None
         seen_tokens: set[str] = set()
         seen_news: set[str] = set()
+        raw_count = 0
+        filtered_count = 0
+        filter_reasons: dict[str, int] = {}
+        page_count = 0
         for _ in range(self._max_pages):
             payload = self._load_news_page(
                 symbols=list(symbol_to_asset),
@@ -902,12 +1078,14 @@ class AlpacaAdapter(BaseProviderAdapter):
                 end_date=end_date,
                 page_token=page_token,
             )
+            page_count += 1
             news = payload.get("news")
             if not isinstance(news, list):
                 raise ProviderUnavailableError(
                     "Alpaca news response must contain a news array"
                 )
             for raw in news:
+                raw_count += 1
                 mapped = _alpaca_news_record(
                     raw,
                     symbol_to_asset=symbol_to_asset,
@@ -916,17 +1094,81 @@ class AlpacaAdapter(BaseProviderAdapter):
                 created_at = datetime.fromisoformat(
                     str(mapped["created_at"]).replace("Z", "+00:00")
                 )
-                if not start_date <= created_at.date() <= end_date:
-                    raise ProviderUnavailableError(
-                        "Alpaca returned news outside the requested range"
-                    )
+                updated_at = datetime.fromisoformat(
+                    str(mapped["updated_at"]).replace("Z", "+00:00")
+                )
                 identity = str(mapped["news_id"])
+                if updated_at < created_at:
+                    self._record_news_fetch_diagnostics(
+                        window_start=window_start,
+                        window_end=window_end,
+                        raw_count=raw_count,
+                        accepted_count=len(records),
+                        filtered_count=filtered_count,
+                        rejected_count=1,
+                        filter_reasons={
+                            **filter_reasons,
+                            "timestamp_ambiguous": (
+                                filter_reasons.get("timestamp_ambiguous", 0) + 1
+                            ),
+                        },
+                        page_count=page_count,
+                        status="provider_error",
+                    )
+                    raise ProviderUnavailableError(
+                        "Alpaca news updated_at precedes created_at: "
+                        f"news_id={identity}"
+                    )
+                if max(created_at, updated_at) > window_end:
+                    self._record_news_fetch_diagnostics(
+                        window_start=window_start,
+                        window_end=window_end,
+                        raw_count=raw_count,
+                        accepted_count=len(records),
+                        filtered_count=filtered_count,
+                        rejected_count=1,
+                        filter_reasons={
+                            **filter_reasons,
+                            "after_research_as_of": (
+                                filter_reasons.get("after_research_as_of", 0) + 1
+                            ),
+                        },
+                        page_count=page_count,
+                        status="provider_error",
+                    )
+                    raise ProviderUnavailableError(
+                        "Alpaca news exceeds the research cutoff: "
+                        f"news_id={identity} created_at={created_at.isoformat()} "
+                        f"updated_at={updated_at.isoformat()} "
+                        f"research_as_of={window_end.isoformat()}"
+                    )
+                if created_at < window_start:
+                    filtered_count += 1
+                    filter_reasons["before_start"] = (
+                        filter_reasons.get("before_start", 0) + 1
+                    )
+                    continue
                 if identity in seen_news:
+                    filtered_count += 1
+                    filter_reasons["duplicate_news_id"] = (
+                        filter_reasons.get("duplicate_news_id", 0) + 1
+                    )
                     continue
                 seen_news.add(identity)
                 records.append(mapped)
             token_value = payload.get("next_page_token")
             if token_value in {None, ""}:
+                self._record_news_fetch_diagnostics(
+                    window_start=window_start,
+                    window_end=window_end,
+                    raw_count=raw_count,
+                    accepted_count=len(records),
+                    filtered_count=filtered_count,
+                    rejected_count=0,
+                    filter_reasons=filter_reasons,
+                    page_count=page_count,
+                    status="ok",
+                )
                 return records
             if not isinstance(token_value, str) or token_value in seen_tokens:
                 raise ProviderUnavailableError(
@@ -938,6 +1180,33 @@ class AlpacaAdapter(BaseProviderAdapter):
             "Alpaca news pagination exceeded the safety limit"
         )
 
+    def _record_news_fetch_diagnostics(
+        self,
+        *,
+        window_start: datetime,
+        window_end: datetime,
+        raw_count: int,
+        accepted_count: int,
+        filtered_count: int,
+        rejected_count: int,
+        filter_reasons: Mapping[str, int],
+        page_count: int,
+        status: str,
+    ) -> None:
+        self._last_news_fetch_diagnostics = {
+            "window_semantics": self._NEWS_WINDOW_SEMANTICS,
+            "status": status,
+            "request_start": window_start.isoformat(),
+            "request_end": window_end.isoformat(),
+            "research_as_of": window_end.isoformat(),
+            "provider_returned_count": raw_count,
+            "accepted_count": accepted_count,
+            "filtered_count": filtered_count,
+            "rejected_count": rejected_count,
+            "filter_reasons": dict(sorted(filter_reasons.items())),
+            "page_count": page_count,
+        }
+
     def _load_news_page(
         self,
         *,
@@ -946,10 +1215,11 @@ class AlpacaAdapter(BaseProviderAdapter):
         end_date: date,
         page_token: str | None,
     ) -> JsonObject:
+        window_start, window_end = _alpaca_news_window(start_date, end_date)
         parameters: list[tuple[str, str | int]] = [
             ("symbols", ",".join(symbols)),
-            ("start", start_date.isoformat()),
-            ("end", end_date.isoformat()),
+            ("start", _utc_rfc3339(window_start)),
+            ("end", _utc_rfc3339(window_end)),
             ("limit", self._news_page_limit),
             ("sort", "asc"),
             ("include_content", str(self._include_news_content).lower()),
@@ -1214,6 +1484,21 @@ def _alpaca_coverage_scope(feed: str) -> str:
     if feed == "iex":
         return "IEX single-exchange US equity feed; not consolidated SIP"
     return "SIP consolidated US equity feed"
+
+
+def _alpaca_news_window(start_date: date, end_date: date) -> tuple[datetime, datetime]:
+    """Return the versioned inclusive UTC date window used for Alpaca News."""
+
+    return (
+        datetime.combine(start_date, time.min, tzinfo=UTC),
+        datetime.combine(end_date, time.max, tzinfo=UTC),
+    )
+
+
+def _utc_rfc3339(value: datetime) -> str:
+    """Serialize one UTC-aware timestamp without local-time ambiguity."""
+
+    return value.astimezone(UTC).isoformat().replace("+00:00", "Z")
 
 
 def _alpaca_news_record(

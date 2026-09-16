@@ -13,6 +13,7 @@ import yaml  # type: ignore[import-untyped]
 from pydantic import ValidationError
 
 from src.agents.evidence import numeric_literals
+from src.agents.numeric_grounding import validate_numeric_grounding
 from src.models.compliance import infer_claim_intent, prohibited_claim_intent
 from src.models.enums import (
     AgentStatus,
@@ -22,7 +23,7 @@ from src.models.enums import (
     SectorCapabilityStatus,
 )
 from src.models.protocols import MemoryServiceProtocol
-from src.models.types import DomainModel, JsonObject
+from src.models.types import DomainModel, JsonObject, JsonValue
 from src.schemas.agents import RejectedClaim, RoleEvidenceManifestEntry
 from src.schemas.common import ErrorInfo, SourceReference
 from src.schemas.llm import LLMRunMetadata
@@ -36,16 +37,18 @@ from src.schemas.sector_research import (
     SectorResearchExecutionResult,
     SectorResearchInput,
     SectorResearchOutput,
+    SectorResearchValidationStage,
     SectorValidatedClaim,
 )
 from src.schemas.sectors import CoveredSectorMetric
 from src.services.llm_gateway import LLMCacheError, LLMSchemaValidationError
 from src.services.llm_provider import LLMProviderError
 
-SECTOR_RESEARCH_PROMPT_VERSION = "sector_research_prompt_v1"
+SECTOR_RESEARCH_PROMPT_VERSION = "sector_research_prompt_v4"
 SECTOR_RESEARCH_MODEL_VERSION = "sector_research_agent_v1"
 SECTOR_RESEARCH_SCHEMA_VERSION = "sector_research_output_v1"
 _MINIMUM_VALID_CLAIMS = 3
+_MINIMUM_ACCEPTED_CYCLE_SUPPORT = 1
 _CAUSAL_LANGUAGE = re.compile(
     r"\b(cause[sd]?|causing|drives?|driven by|leads? to|results? in|because of)\b",
     re.IGNORECASE,
@@ -58,6 +61,14 @@ _DEGRADATION_LANGUAGE = re.compile(
     r"\b(partial|proxy|limited|insufficient|incomplete|uncertain)\b",
     re.IGNORECASE,
 )
+
+
+class _SectorResearchValidationError(ValueError):
+    """Carry a credential-free, machine-readable local validation failure."""
+
+    def __init__(self, message: str, *, details: JsonObject) -> None:
+        super().__init__(message)
+        self.details = details
 
 
 class SectorResearchPrompt(DomainModel):
@@ -141,6 +152,8 @@ class SectorResearchAgent:
         evidence = build_sector_research_evidence(research_input)
         payload = _compact_prompt_payload(research_input, evidence)
         metadata: LLMRunMetadata | None = None
+        raw: JsonObject | None = None
+        draft: SectorResearchDraftResponse | None = None
         try:
             raw, metadata = _invoke_gateway(
                 self._gateway,
@@ -149,7 +162,7 @@ class SectorResearchAgent:
                 payload=payload,
             )
             draft = SectorResearchDraftResponse.model_validate(raw)
-            output = _promote_output(
+            output, event_coverage = _promote_output(
                 research_input=research_input,
                 evidence=evidence,
                 draft=draft,
@@ -169,6 +182,22 @@ class SectorResearchAgent:
                         bool(item.numeric_literals) for item in output.claims
                     ),
                     "memory_writes": len(memory_results),
+                    "claim_status_map": _claim_status_map(draft, output),
+                    "cycle_assessment_status": output.cycle_assessment.status.value,
+                    "effective_supporting_claim_ids": list(
+                        output.cycle_assessment.supporting_claim_ids
+                    ),
+                    "dropped_support_claim_paths": list(
+                        output.cycle_assessment.dropped_support_claim_paths
+                    ),
+                    "mandatory_event_coverage_matrix": cast(
+                        JsonValue,
+                        event_coverage,
+                    ),
+                    "mandatory_high_events": len(event_coverage),
+                    "covered_high_events": sum(
+                        item["coverage_status"] == "COVERED" for item in event_coverage
+                    ),
                 },
             )
         except LLMCacheError:
@@ -185,14 +214,10 @@ class SectorResearchAgent:
         except LLMProviderError as exc:
             details: JsonObject | None = None
             if isinstance(exc, LLMSchemaValidationError):
-                details = {
-                    "schema_name": exc.schema_name,
-                    "schema_version": exc.schema_version,
-                    "validation_errors": [
-                        {"path": path, "error_type": error_type}
-                        for path, error_type in exc.validation_errors
-                    ],
-                }
+                details = _gateway_schema_diagnostics(
+                    exc,
+                    sector_id=research_input.sector_id.value,
+                )
             return SectorResearchExecutionResult(
                 run_id=run_id,
                 status=AgentStatus.ERROR,
@@ -204,7 +229,15 @@ class SectorResearchAgent:
                 ),
                 llm_run_metadata=metadata,
             )
-        except (ValidationError, ValueError) as exc:
+        except _SectorResearchValidationError as exc:
+            contract_diagnostics: JsonObject = {}
+            if draft is not None:
+                contract_diagnostics["validation_artifact"] = {
+                    "schema_version": SECTOR_RESEARCH_SCHEMA_VERSION,
+                    "sector_id": research_input.sector_id.value,
+                    "research_as_of": research_input.research_as_of.isoformat(),
+                    "structured_response": draft.model_dump(mode="json"),
+                }
             return SectorResearchExecutionResult(
                 run_id=run_id,
                 status=AgentStatus.ERROR,
@@ -212,8 +245,46 @@ class SectorResearchAgent:
                     code="sector_research_validation",
                     message=str(exc),
                     retryable=False,
+                    details=exc.details,
                 ),
                 llm_run_metadata=metadata,
+                diagnostics=contract_diagnostics,
+            )
+        except (ValidationError, ValueError) as exc:
+            details = (
+                _pydantic_validation_diagnostics(
+                    exc,
+                    sector_id=research_input.sector_id.value,
+                )
+                if isinstance(exc, ValidationError)
+                else _validation_details(
+                    stage=SectorResearchValidationStage.OTHER,
+                    field_path="sector_research",
+                    error_code="UNCLASSIFIED_LOCAL_VALIDATION",
+                    expected="Valid Sector research contract semantics.",
+                    observed="Local validation rejected the structured response.",
+                    sector_id=research_input.sector_id.value,
+                )
+            )
+            schema_diagnostics: JsonObject = {}
+            if raw is not None:
+                schema_diagnostics["validation_artifact"] = {
+                    "schema_version": SECTOR_RESEARCH_SCHEMA_VERSION,
+                    "sector_id": research_input.sector_id.value,
+                    "research_as_of": research_input.research_as_of.isoformat(),
+                    "structured_response": raw,
+                }
+            return SectorResearchExecutionResult(
+                run_id=run_id,
+                status=AgentStatus.ERROR,
+                error=ErrorInfo(
+                    code="sector_research_validation",
+                    message=str(exc),
+                    retryable=False,
+                    details=details,
+                ),
+                llm_run_metadata=metadata,
+                diagnostics=schema_diagnostics,
             )
 
     def _persist_memory(
@@ -511,6 +582,117 @@ def build_sector_research_evidence(
     return tuple(unique[key] for key in sorted(unique))
 
 
+def _validation_details(
+    *,
+    stage: SectorResearchValidationStage,
+    field_path: str,
+    error_code: str,
+    expected: str,
+    observed: str,
+    sector_id: str,
+    claim_id: str | None = None,
+    event_id: str | None = None,
+    chain_id: str | None = None,
+) -> JsonObject:
+    """Build one bounded diagnostic without raw provider or credential content."""
+
+    return {
+        "validation_stage": stage.value,
+        "field_path": field_path,
+        "error_code": error_code,
+        "expected_semantics": expected,
+        "observed_semantics_summary": observed,
+        "related_claim_id": claim_id,
+        "related_event_id": event_id,
+        "related_sector_id": sector_id,
+        "related_chain_id": chain_id,
+    }
+
+
+def _pydantic_field_path(location: tuple[int | str, ...]) -> str:
+    """Render a Pydantic location as an actionable contract field path."""
+
+    result = ""
+    for part in location:
+        if isinstance(part, int):
+            result += f"[{part}]"
+        elif result:
+            result += f".{part}"
+        else:
+            result = part
+    return result or "model"
+
+
+def _schema_stage(error_type: str) -> SectorResearchValidationStage:
+    """Classify a schema error into the stable Sector diagnostic taxonomy."""
+
+    if error_type == "missing":
+        return SectorResearchValidationStage.REQUIRED_FIELD
+    if "enum" in error_type or error_type == "literal_error":
+        return SectorResearchValidationStage.ENUM
+    if error_type in {
+        "too_short",
+        "too_long",
+        "list_too_short",
+        "list_too_long",
+        "tuple_too_short",
+        "tuple_too_long",
+    }:
+        return SectorResearchValidationStage.CARDINALITY
+    return SectorResearchValidationStage.SCHEMA_PARSE
+
+
+def _pydantic_validation_diagnostics(
+    exc: ValidationError,
+    *,
+    sector_id: str,
+) -> JsonObject:
+    """Reduce Pydantic diagnostics to safe paths and semantic error classes."""
+
+    errors = exc.errors(include_url=False, include_context=False, include_input=False)
+    first = errors[0]
+    location = first["loc"]
+    error_type = str(first["type"])
+    return _validation_details(
+        stage=_schema_stage(error_type),
+        field_path=_pydantic_field_path(location),
+        error_code=f"SCHEMA_{error_type.upper()}",
+        expected="Value satisfying the versioned Sector structured-output schema.",
+        observed=f"Pydantic error type={error_type}; total_errors={len(errors)}.",
+        sector_id=sector_id,
+    )
+
+
+def _gateway_schema_diagnostics(
+    exc: LLMSchemaValidationError,
+    *,
+    sector_id: str,
+) -> JsonObject:
+    """Normalize Gateway schema failures into the Sector diagnostic taxonomy."""
+
+    first_path, first_type = (
+        exc.validation_errors[0]
+        if exc.validation_errors
+        else ("model", "unknown_schema_error")
+    )
+    details = _validation_details(
+        stage=_schema_stage(first_type),
+        field_path=first_path,
+        error_code=f"SCHEMA_{first_type.upper()}",
+        expected=(f"Response satisfying {exc.schema_name} at {exc.schema_version}."),
+        observed=(
+            f"Gateway schema error type={first_type}; "
+            f"total_errors={len(exc.validation_errors)}."
+        ),
+        sector_id=sector_id,
+    )
+    details["validation_errors"] = [
+        {"path": path, "error_type": error_type}
+        for path, error_type in exc.validation_errors
+    ]
+    return details
+
+
 def _promote_output(
     *,
     research_input: SectorResearchInput,
@@ -518,8 +700,45 @@ def _promote_output(
     draft: SectorResearchDraftResponse,
     model_name: str,
     prompt_version: str,
-) -> SectorResearchOutput:
+) -> tuple[SectorResearchOutput, list[JsonObject]]:
     evidence_index = {item.entry.evidence_id: item for item in evidence}
+    submitted_paths = tuple(item.claim_path for item in draft.claims)
+    duplicate_paths = tuple(
+        dict.fromkeys(
+            path for path in submitted_paths if submitted_paths.count(path) > 1
+        )
+    )
+    if duplicate_paths:
+        raise _SectorResearchValidationError(
+            "Sector draft Claim paths must be unique",
+            details=_validation_details(
+                stage=SectorResearchValidationStage.DUPLICATE_ID,
+                field_path="claims",
+                error_code="DUPLICATE_CLAIM_PATH",
+                expected="Each submitted Claim path is unique.",
+                observed=f"Duplicate paths: {','.join(duplicate_paths)}.",
+                sector_id=research_input.sector_id.value,
+                claim_id=duplicate_paths[0],
+            ),
+        )
+    unknown_support_paths = tuple(
+        path
+        for path in draft.cycle_assessment.supporting_claim_paths
+        if path not in set(submitted_paths)
+    )
+    if unknown_support_paths:
+        raise _SectorResearchValidationError(
+            "Sector cycle references an unknown submitted Claim",
+            details=_validation_details(
+                stage=SectorResearchValidationStage.UNKNOWN_REFERENCE,
+                field_path="cycle_assessment.supporting_claim_paths",
+                error_code="UNKNOWN_CLAIM_REFERENCE",
+                expected="Every cycle support path identifies a submitted Claim.",
+                observed=f"Unknown path: {unknown_support_paths[0]}.",
+                sector_id=research_input.sector_id.value,
+                claim_id=unknown_support_paths[0],
+            ),
+        )
     accepted: list[SectorValidatedClaim] = []
     rejected: list[RejectedClaim] = []
     path_to_id: dict[str, str] = {}
@@ -561,23 +780,100 @@ def _promote_output(
         accepted.append(claim)
         path_to_id[item.claim_path] = claim_id
     if len(accepted) < _MINIMUM_VALID_CLAIMS:
-        raise ValueError(
-            f"Sector research retained {len(accepted)} valid Claims; "
-            f"minimum is {_MINIMUM_VALID_CLAIMS}"
+        reason_counts: dict[str, int] = {}
+        for rejected_claim in rejected:
+            reason_counts[rejected_claim.reason] = (
+                reason_counts.get(rejected_claim.reason, 0) + 1
+            )
+        reasons = (
+            ",".join(
+                f"{reason}={count}" for reason, count in sorted(reason_counts.items())
+            )
+            or "none"
         )
-    _validate_required_event_coverage(research_input, accepted)
+        details = _validation_details(
+            stage=SectorResearchValidationStage.CARDINALITY,
+            field_path="claims",
+            error_code="MINIMUM_VALID_CLAIMS_NOT_MET",
+            expected=f"At least {_MINIMUM_VALID_CLAIMS} accepted Claims.",
+            observed=(
+                f"submitted={len(draft.claims)}; accepted={len(accepted)}; "
+                f"rejected={len(rejected)}; rejection_reasons={reasons}."
+            ),
+            sector_id=research_input.sector_id.value,
+            claim_id=(rejected[0].claim_path if rejected else None),
+        )
+        details["rejected_claims"] = [
+            {
+                "claim_path": item.claim_path,
+                "reason": item.reason,
+                "evidence_ids": list(item.evidence_ids),
+                "numeric_literals": list(item.numeric_literals),
+            }
+            for item in rejected
+        ]
+        raise _SectorResearchValidationError(
+            f"Sector research retained {len(accepted)} valid Claims; "
+            f"minimum is {_MINIMUM_VALID_CLAIMS}",
+            details=details,
+        )
+    event_coverage = _mandatory_event_coverage_matrix(
+        research_input=research_input,
+        draft=draft,
+        path_to_id=path_to_id,
+        rejected=rejected,
+    )
+    _validate_required_event_coverage(event_coverage)
     supporting_ids = tuple(
         path_to_id[path]
         for path in draft.cycle_assessment.supporting_claim_paths
         if path in path_to_id
     )
-    if not supporting_ids:
-        raise ValueError("Sector cycle has no accepted supporting Claim")
+    rejected_support_paths = tuple(
+        path
+        for path in draft.cycle_assessment.supporting_claim_paths
+        if path not in path_to_id
+    )
+    if len(supporting_ids) < _MINIMUM_ACCEPTED_CYCLE_SUPPORT:
+        details = _validation_details(
+            stage=SectorResearchValidationStage.CLAIM_LINEAGE,
+            field_path="cycle_assessment.supporting_claim_paths",
+            error_code="INSUFFICIENT_ACCEPTED_CYCLE_SUPPORT",
+            expected=(
+                "Cycle assessment retains at least "
+                f"{_MINIMUM_ACCEPTED_CYCLE_SUPPORT} accepted supporting Claim."
+            ),
+            observed=(
+                f"accepted_support_count={len(supporting_ids)}; "
+                f"rejected_support_count={len(rejected_support_paths)}; "
+                f"required_support_count={_MINIMUM_ACCEPTED_CYCLE_SUPPORT}."
+            ),
+            sector_id=research_input.sector_id.value,
+            claim_id=(rejected_support_paths[0] if rejected_support_paths else None),
+        )
+        details["accepted_support_count"] = len(supporting_ids)
+        details["rejected_support_count"] = len(rejected_support_paths)
+        details["required_support_count"] = _MINIMUM_ACCEPTED_CYCLE_SUPPORT
+        details["related_claim_ids"] = list(rejected_support_paths)
+        raise _SectorResearchValidationError(
+            "Sector cycle has no accepted supporting Claim",
+            details=details,
+        )
     missing_data = _missing_data(research_input)
     uncertainties = tuple(dict.fromkeys((*draft.uncertainties, *missing_data)))
     if _input_requires_degradation(evidence) and not uncertainties:
-        raise ValueError("PARTIAL or MISSING Sector input requires uncertainty")
-    return SectorResearchOutput(
+        raise _SectorResearchValidationError(
+            "PARTIAL or MISSING Sector input requires uncertainty",
+            details=_validation_details(
+                stage=SectorResearchValidationStage.REQUIRED_FIELD,
+                field_path="uncertainties",
+                error_code="MISSING_DEGRADATION_UNCERTAINTY",
+                expected="Explicit uncertainty for PARTIAL or MISSING input.",
+                observed="No uncertainty was retained.",
+                sector_id=research_input.sector_id.value,
+            ),
+        )
+    output = SectorResearchOutput(
         sector_id=research_input.sector_id,
         sector_scope_id=research_input.sector_scope_id,
         research_as_of=research_input.research_as_of,
@@ -587,6 +883,15 @@ def _promote_output(
             confidence=draft.cycle_assessment.confidence,
             supporting_claim_ids=tuple(dict.fromkeys(supporting_ids)),
             uncertainty=draft.cycle_assessment.uncertainty,
+            status=(
+                SectorCapabilityStatus.PARTIAL
+                if rejected_support_paths
+                else SectorCapabilityStatus.AVAILABLE
+            ),
+            dropped_support_claim_paths=tuple(dict.fromkeys(rejected_support_paths)),
+            degradation_reasons=(
+                ("REJECTED_SUPPORT_CLAIM",) if rejected_support_paths else ()
+            ),
         ),
         uncertainties=uncertainties,
         missing_data=missing_data,
@@ -595,6 +900,22 @@ def _promote_output(
         model_version=model_name,
         prompt_version=prompt_version,
     )
+    return output, event_coverage
+
+
+def _claim_status_map(
+    draft: SectorResearchDraftResponse,
+    output: SectorResearchOutput,
+) -> JsonObject:
+    """Expose candidate-to-final status without promoting quarantined Claims."""
+
+    quarantined = {item.claim_path for item in output.rejected_claims}
+    return {
+        item.claim_path: (
+            "QUARANTINED" if item.claim_path in quarantined else "ACCEPTED"
+        )
+        for item in draft.claims
+    }
 
 
 def _claim_rejection(
@@ -628,9 +949,14 @@ def _claim_rejection(
     if prohibited_claim_intent(claim_text) is not None:
         return rejected("prohibited_claim_intent")
     bound = [evidence[item] for item in evidence_ids]
-    for literal in numeric_literals(claim_text):
-        if not any(literal in item.entry.numeric_tokens for item in bound):
-            return rejected(f"numeric_literal_not_grounded:{literal}")
+    grounding = validate_numeric_grounding(
+        claim_text,
+        (item.entry for item in bound),
+    )
+    if grounding.ungrounded_literals:
+        return rejected(
+            f"numeric_literal_not_grounded:{grounding.ungrounded_literals[0]}"
+        )
     if any(item.association_only for item in bound) and _CAUSAL_LANGUAGE.search(
         claim_text
     ):
@@ -651,19 +977,104 @@ def _claim_rejection(
     return None
 
 
-def _validate_required_event_coverage(
+def _mandatory_event_coverage_matrix(
+    *,
     research_input: SectorResearchInput,
-    claims: list[SectorValidatedClaim],
+    draft: SectorResearchDraftResponse,
+    path_to_id: dict[str, str],
+    rejected: list[RejectedClaim],
+) -> list[JsonObject]:
+    """Resolve mandatory Event coverage against final accepted Claims only."""
+
+    rejected_index = {item.claim_path: item.reason for item in rejected}
+    matrix: list[JsonObject] = []
+    for event in research_input.anomaly_events:
+        if event.severity not in {EventSeverity.HIGH, EventSeverity.CRITICAL}:
+            continue
+        event_evidence_id = f"event:{event.event_id}"
+        candidate_paths = tuple(
+            item.claim_path
+            for item in draft.claims
+            if event_evidence_id in item.evidence_ids
+        )
+        accepted_claim_ids = tuple(
+            path_to_id[path] for path in candidate_paths if path in path_to_id
+        )
+        candidate_statuses = [
+            {
+                "claim_path": path,
+                "final_status": ("ACCEPTED" if path in path_to_id else "QUARANTINED"),
+                "rejection_code": rejected_index.get(path),
+            }
+            for path in candidate_paths
+        ]
+        matrix.append(
+            {
+                "event_id": event.event_id,
+                "sector_id": research_input.sector_id.value,
+                "event_evidence_id": event_evidence_id,
+                "severity": event.severity.value,
+                "candidate_claim_paths": list(candidate_paths),
+                "candidate_claim_final_statuses": cast(
+                    JsonValue,
+                    candidate_statuses,
+                ),
+                "accepted_claim_ids": list(dict.fromkeys(accepted_claim_ids)),
+                "coverage_status": ("COVERED" if accepted_claim_ids else "UNCOVERED"),
+            }
+        )
+    return matrix
+
+
+def _validate_required_event_coverage(
+    coverage_matrix: list[JsonObject],
 ) -> None:
-    high_ids = {
-        f"event:{event.event_id}"
-        for event in research_input.anomaly_events
-        if event.severity in {EventSeverity.HIGH, EventSeverity.CRITICAL}
-    }
-    cited = {item for claim in claims for item in claim.evidence_ids}
-    missing = high_ids - cited
-    if missing:
-        raise ValueError("HIGH Sector Radar event was omitted from accepted Claims")
+    """Fail closed when any mandatory Event lacks final accepted lineage."""
+
+    uncovered = [
+        item for item in coverage_matrix if item["coverage_status"] == "UNCOVERED"
+    ]
+    if uncovered:
+        first = uncovered[0]
+        event_id = cast(str, first["event_id"])
+        mandatory_count = len(coverage_matrix)
+        covered_count = mandatory_count - len(uncovered)
+        details = _validation_details(
+            stage=SectorResearchValidationStage.EVENT_LINEAGE,
+            field_path="claims[*].evidence_ids",
+            error_code="HIGH_EVENT_NOT_CITED",
+            expected=("Every HIGH/CRITICAL Radar event is cited by an accepted Claim."),
+            observed=(
+                f"Mandatory events={mandatory_count}; covered={covered_count}; "
+                f"uncovered={len(uncovered)}; first_uncovered={event_id}."
+            ),
+            sector_id=cast(str, first["sector_id"]),
+            event_id=event_id,
+        )
+        details["event_severity"] = first["severity"]
+        details["candidate_claim_paths_that_referenced_event"] = first[
+            "candidate_claim_paths"
+        ]
+        details["candidate_claim_final_statuses"] = first[
+            "candidate_claim_final_statuses"
+        ]
+        details["rejection_codes"] = [
+            item["rejection_code"]
+            for item in cast(list[JsonObject], first["candidate_claim_final_statuses"])
+            if item["rejection_code"] is not None
+        ]
+        details["accepted_claim_ids_covering_event"] = first["accepted_claim_ids"]
+        details["mandatory_high_event_count"] = mandatory_count
+        details["covered_high_event_count"] = covered_count
+        details["uncovered_event_ids"] = [item["event_id"] for item in uncovered]
+        details["mandatory_event_coverage_matrix"] = cast(
+            JsonValue,
+            coverage_matrix,
+        )
+        raise _SectorResearchValidationError(
+            "HIGH Sector Radar event was omitted from accepted Claims",
+            details=details,
+        )
 
 
 def _compact_prompt_payload(

@@ -128,6 +128,48 @@ NONE。
 
 YES
 
+# Phase 4C Day44 — Agent Research Boundary
+
+## Current Status
+
+Agents remain Research Intelligence producers. Existing Claim, grounding,
+quarantine, direct-upstream provenance, and trading boundaries are unchanged.
+
+## Current Task
+
+Future Agent outputs may support Opportunity Candidates and Selection/Timing
+Satellite Alpha as structured Research descriptors. They must not become
+Quant ranks or trading decisions.
+
+## API Changes
+
+None. No Prompt or structured-output schema changed on Day44.
+
+## Files Changed
+
+`docs/coordination/AGENTS.md` only for Window synchronization.
+
+## Tests
+
+Full offline Gate A passed: `565 passed, 5 deselected`; Ruff, mypy, Black, and
+`git diff --check` pass. Existing Phase 3/4A Agent contracts did not change.
+
+## Blockers
+
+None. Future descriptor vocabulary and minimum provenance will require a
+separate approved schema task.
+
+## Required Changes From Other Modules
+
+Agents may later produce decomposed Selection Satellite Alpha and state-change
+Timing Satellite Alpha. They must not implement cross-sectional ranking,
+Top-K, one opaque AI stock score, Quant timing, position sizing, or holdings
+decay.
+
+## Ready For Integration
+
+YES — Day44 ownership is frozen; no Day45 implementation has begun.
+
 `AGENT_FINAL_CLOSURE = PASS`。可以进入 fresh Phase 3 acceptance；本窗口不开始
 Phase 4 / Day30。
 
@@ -157,6 +199,66 @@ any Provider SDK dependency.
 
 NONE. Managers continue to consume validated upstream Claims rather than raw
 Provider fields.
+
+## Ready For Integration
+
+YES
+
+# Phase 4C Day45 — Satellite Alpha Ontology v1
+
+## Current Status
+
+Window 3 implemented the versioned definition/observation ontology and a pure
+ResearchState mapper. Satellite Alpha remains an attributable Research
+descriptor, not a Quant Factor, rank, signal, or portfolio instruction.
+
+## Current Task
+
+Day45 contract closure only. Day46 OpportunityCandidate and Day47 historical
+Timing builders were not started.
+
+## API Changes
+
+- Added usage `SELECTION/TIMING/BOTH`, five comparison scopes, explicit
+  coverage/maturity enums, 14 family definitions, typed components,
+  deterministic Observation identity, and the State support audit.
+- Added `SatelliteAlphaMapper`: frozen State plus optional matching Episode to
+  14 truthful observations; zero LLM/Provider/report calls.
+- ResearchState v1 is unchanged. Missing formal semantics remain PARTIAL,
+  MISSING_INPUT, NOT_AVAILABLE_AT_SOURCE_RUN, or REQUIRES_HISTORY.
+
+## Files Changed
+
+- `src/schemas/satellite_alpha.py`
+- `src/services/satellite_alpha.py`
+- `src/schemas/__init__.py`
+- `src/services/__init__.py`
+- `tests/unit/services/test_satellite_alpha.py`
+- `docs/SATELLITE_ALPHA.md`
+- `docs/schema.md`
+- `docs/DECISIONS.md`
+- `docs/MODULE_STATUS.md`
+- `docs/coordination/AGENTS.md`
+
+## Tests
+
+Focused Day45 contract tests: `15 passed`, covering ontology usage/value
+shapes, grounded components, semantic identity, PIT, provenance,
+Phase3/Phase4A compatibility, missing statuses, history requirements, and
+prohibited Quant/trading fields. Full pytest: `580 passed, 5 deselected`.
+Leakage gate: `3 passed, 582 deselected`. Ruff, mypy (319 files), Black, and
+`git diff --check`: PASS.
+
+## Blockers
+
+None in the Day45 Agent-owned implementation.
+
+## Required Changes From Other Modules
+
+Future State version only: preserve already-accepted logic stage, expectation
+direction/subtype, risk component type, catalyst/invalidator identities,
+structured debate disposition, canonical Sector ID, and event identity/time.
+Do not add another LLM score. Day47 owns ordered State history.
 
 ## Ready For Integration
 
@@ -283,3 +385,350 @@ text.
 YES
 
 `DAY35_SECTOR_AGENT = PASS`
+
+---
+
+# Phase 4B Day38 — Accepted Claim State Projection
+
+## Current Status
+
+Accepted Analyst/Manager Claims can be projected into ResearchState by stable
+Claim ID. Recursive provenance is validated once and closes at direct
+Evidence; rejected Claims and report prose are not State inputs.
+
+## API Changes
+
+- No Agent Prompt or Agent output contract changed.
+- `ResearchStateClaimInput` adds only producer role and run identity around the
+  existing `ClaimEvidenceBinding`.
+
+## Blockers
+
+NONE. A source run that did not persist full accepted Claims remains explicitly
+`NOT_AVAILABLE_AT_SOURCE_RUN` for debate/risk/thesis State.
+
+## Ready For Integration
+
+YES
+
+---
+
+# Phase 4B Day39 — Agent Execution References
+
+## Current Status
+
+ResearchEpisode references existing Agent runs and structured Claim results;
+it does not change any Agent Prompt or output contract.
+
+## API Changes
+
+- `AgentExecutionTrace` records role/run identity, context and Claim IDs,
+  accepted/rejected counts, status, optional latency, and Provider/model/Prompt
+  versions.
+- Existing Day36 Sector usage diagnostics are referenced directly.
+- Private reasoning, chain-of-thought, raw prompts, and report prose are not
+  Episode fields.
+
+## Blockers
+
+NONE. Historical runs that omitted exact Claim identities remain explicitly
+PARTIAL and must not be backfilled with synthetic IDs.
+
+## Ready For Integration
+
+YES
+
+---
+
+# Phase 4C Day46 — Selection Satellite and OpportunityCandidate v1
+
+## Current Status
+
+Window 3 implemented deterministic Selection production and research-only
+Opportunity qualification. ResearchState v1 and ResearchEpisode identity are
+unchanged; Day47 was not started.
+
+## Current Task
+
+Day46 contract and engineering gates are complete. The implementation is ready
+for independent Main acceptance.
+
+## API Changes
+
+- `SelectionSatelliteBuildInput` adds only a compact canonical Sector/Radar
+  projection around frozen State/Episode inputs.
+- Exact State feature names support alignment, expectation, logic, and chain
+  components. Existing Bull/Bear/Risk Claim paths support conservative partial
+  debate and coarse risk components. Claim prose is never parsed.
+- `OpportunityCandidate v1` records rule-based qualification, deterministic
+  identity, PIT availability, Selection Observation IDs, and compact source
+  lineage. It has no weighted score or Quant/trading fields.
+
+## Files Changed
+
+- `src/schemas/satellite_alpha.py`
+- `src/services/satellite_alpha.py`
+- `src/schemas/opportunity.py`
+- `src/services/opportunity.py`
+- shared schema/service exports
+- `tests/unit/services/test_selection_opportunity.py`
+- `docs/SATELLITE_ALPHA.md`
+- `docs/OPPORTUNITY_CANDIDATE.md`
+- shared schema/status/decision documentation
+- `docs/coordination/AGENTS.md`
+
+## Tests
+
+- Focused Day45+Day46: `31 passed` (`16` new Day46 tests).
+- Full pytest: `596 passed, 5 deselected`.
+- Leakage: `3 passed, 598 deselected`.
+- Ruff, mypy (322 source files), Black, and `git diff --check`: PASS.
+
+## Blockers
+
+No implementation blocker. Missing State semantics remain explicit rather
+than inferred from prose.
+
+## Required Changes From Other Modules
+
+None for Day46. Main should independently validate qualification and the
+Research/Quant boundary. Day47 history work requires separate authorization.
+
+## Ready For Integration
+
+YES
+
+---
+
+# Phase 4 Day49 — Agent Contract Freeze Sync
+
+## Current Status
+
+Phase3 Claim contracts, Day36 Sector usage, Day45 Satellite projection, and
+Day46 OpportunityCandidate remain accepted without Prompt or Agent changes.
+
+## Current Task
+
+Freeze sync only; Day49 added no Agent capability and made no LLM calls.
+
+## API Changes
+
+None. OpportunityCandidate remains Research qualification, never Top-K,
+advice, or a portfolio decision.
+
+## Files Changed
+
+This coordination status only.
+
+## Tests
+
+Phase regressions and full Gate PASS.
+
+## Blockers
+
+None. Phase4A historical Asset Claim identities remain partially unavailable
+and were not inferred or backfilled.
+
+## Required Changes From Other Modules
+
+None.
+
+## Ready For Integration
+
+YES — Agent-side Research Intelligence v1 contracts are frozen.
+
+---
+
+# Phase 4 Pre-Freeze — S03 Sector Research Validation Diagnostics
+
+## Current Status
+
+Sector Research validation now emits a stable stage, field path, error code,
+expected semantics, observed summary, and related Sector/Claim/Event/Chain IDs.
+Failed structured responses that reach the Agent are retained as a
+credential-free validation artifact for deterministic replay.
+
+The historical `20260914T205638Z` S03 run cannot be replayed exactly: that run
+persisted neither its structured response nor `ErrorInfo.message`; its manifest
+contains only `sector_research_validation` with null details. The same S03
+State/Macro/Radar databases pass the fixed offline path with APPLE_CHAIN and the
+HIGH Radar event intact.
+
+## Current Task
+
+Validation observability and strict lineage diagnostics are complete. The one
+authorized S03-only Qwen smoke stopped at Gateway `configuration_error` before
+Sector validation, so no retry was attempted.
+
+## API Changes
+
+- `SectorResearchValidationStage` defines the approved failure taxonomy.
+- Local promotion failures return non-null safe `ErrorInfo.details`.
+- Cycle support paths must reference submitted and accepted Claims.
+- The smoke command accepts `--sector S03` and persists failed structured
+  response artifacts when the response reaches the Agent validator.
+
+## Files Changed
+
+- `src/schemas/sector_research.py`
+- `src/agents/sector_research.py`
+- `scripts/smoke_sector_research.py`
+- `tests/unit/agents/test_sector_research_agent.py`
+- `docs/coordination/AGENTS.md`
+
+## Tests
+
+- Sector Agent focused: `21 passed`.
+- Historical DB fixed smoke: S01/S02/S03 `3/3 PASS`; S03 has 4 valid Claims,
+  4/4 grounded numeric Claims, 0 invalid citations, and 1/1 HIGH event cited.
+- Full pytest: `674 passed, 5 deselected`.
+- Leakage: `8 passed, 671 deselected`.
+- Ruff, mypy (332 source files), Black: PASS.
+
+## Blockers
+
+- Exact historical RCA is unavailable because the failed structured response
+  was not persisted by the old run.
+- The single live S03 smoke failed at Gateway configuration before the Agent
+  validator; this Window must not diagnose or change the Provider path.
+
+## Required Changes From Other Modules
+
+Window 5 / Main should resolve the Qwen `configuration_error`, then run a new
+explicit S03-only smoke. If Sector validation fails, the new artifact will
+contain precise non-null diagnostics and a replayable structured response.
+
+## Ready For Integration
+
+NO — observability is ready, but live S03 contract acceptance is not proven.
+
+---
+
+# Phase 4 Pre-Freeze — S03 Dependent Claim Lineage Repair
+
+## Current Status
+
+The saved `20260915T052024Z` S03 structured response proved that `claims[4]`
+was correctly quarantined because it cited PARTIAL GDP/INDPRO Evidence without
+the required degradation language. It had no numeric, event, PIT, Sector, or
+Chain violation. The cycle still had two accepted declared supports, so the
+former unconditional failure was a dependent-lineage resolution defect.
+
+Cycle promotion now resolves only after the final accepted Claim set. When at
+least one declared accepted support remains, rejected support paths are removed
+and the cycle is explicitly PARTIAL with `REJECTED_SUPPORT_CLAIM` provenance.
+Zero accepted support still fails closed with exact accepted/rejected/required
+counts. Rejected Claims never become downstream support.
+
+## Current Task
+
+The original S03 artifact replays offline as PASS/PARTIAL, and a new exact-cutoff
+Qwen S03-only smoke passes the Sector contract.
+
+## API Changes
+
+- `SectorCycleAssessment` adds status, dropped support paths, and degradation
+  reasons using existing Sector capability semantics.
+- Successful diagnostics include the candidate Claim status map, effective
+  supporting Claim IDs, and dropped support paths.
+- Insufficient support reports `INSUFFICIENT_ACCEPTED_CYCLE_SUPPORT` with exact
+  lineage counts.
+- No Prompt, Gateway, Data, Memory, Radar, or Temporal contract changed.
+
+## Files Changed
+
+- `src/schemas/sector_research.py`
+- `src/agents/sector_research.py`
+- `scripts/smoke_sector_research.py`
+- `tests/unit/agents/test_sector_research_agent.py`
+- `docs/coordination/AGENTS.md`
+
+## Tests
+
+- Sector Agent focused: `24 passed`.
+- Phase4A Sector focused: `53 passed`.
+- Original S03 structured artifact: PASS with 6 accepted, 6 quarantined,
+  cycle PARTIAL, 2 effective supports, and dropped `claims[4]`.
+- Historical S01/S02 output compatibility: PASS.
+- Full pytest: `707 passed, 5 deselected`.
+- Leakage: `8 passed, 704 deselected`.
+- Ruff, mypy (341 source files), Black, and `git diff --check`: PASS.
+- Live Qwen S03 `20260915T053121Z`: PASS; 10 accepted, 3 quarantined,
+  7/7 grounded numeric Claims, 0 invalid citations, HIGH event 1/1 cited,
+  retry count 0, and no rejected cycle dependency.
+
+## Blockers
+
+NONE for the S03 Sector Research claim-lineage contract.
+
+## Required Changes From Other Modules
+
+None. Main may run the full AAPL live acceptance using the same unified cutoff.
+
+## Ready For Integration
+
+YES — ready for the full AAPL live rerun.
+
+---
+
+# Phase 4 Final AAPL — S02 Mandatory HIGH Event Coverage
+
+## Current Status
+
+The saved S02 artifact was replayed against its exact State/Macro/Radar cutoff.
+Its only HIGH-event Claim (`claims[2]`) was correctly quarantined with
+`numeric_literal_not_grounded:3`: Qwen converted the upstream `change_3m`
+dimension label into a new numeric literal, `3-month`. The two rounded values
+in the same Claim were grounded by the Radar Event, and its Event ID, scope,
+and PIT lineage were valid.
+
+No other candidate Claim carried the HIGH Event ID, so final accepted coverage
+is genuinely empty. The strict `HIGH_EVENT_NOT_CITED` failure remains correct.
+
+## Current Task
+
+Window 3 added a deterministic mandatory-event coverage matrix over the final
+accepted Claim set and expanded failure diagnostics. It did not change Prompt,
+numeric grounding, Radar severity, or the mandatory coverage invariant.
+
+## API Changes
+
+- Successful Sector diagnostics now include a per-event `COVERED`/`UNCOVERED`
+  matrix derived after Claim validation.
+- `HIGH_EVENT_NOT_CITED` now records severity, all candidate Claim paths and
+  final statuses, rejection codes, accepted covering Claim IDs, mandatory and
+  covered counts, and all uncovered Event IDs.
+- Duplicate Claim references never inflate the mandatory Event count.
+
+## Files Changed
+
+- `src/agents/sector_research.py`
+- `scripts/smoke_sector_research.py`
+- `tests/unit/agents/test_sector_research_agent.py`
+- `docs/coordination/AGENTS.md`
+
+## Tests
+
+- Sector/Phase4A focused: `57 passed`.
+- Original S02 artifact replay: expected strict FAIL; mandatory=1, covered=0,
+  candidate `claims[2]` quarantined, no accepted covering Claim.
+- S01/S03 saved output compatibility: PASS.
+- Full pytest: `711 passed, 5 deselected`.
+- Leakage: `8 passed, 708 deselected`.
+- Ruff, mypy (341 source files), Black, and `git diff --check`: PASS.
+
+## Blockers
+
+The current Prompt/Qwen output does not guarantee one valid accepted Claim for
+every mandatory HIGH Event. There is no local Agent validator bug to repair.
+
+## Required Changes From Other Modules
+
+Window 5 should version the Sector structured-output Prompt so that Event
+Claims copy only exact numeric literals supplied by Event Evidence and avoid
+turning dimension names such as `change_3m` into `3-month`. Mandatory HIGH
+Event coverage must remain explicit.
+
+## Ready For Integration
+
+NO — a Prompt contract change and new S02-only live validation are required.

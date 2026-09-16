@@ -112,6 +112,20 @@ class ProviderHTTPClient:
         self._sleeper = sleeper or time.sleep
         self._rate_lock = Lock()
         self._last_request_at: float | None = None
+        self._request_count = 0
+        self._retry_count = 0
+
+    @property
+    def request_count(self) -> int:
+        """Return physical HTTP attempts made by this client instance."""
+
+        return self._request_count
+
+    @property
+    def retry_count(self) -> int:
+        """Return attempts made after an initial endpoint request."""
+
+        return self._retry_count
 
     def get_text(
         self,
@@ -119,6 +133,9 @@ class ProviderHTTPClient:
         *,
         accept: str,
         headers: Mapping[str, str] | None = None,
+        status_error_factory: (
+            Callable[[int, str], ProviderUnavailableError] | None
+        ) = None,
     ) -> str:
         """Fetch and decode one HTTPS resource.
 
@@ -128,6 +145,8 @@ class ProviderHTTPClient:
             headers: Additional provider authentication headers. Values are
                 sent only to the requested endpoint and never included in
                 raised errors.
+            status_error_factory: Optional provider-specific conversion of a
+                decoded non-success response into a sanitized public error.
 
         Returns:
             Decoded UTF-8 response text.
@@ -164,6 +183,9 @@ class ProviderHTTPClient:
         attempts = self._max_retries + 1
         for attempt in range(attempts):
             self._wait_for_rate_limit()
+            self._request_count += 1
+            if attempt > 0:
+                self._retry_count += 1
             try:
                 response = self._transport.send(
                     request,
@@ -191,6 +213,15 @@ class ProviderHTTPClient:
                 response.status_code not in self._RETRYABLE_STATUS_CODES
                 or attempt + 1 == attempts
             ):
+                if status_error_factory is not None:
+                    try:
+                        error_text = decode_http_payload(
+                            response.body,
+                            _header(response.headers, "Content-Encoding") or "",
+                        )
+                    except (OSError, UnicodeError, zlib.error):
+                        error_text = ""
+                    raise status_error_factory(response.status_code, error_text)
                 raise ProviderUnavailableError(
                     "provider request failed with HTTP status "
                     f"{response.status_code}"

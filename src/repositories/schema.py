@@ -21,6 +21,7 @@ CORE_TABLES = frozenset(
         "report_jobs",
         "report_sections",
         "reports",
+        "research_dataset_samples",
         "research_scopes",
         "sector_edges",
         "sector_benchmark_mappings",
@@ -51,6 +52,7 @@ CORE_INDEXES = frozenset(
         "idx_reports_date_market",
         "idx_report_evaluations_report_created",
         "idx_report_jobs_status_created",
+        "idx_research_dataset_asset_as_of",
         "idx_research_scopes_parent",
         "idx_sector_edges_source_target",
         "idx_sector_benchmarks_time",
@@ -336,6 +338,7 @@ TABLE_DDL = (
         created_by             VARCHAR NOT NULL,
         created_at             TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         expires_at             TIMESTAMP,
+        metadata_json          VARCHAR,
         p2_reward_hint_json    VARCHAR,
         p2_router_hint_json    VARCHAR
     )
@@ -421,6 +424,27 @@ TABLE_DDL = (
         section_markdown       VARCHAR NOT NULL,
         citations_json         VARCHAR,
         PRIMARY KEY (report_id, section_name)
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS research_dataset_samples (
+        sample_id               VARCHAR PRIMARY KEY,
+        asset_id               VARCHAR NOT NULL,
+        market                 VARCHAR NOT NULL,
+        research_as_of         TIMESTAMP NOT NULL,
+        research_state_id      VARCHAR NOT NULL,
+        research_episode_id    VARCHAR NOT NULL,
+        data_snapshot_id       VARCHAR NOT NULL,
+        sector_context_id      VARCHAR,
+        attribution_bundle_id  VARCHAR,
+        quality_status         VARCHAR NOT NULL,
+        label_status           VARCHAR NOT NULL,
+        dataset_schema_version VARCHAR NOT NULL,
+        dataset_build_version  VARCHAR NOT NULL,
+        input_fingerprint      VARCHAR NOT NULL,
+        sample_json            VARCHAR NOT NULL,
+        created_at             TIMESTAMP NOT NULL,
+        UNIQUE (research_episode_id, dataset_build_version)
     )
     """,
     """
@@ -641,6 +665,7 @@ TABLE_DDL = (
     "ALTER TABLE fundamentals ADD COLUMN IF NOT EXISTS source_locator VARCHAR",
     "ALTER TABLE fundamentals ADD COLUMN IF NOT EXISTS quality VARCHAR",
     "ALTER TABLE macro_series ADD COLUMN IF NOT EXISTS source_locator VARCHAR",
+    "ALTER TABLE memory_items ADD COLUMN IF NOT EXISTS metadata_json VARCHAR",
     """
     ALTER TABLE macro_series_vintages
     ADD COLUMN IF NOT EXISTS source_locator VARCHAR
@@ -703,6 +728,10 @@ INDEX_DDL = (
     """
     CREATE INDEX IF NOT EXISTS idx_report_jobs_status_created
     ON report_jobs (status, created_at)
+    """,
+    """
+    CREATE INDEX IF NOT EXISTS idx_research_dataset_asset_as_of
+    ON research_dataset_samples (asset_id, research_as_of)
     """,
     """
     CREATE INDEX IF NOT EXISTS idx_sector_nodes_type_time

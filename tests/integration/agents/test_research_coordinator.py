@@ -324,7 +324,7 @@ def test_full_research_chain_is_ordered_cited_and_audited(tmp_path: Path) -> Non
             AgentName.TECHNICAL_TEXT_ANALYST: "v9",
             AgentName.SENTIMENT_ANALYST: "v8",
             AgentName.NEWS_EVENT_ANALYST: "v9",
-            AgentName.RESEARCH_MANAGER: "v6",
+            AgentName.RESEARCH_MANAGER: "v7",
             AgentName.BULL_MANAGER: "v8",
             AgentName.BEAR_MANAGER: "v10",
             AgentName.RISK_MANAGER: "v7",

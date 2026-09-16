@@ -41,6 +41,7 @@ def test_fmp_smoke_outputs_safe_metric_coverage(
 
         def __init__(self, **kwargs: object) -> None:
             assert kwargs["api_key"] == "secret-fmp-value"
+            self.fetch_count = 0
 
         def fetch_fundamentals_range(
             self,
@@ -48,6 +49,7 @@ def test_fmp_smoke_outputs_safe_metric_coverage(
             start_date: date,
             end_date: date,
         ) -> Iterable[ProviderRecord]:
+            self.fetch_count += 1
             assert asset_ids == ["US:AAPL"]
             assert end_date == date(2026, 8, 14)
             assert start_date == date(2024, 8, 4)
@@ -65,6 +67,14 @@ def test_fmp_smoke_outputs_safe_metric_coverage(
                     "quality": "provider_standardized",
                 },
             )
+
+        def acquisition_diagnostics(self) -> dict[str, object]:
+            return {
+                "external_acquisition_count": 1,
+                "snapshot_reuse_count": max(self.fetch_count - 1, 0),
+                "physical_http_request_count": 4,
+                "retry_count": 0,
+            }
 
     settings = AppSettings()
     settings.providers.fmp_enabled = True
@@ -84,4 +94,62 @@ def test_fmp_smoke_outputs_safe_metric_coverage(
     assert "pe_ttm" in result["missing_metrics"]
     assert result["reporting_period"] == "2026-06-27"
     assert result["provider_timestamp"] == "2026-07-31T06:01:02+00:00"
+    assert result["fmp_external_request_count"] == 1
+    assert result["fmp_snapshot_reuse_count"] == 0
+    assert result["fmp_retry_count"] == 0
     assert "secret-fmp-value" not in output
+
+
+def test_fmp_smoke_can_validate_same_run_reuse(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """The integration mode validates twice without a second acquisition."""
+
+    class FakeFMPAdapter:
+        provider_name = "financial_modeling_prep"
+
+        def __init__(self, **kwargs: object) -> None:
+            del kwargs
+            self.fetch_count = 0
+
+        def fetch_fundamentals_range(
+            self,
+            asset_ids: list[str],
+            start_date: date,
+            end_date: date,
+        ) -> Iterable[ProviderRecord]:
+            del asset_ids, start_date, end_date
+            self.fetch_count += 1
+            return (
+                {
+                    "asset_id": "US:AAPL",
+                    "market": "US",
+                    "fiscal_period_end": "2026-06-27",
+                    "report_type": "TTM_STANDARDIZED",
+                    "accepted_at": "2026-07-31T06:01:02+00:00",
+                    "source_locator": "fmp:stable:standardized-metrics:AAPL",
+                    "quality": "provider_standardized",
+                    "revenue_yoy": -0.015,
+                },
+            )
+
+        def acquisition_diagnostics(self) -> dict[str, object]:
+            return {
+                "external_acquisition_count": 1,
+                "snapshot_reuse_count": self.fetch_count - 1,
+                "physical_http_request_count": 4,
+                "retry_count": 0,
+            }
+
+    settings = AppSettings()
+    settings.providers.fmp_enabled = True
+    settings.providers.fmp_api_key = SecretStr("secret-fmp-value")
+    monkeypatch.setattr(smoke_fmp, "load_settings", lambda: settings)
+    monkeypatch.setattr(smoke_fmp, "FinancialModelingPrepAdapter", FakeFMPAdapter)
+
+    assert smoke_fmp.main(["--end-date", "2026-08-14", "--verify-reuse"]) == 0
+    result = json.loads(capsys.readouterr().out)
+    assert result["fmp_external_request_count"] == 1
+    assert result["fmp_snapshot_reuse_count"] == 1
+    assert result["fake_provider_count"] == 0

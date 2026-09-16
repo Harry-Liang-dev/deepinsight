@@ -1,0 +1,11 @@
+{
+  "manifest_schema_version": "research_dataset_manifest_v1",
+  "manifest_id": "research_dataset_manifest_73b3ab55b563703f42756ee2",
+  "sample_id": "research_sample_4b98c4b3f722981a81d51f5d",
+  "sample_artifact": "data/research_dataset/day42/phase3_aapl_golden.research_dataset_sample.json",
+  "repository_table": "research_dataset_samples",
+  "dataset_schema_version": "research_dataset_sample_v1",
+  "dataset_build_version": "pit_research_dataset_build_v1",
+  "input_fingerprint": "4b98c4b3f722981a81d51f5d46b7622c6f9d57a1cddc5e432780f8686868310c",
+  "created_at": "2026-09-01T00:00:00Z"
+}

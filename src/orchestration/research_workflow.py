@@ -219,6 +219,8 @@ class ResearchWorkflowService:
         document_lookback_days: int = 370,
         evidence_chunks_per_document: int = 4,
         clock: Callable[[], datetime] | None = None,
+        research_as_of: datetime | None = None,
+        reuse_acquired_data: bool = False,
         report_id_factory: Callable[[], str] | None = None,
         task_id_factory: Callable[[], str] | None = None,
     ) -> None:
@@ -249,6 +251,8 @@ class ResearchWorkflowService:
         self._document_lookback_days = document_lookback_days
         self._evidence_chunks_per_document = evidence_chunks_per_document
         self._clock = clock or (lambda: datetime.now(UTC))
+        self._research_as_of = research_as_of
+        self._reuse_acquired_data = reuse_acquired_data
         self._report_id_factory = report_id_factory or (lambda: f"rep_{uuid4().hex}")
         self._task_id_factory = task_id_factory or (lambda: f"task_{uuid4().hex}")
 
@@ -270,29 +274,34 @@ class ResearchWorkflowService:
         window_start = request.report_date - timedelta(
             days=self._document_lookback_days
         )
-        supports_fundamentals = isinstance(self._provider, FundamentalRangeProvider)
-        self._ingestion.run(
-            self._provider,
-            IngestionRequest(
-                job_type=IngestionJobType.INCREMENTAL,
-                asset_ids=(str(asset_id),),
-                target_date=request.report_date,
-                document_start_date=window_start,
-                document_end_date=request.report_date,
-                fundamental_start_date=(
-                    window_start if supports_fundamentals else None
+        if not self._reuse_acquired_data:
+            supports_fundamentals = isinstance(self._provider, FundamentalRangeProvider)
+            self._ingestion.run(
+                self._provider,
+                IngestionRequest(
+                    job_type=IngestionJobType.INCREMENTAL,
+                    asset_ids=(str(asset_id),),
+                    target_date=request.report_date,
+                    document_start_date=window_start,
+                    document_end_date=request.report_date,
+                    fundamental_start_date=(
+                        window_start if supports_fundamentals else None
+                    ),
+                    fundamental_end_date=(
+                        request.report_date if supports_fundamentals else None
+                    ),
                 ),
-                fundamental_end_date=(
-                    request.report_date if supports_fundamentals else None
-                ),
-            ),
-        )
+            )
 
         documents = self._documents.list_documents(
             asset_id,
             end_date=request.report_date,
         )
-        retrieved_documents = self._index_and_collect_documents(documents)
+        retrieved_documents = (
+            self._collect_existing_documents(documents)
+            if self._reuse_acquired_data
+            else self._index_and_collect_documents(documents)
+        )
         if not retrieved_documents:
             raise MissingResearchEvidenceError(
                 "No attributable document evidence was available."
@@ -304,7 +313,13 @@ class ResearchWorkflowService:
         )
         task_id = _required_identifier(self._task_id_factory(), "task ID")
         features = self._build_features(asset_id, request.report_date)
-        as_of = datetime.combine(request.report_date, time.max, tzinfo=UTC)
+        as_of = self._research_as_of or datetime.combine(
+            request.report_date, time.max, tzinfo=UTC
+        )
+        if as_of.date() != request.report_date:
+            raise ResearchWorkflowError(
+                "research instant and report date must share the UTC calendar date"
+            )
         data_bundle: ResearchDataBundle | None = None
         context_bundle: ResearchContextBundle | None = None
         if self._data_bundle_builder is None:
@@ -383,6 +398,7 @@ class ResearchWorkflowService:
                 input_context=context,
                 agent_result=agent_result,
                 created_at=self._clock(),
+                sector_context=sector_context_bundle,
             )
         )
 
@@ -395,6 +411,28 @@ class ResearchWorkflowService:
             indexed = self._document_indexer.index_document(document.document_id)
             for chunk in _sample_evidence_chunks(
                 indexed,
+                self._evidence_chunks_per_document,
+            ):
+                retrieved.append(
+                    RetrievedDocument(
+                        document_id=document.document_id,
+                        chunk_id=chunk.chunk_id,
+                        title=document.title,
+                        chunk_text=chunk.chunk_text,
+                    )
+                )
+        return retrieved
+
+    def _collect_existing_documents(
+        self,
+        documents: list[TextDocumentRecord],
+    ) -> list[RetrievedDocument]:
+        """Collect already-indexed chunks for an explicit same-run resume."""
+
+        retrieved: list[RetrievedDocument] = []
+        for document in documents:
+            for chunk in _sample_evidence_chunks(
+                self._documents.list_chunks(document.document_id),
                 self._evidence_chunks_per_document,
             ):
                 retrieved.append(

@@ -5,7 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 from collections.abc import Sequence
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from src.adapters import (
@@ -23,6 +23,7 @@ from src.repositories import (
     SectorOntologyRepository,
 )
 from src.schemas.market_data import FundamentalRecord
+from src.schemas.temporal import TemporalAccessMode
 from src.services import (
     CURRENT_US_RESEARCH_UNIVERSE_VERSION,
     DataNormalizer,
@@ -33,6 +34,7 @@ from src.services import (
     build_us_sector_benchmark_candidates_v1,
     resolve_validated_benchmark_mappings,
 )
+from src.services.research_clock import ResearchAsOfMode, parse_research_clock
 
 _ASSETS = ("US:AAPL", "US:NVDA", "US:AMD", "US:TSM", "US:MU")
 _PRICE_IDS = (*_ASSETS, "US:SPY", "US:SOXX", "US:XLK")
@@ -48,7 +50,9 @@ def _parser() -> argparse.ArgumentParser:
         description="Generate three deterministic live Sector research snapshots."
     )
     parser.add_argument(
-        "--as-of", type=date.fromisoformat, default=datetime.now(UTC).date()
+        "--as-of",
+        type=parse_research_clock,
+        default=parse_research_clock(datetime.now(UTC).isoformat()),
     )
     parser.add_argument(
         "--output-root", type=Path, default=Path("data/live_sector_state")
@@ -60,6 +64,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     """Fetch real canonical inputs and persist three deterministic snapshots."""
 
     args = _parser().parse_args(argv)
+    clock = args.as_of
+    as_of = clock.snapshot_date
+    market_session_date = clock.market_session_date
     settings = load_settings().providers
     key_id = settings.alpaca_api_key_id
     secret_key = settings.alpaca_api_secret_key
@@ -80,7 +87,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     assert key_id is not None and secret_key is not None and fmp_key is not None
 
     checked_at = datetime.now(UTC)
-    start_date = args.as_of - timedelta(days=130)
+    start_date = market_session_date - timedelta(days=130)
     try:
         alpaca = AlpacaAdapter(
             api_key_id=key_id.get_secret_value(),
@@ -105,7 +112,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 received_at=checked_at,
             )
             for raw in alpaca.fetch_eod_bars_range(
-                list(_PRICE_IDS), start_date, args.as_of
+                list(_PRICE_IDS), start_date, market_session_date
             )
         ]
         validated_ids = {str(item.asset_id) for item in bars}
@@ -128,8 +135,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             try:
                 raw_records = fmp.fetch_fundamentals_range(
                     [asset_id],
-                    args.as_of - timedelta(days=740),
-                    args.as_of,
+                    as_of - timedelta(days=740),
+                    as_of,
                 )
                 fundamentals.extend(
                     normalizer.normalize_fundamental(
@@ -155,6 +162,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 1
 
     run_stamp = checked_at.strftime("%Y%m%dT%H%M%SZ")
+    latest_completed_market_session = max(item.trade_date for item in bars)
     run_dir = args.output_root / run_stamp
     run_dir.mkdir(parents=True, exist_ok=False)
     database_path = run_dir / "sector_state.duckdb"
@@ -172,7 +180,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     mappings = resolve_validated_benchmark_mappings(
         build_us_sector_benchmark_candidates_v1(),
         validated_asset_ids=validated_ids,
-        valid_from=args.as_of,
+        valid_from=as_of,
     )
     for mapping in mappings:
         sector_repository.add_benchmark_mapping(mapping)
@@ -183,14 +191,14 @@ def main(argv: Sequence[str] | None = None) -> int:
         for sector_id in _SECTORS:
             universe = SectorUniverseService(sector_repository).create_snapshot(
                 sector_id=sector_id,
-                as_of=args.as_of,
+                as_of=as_of,
                 membership_version=CURRENT_US_RESEARCH_UNIVERSE_VERSION,
                 source="phase4_day32_live_sector_state",
             )
             bars_by_asset = {
                 asset_id: market_repository.list_eod_bars(
                     AssetId(asset_id),
-                    end_date=args.as_of,
+                    end_date=market_session_date,
                     limit=120,
                 )
                 for asset_id in {
@@ -202,7 +210,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             fundamentals_by_asset = {
                 str(asset_id): market_repository.list_fundamentals(
                     asset_id,
-                    end_date=args.as_of,
+                    end_date=as_of,
                 )
                 for asset_id in universe.asset_ids
             }
@@ -210,6 +218,12 @@ def main(argv: Sequence[str] | None = None) -> int:
                 universe=universe,
                 bars_by_asset=bars_by_asset,
                 fundamentals_by_asset=fundamentals_by_asset,
+                research_as_of=clock.research_as_of,
+                temporal_access_mode=(
+                    TemporalAccessMode.LIVE_ACQUISITION
+                    if clock.mode is ResearchAsOfMode.INSTANT
+                    else TemporalAccessMode.HISTORICAL_REPLAY
+                ),
             )
             sector_repository.save_research_snapshot(snapshot)
             snapshots.append(snapshot)
@@ -230,7 +244,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         json.dumps(
             {
                 "status": "ok",
-                "as_of": args.as_of.isoformat(),
+                "as_of": clock.research_as_of.isoformat(),
+                "as_of_mode": clock.mode.value,
+                "snapshot_date": as_of.isoformat(),
+                "market_session_date": latest_completed_market_session.isoformat(),
+                "market_query_end": market_session_date.isoformat(),
                 "database_path": str(database_path),
                 "providers": ["alpaca_market_data", "financial_modeling_prep"],
                 "bar_count": len(bars),

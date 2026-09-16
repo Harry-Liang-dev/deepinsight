@@ -56,6 +56,24 @@ class SectorCycleAssessmentPhase(StrEnum):
     UNCERTAIN = "uncertain"
 
 
+class SectorResearchValidationStage(StrEnum):
+    """Stable, safe failure stages for Sector research diagnostics."""
+
+    SCHEMA_PARSE = "SCHEMA_PARSE"
+    REQUIRED_FIELD = "REQUIRED_FIELD"
+    ENUM = "ENUM"
+    CARDINALITY = "CARDINALITY"
+    CLAIM_LINEAGE = "CLAIM_LINEAGE"
+    EVENT_LINEAGE = "EVENT_LINEAGE"
+    NUMERIC_GROUNDING = "NUMERIC_GROUNDING"
+    PIT = "PIT"
+    SECTOR_SCOPE = "SECTOR_SCOPE"
+    CHAIN_SCOPE = "CHAIN_SCOPE"
+    DUPLICATE_ID = "DUPLICATE_ID"
+    UNKNOWN_REFERENCE = "UNKNOWN_REFERENCE"
+    OTHER = "OTHER"
+
+
 class SectorEvidenceKind(StrEnum):
     """Compact projection kinds over existing canonical upstream objects."""
 
@@ -232,6 +250,26 @@ class SectorCycleAssessment(DomainModel):
     confidence: float = Field(ge=0.0, le=1.0)
     supporting_claim_ids: tuple[str, ...] = Field(min_length=1)
     uncertainty: str = Field(min_length=1)
+    status: SectorCapabilityStatus = SectorCapabilityStatus.AVAILABLE
+    dropped_support_claim_paths: tuple[str, ...] = ()
+    degradation_reasons: tuple[Literal["REJECTED_SUPPORT_CLAIM"], ...] = ()
+
+    @model_validator(mode="after")
+    def validate_dependent_lineage_status(self) -> Self:
+        """Require explicit PARTIAL semantics when support was quarantined."""
+
+        has_dropped_support = bool(self.dropped_support_claim_paths)
+        if has_dropped_support:
+            if self.status is not SectorCapabilityStatus.PARTIAL:
+                raise ValueError("Dropped cycle support requires PARTIAL status")
+            if "REJECTED_SUPPORT_CLAIM" not in self.degradation_reasons:
+                raise ValueError("Dropped cycle support requires a degradation reason")
+        elif (
+            self.status is not SectorCapabilityStatus.AVAILABLE
+            or self.degradation_reasons
+        ):
+            raise ValueError("Complete cycle support requires AVAILABLE status")
+        return self
 
 
 class SectorResearchOutput(DomainModel):

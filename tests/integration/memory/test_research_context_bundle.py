@@ -235,6 +235,43 @@ def test_temporal_leakage_excludes_future_effective_memory(
 
     assert [item.memory_id for item in bundle.asset_events] == ["mem-before"]
     assert bundle.retrieval_metadata.excluded_future_count == 1
+    assert [
+        item.memory_id for item in bundle.retrieval_metadata.eligible_candidates
+    ] == ["mem-before"]
+
+
+def test_temporal_leakage_excludes_memory_created_after_cutoff(
+    database: DuckDBDatabase,
+    tmp_path: Path,
+) -> None:
+    """Backdated effective time cannot hide a future Memory creation time."""
+
+    embedder = FakeEmbeddingService(VECTORS)
+    service = MemoryService(
+        MemoryItemRepository(database),
+        FaissVectorRepository(
+            tmp_path / "future-created-faiss",
+            embedder_model=embedder.model_name,
+            embedding_dim=embedder.dimension,
+        ),
+        embedder,
+        clock=lambda: AS_OF + timedelta(seconds=1),
+        memory_id_factory=lambda: "mem-future-created",
+    )
+    _write(
+        service,
+        level=MemoryLevel.L2,
+        text="asset event",
+        effective_ts=AS_OF - timedelta(days=1),
+        namespace_key="US:AAPL",
+        asset_id=AAPL,
+        memory_type="issuer_event",
+    )
+
+    bundle = service.retrieve_context(_request())
+
+    assert bundle.asset_events == []
+    assert bundle.retrieval_metadata.excluded_future_count == 1
     assert all(item.effective_ts <= AS_OF for item in bundle.asset_events)
 
 
@@ -361,6 +398,10 @@ def test_relevance_ordering_and_importance_filter_are_deterministic(
         reverse=True,
     )
     assert bundle.retrieval_metadata.excluded_importance_count == 1
+    assert [
+        (item.memory_id, item.rank, item.selected)
+        for item in bundle.retrieval_metadata.eligible_candidates
+    ] == [("mem-best", 1, True), ("mem-mid", 2, True)]
 
 
 def test_bundle_persists_across_vector_repository_restart(

@@ -41,6 +41,7 @@ from src.models.identifiers import AssetId
 from src.models.types import JsonObject
 from src.operators import FundamentalFeatureOperator, TechnicalFeatureOperator
 from src.orchestration import ResearchReportPipeline, ResearchWorkflowService
+from src.orchestration.research_workflow import AssetSectorContextResolver
 from src.reports import STANDARD_SECTION_NAMES, ReportAssembler
 from src.repositories import (
     AgentRunRepository,
@@ -106,12 +107,14 @@ def create_offline_application(
     data_root: Path,
     *,
     llm_error: LLMProviderError | None = None,
+    sector_context_resolver: AssetSectorContextResolver | None = None,
 ) -> FastAPI:
     """Create a complete local API using only fixed data and fake providers.
 
     Args:
         data_root: Isolated root for DuckDB, FAISS, and raw fixture data.
         llm_error: Optional deterministic provider failure for tests.
+        sector_context_resolver: Optional prebuilt Phase4 context resolver.
 
     Returns:
         A fully wired FastAPI application with no network dependencies.
@@ -233,6 +236,7 @@ def create_offline_application(
             instruments=instruments,
             market_data=market_data,
         ),
+        sector_context_resolver=sector_context_resolver,
         dataset_version="offline_api_fixture_v1",
         clock=lambda: OFFLINE_NOW,
         report_id_factory=lambda: f"rep_demo_{next(report_ids)}",
@@ -468,7 +472,11 @@ def _agent_response(agent_name: AgentName, input_payload: JsonObject) -> JsonObj
             },
         }
     if agent_name is AgentName.RESEARCH_MANAGER:
-        summary = "Growth remained positive while valuation risk required caution."
+        summary = (
+            evidence_text
+            if provenance_id.startswith("sector:")
+            else "Growth remained positive while valuation risk required caution."
+        )
         conflict = "Constructive operating evidence was offset by limited history."
         return {
             "agent_name": "research_manager",
@@ -541,14 +549,21 @@ def _first_upstream_claim(input_payload: JsonObject) -> tuple[str, str]:
     claims = contract.get("validated_upstream_claims")
     if not isinstance(claims, list) or not claims:
         raise RuntimeError("offline Manager upstream Claims are unavailable")
-    claim = claims[0]
+    sector_claims: list[JsonObject] = []
+    for item in claims:
+        if not isinstance(item, dict):
+            continue
+        candidate_id = item.get("claim_id")
+        if isinstance(candidate_id, str) and candidate_id.startswith("sector:"):
+            sector_claims.append(item)
+    claim = sector_claims[-1] if sector_claims else claims[0]
     if not isinstance(claim, dict):
         raise RuntimeError("offline Manager upstream Claim is invalid")
-    claim_id = claim.get("claim_id")
+    output_id = claim.get("claim_id")
     claim_text = claim.get("claim_text")
-    if not isinstance(claim_id, str) or not isinstance(claim_text, str):
+    if not isinstance(output_id, str) or not isinstance(claim_text, str):
         raise RuntimeError("offline Manager upstream Claim is incomplete")
-    return claim_id, claim_text
+    return output_id, claim_text
 
 
 def _analyst_response(

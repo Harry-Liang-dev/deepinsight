@@ -52,6 +52,7 @@ from src.schemas.sector_research import (
     SectorResearchDraftResponse,
     SectorResearchExecutionResult,
     SectorResearchInput,
+    SectorResearchValidationStage,
 )
 from src.schemas.sectors import (
     CoveredSectorMetric,
@@ -500,6 +501,13 @@ def test_sector_agent_is_claim_first_and_uses_compact_projection() -> None:
     assert "sector_snapshot" not in gateway.payload
     assert "macro_snapshot" not in gateway.payload
     assert "evidence_manifest" in gateway.payload
+    matrix = cast(
+        list[JsonObject],
+        result.diagnostics["mandatory_event_coverage_matrix"],
+    )
+    assert len(matrix) == 1
+    assert matrix[0]["coverage_status"] == "COVERED"
+    assert matrix[0]["accepted_claim_ids"] == ["sector:S01:claim:3"]
 
 
 def test_exact_numeric_hallucination_is_quarantined() -> None:
@@ -545,6 +553,34 @@ def test_macro_correlation_cannot_be_promoted_to_causality() -> None:
     assert result.output is not None
     assert result.output.rejected_claims[0].reason == (
         "historical_association_misstated_as_causality"
+    )
+
+
+def test_mandatory_event_accepts_association_safe_partial_wording() -> None:
+    """A conservative association Claim can legally cover a mandatory Event."""
+
+    research_input = _research_input()
+    response = _response(research_input)
+    claims = cast(list[JsonObject], response["claims"])
+    claims[3]["claim_text"] = (
+        "The cited Radar Event records a high-severity propagation candidate; "
+        "limited sensitivity Evidence reports a historical association for the "
+        "supplied series."
+    )
+    claims[3]["evidence_ids"] = [
+        f"event:{research_input.anomaly_events[0].event_id}",
+        _evidence_id(research_input, ":sensitivity:FEDFUNDS"),
+    ]
+
+    _, untyped = _run(research_input, response)
+    result = cast("SectorResearchExecutionResult", untyped)
+
+    assert result.status is AgentStatus.OK
+    assert result.output is not None
+    assert result.diagnostics["covered_high_events"] == 1
+    assert all(
+        item.reason != "historical_association_misstated_as_causality"
+        for item in result.output.rejected_claims
     )
 
 
@@ -621,16 +657,53 @@ def test_input_rejects_future_or_misaligned_pit_context() -> None:
 
 
 def test_prompt_is_versioned_and_preserves_research_boundaries() -> None:
-    """The central Prompt states numeric, proxy, causality, graph, and trade rules."""
+    """Prompt v4 preserves semantics and requires complete Claim objects."""
 
     prompt = SectorResearchPromptLoader(PROMPT_ROOT).load()
+    archived_v1 = (
+        PROMPT_ROOT
+        / "archive"
+        / "sector_research_prompt_v1"
+        / "sector_research_agent.yaml"
+    ).read_text(encoding="utf-8")
+    archived_v2 = (
+        PROMPT_ROOT
+        / "archive"
+        / "sector_research_prompt_v2"
+        / "sector_research_agent.yaml"
+    ).read_text(encoding="utf-8")
+    archived_v3 = (
+        PROMPT_ROOT
+        / "archive"
+        / "sector_research_prompt_v3"
+        / "sector_research_agent.yaml"
+    ).read_text(encoding="utf-8")
+    normalized = " ".join(prompt.system_prompt.split())
 
-    assert prompt.version == "sector_research_prompt_v1"
+    assert prompt.version == "sector_research_prompt_v4"
+    assert "version: sector_research_prompt_v1" in archived_v1
+    assert "version: sector_research_prompt_v2" in archived_v2
+    assert "version: sector_research_prompt_v3" in archived_v3
     assert "historical association" in prompt.system_prompt
     assert "PARTIAL" in prompt.system_prompt
     assert "propagation candidate" in prompt.system_prompt
     assert "target price" in prompt.system_prompt
     assert '"claim_intent":' not in prompt.system_prompt
+    assert "ANY numeric literal in claim_text" in prompt.system_prompt
+    assert "never rewrite change_3m as 3-month" in prompt.system_prompt
+    assert "final accepted Claim collection" in prompt.system_prompt
+    assert "Relationship wording is a hard contract" in prompt.system_prompt
+    assert "driven by" in prompt.system_prompt
+    assert "does not make a causal phrase legal" in normalized
+    assert "Each Claim object must independently repeat all six keys" in normalized
+    assert "never rely on a schema default" in normalized
+    assert "evidence_manifest[*].evidence_id" in prompt.system_prompt
+    assert "Allowed category values are exactly" in normalized
+    assert "Allowed phase values are exactly" in normalized
+    assert "Do not return this checklist" in normalized
+    assert "S02" not in prompt.system_prompt
+    assert "ignore the validator" not in prompt.system_prompt.lower()
+    assert "bypass the validator" not in prompt.system_prompt.lower()
 
 
 @pytest.mark.parametrize(
@@ -710,6 +783,496 @@ def test_minimum_valid_claims_remains_fail_closed() -> None:
     assert result.status is AgentStatus.ERROR
     assert result.error is not None
     assert "minimum is 3" in result.error.message
+    assert result.error.details is not None
+    assert (
+        result.error.details["validation_stage"]
+        == SectorResearchValidationStage.CARDINALITY.value
+    )
+    assert result.error.details["field_path"] == "claims"
+    assert result.error.details["error_code"] == "MINIMUM_VALID_CLAIMS_NOT_MET"
+    assert result.error.details["related_sector_id"] == "S01"
+    assert result.diagnostics["validation_artifact"]
+
+
+def test_unknown_cycle_claim_reference_has_precise_diagnostics() -> None:
+    """Cycle lineage rejects a path outside the submitted Claim namespace."""
+
+    research_input = _research_input()
+    response = _response(research_input)
+    cycle = cast(JsonObject, response["cycle_assessment"])
+    cycle["supporting_claim_paths"] = ["claims[99]"]
+
+    _, untyped = _run(research_input, response)
+    result = cast(SectorResearchExecutionResult, untyped)
+
+    assert result.status is AgentStatus.ERROR
+    assert result.error is not None
+    assert result.error.details is not None
+    assert result.error.details["validation_stage"] == "UNKNOWN_REFERENCE"
+    assert result.error.details["error_code"] == "UNKNOWN_CLAIM_REFERENCE"
+    assert result.error.details["related_claim_id"] == "claims[99]"
+
+
+def test_invalid_cycle_enum_has_precise_diagnostics() -> None:
+    """An ontology-external cycle value fails closed at the enum stage."""
+
+    research_input = _research_input()
+    response = _response(research_input)
+    cycle = cast(JsonObject, response["cycle_assessment"])
+    cycle["phase"] = "booming"
+
+    _, untyped = _run(research_input, response)
+    result = cast(SectorResearchExecutionResult, untyped)
+
+    assert result.status is AgentStatus.ERROR
+    assert result.error is not None
+    assert result.error.details is not None
+    assert result.error.details["validation_stage"] == "ENUM"
+    assert result.error.details["field_path"] == "cycle_assessment.phase"
+    assert result.diagnostics["validation_artifact"]
+
+
+def test_ungrounded_numeric_failure_retains_claim_diagnostics() -> None:
+    """Numeric quarantine remains strict and explains a resulting cardinality fail."""
+
+    research_input = _research_input(with_event=False)
+    response = _response(research_input)
+    claims = cast(list[JsonObject], response["claims"])
+    for index, claim in enumerate(claims):
+        claim["claim_text"] = f"Unsupported numeric statement {900 + index}."
+
+    _, untyped = _run(research_input, response)
+    result = cast(SectorResearchExecutionResult, untyped)
+
+    assert result.status is AgentStatus.ERROR
+    assert result.error is not None
+    assert result.error.details is not None
+    assert result.error.details["validation_stage"] == "CARDINALITY"
+    rejected = cast(list[JsonObject], result.error.details["rejected_claims"])
+    assert len(rejected) == 3
+    assert all(
+        str(item["reason"]).startswith("numeric_literal_not_grounded:")
+        for item in rejected
+    )
+
+
+def test_unknown_chain_evidence_never_enters_valid_output() -> None:
+    """An invented Chain identity is quarantined without alias or graph mutation."""
+
+    research_input = _research_input()
+    response = _response(research_input)
+    claims = cast(list[JsonObject], response["claims"])
+    claims.append(
+        {
+            "claim_path": "claims[4]",
+            "claim_text": "An invented chain is active.",
+            "category": "industry_chains",
+            "evidence_ids": ["chain:INVENTED_CHAIN:v1"],
+            "numeric_literals": [],
+            "confidence": 0.8,
+        }
+    )
+
+    _, untyped = _run(research_input, response)
+    result = cast(SectorResearchExecutionResult, untyped)
+
+    assert result.status is AgentStatus.OK
+    assert result.output is not None
+    assert result.output.rejected_claims[-1].reason == (
+        "unknown_direct_upstream_evidence"
+    )
+    assert all(
+        "chain:INVENTED_CHAIN:v1" not in claim.evidence_ids
+        for claim in result.output.claims
+    )
+
+
+def test_rejected_cycle_support_degrades_when_accepted_support_remains() -> None:
+    """Rejected support is dropped only when accepted support remains sufficient."""
+
+    research_input = _research_input()
+    response = _response(research_input)
+    claims = cast(list[JsonObject], response["claims"])
+    claims[0]["claim_text"] = "Unsupported return was 999."
+
+    _, untyped = _run(research_input, response)
+    result = cast(SectorResearchExecutionResult, untyped)
+
+    assert result.status is AgentStatus.OK
+    assert result.output is not None
+    cycle = result.output.cycle_assessment
+    assert cycle.status is SectorCapabilityStatus.PARTIAL
+    assert cycle.dropped_support_claim_paths == ("claims[0]",)
+    assert cycle.degradation_reasons == ("REJECTED_SUPPORT_CLAIM",)
+    assert cycle.supporting_claim_ids == ("sector:S01:claim:0",)
+    assert result.diagnostics["claim_status_map"] == {
+        "claims[0]": "QUARANTINED",
+        "claims[1]": "ACCEPTED",
+        "claims[2]": "ACCEPTED",
+        "claims[3]": "ACCEPTED",
+    }
+
+
+def test_only_rejected_cycle_support_fails_with_precise_counts() -> None:
+    """A cycle conclusion with zero accepted support remains fail closed."""
+
+    research_input = _research_input()
+    response = _response(research_input)
+    claims = cast(list[JsonObject], response["claims"])
+    claims[0]["claim_text"] = "Unsupported return was 999."
+    cycle = cast(JsonObject, response["cycle_assessment"])
+    cycle["supporting_claim_paths"] = ["claims[0]"]
+
+    _, untyped = _run(research_input, response)
+    result = cast(SectorResearchExecutionResult, untyped)
+
+    assert result.status is AgentStatus.ERROR
+    assert result.error is not None
+    assert result.error.details is not None
+    assert result.error.details["validation_stage"] == "CLAIM_LINEAGE"
+    assert result.error.details["error_code"] == ("INSUFFICIENT_ACCEPTED_CYCLE_SUPPORT")
+    assert result.error.details["accepted_support_count"] == 0
+    assert result.error.details["rejected_support_count"] == 1
+    assert result.error.details["required_support_count"] == 1
+
+
+def test_rejected_high_event_claim_cannot_support_cycle() -> None:
+    """An invalid event Claim remains rejected before dependent cycle resolution."""
+
+    research_input = _research_input()
+    response = _response(research_input)
+    claims = cast(list[JsonObject], response["claims"])
+    claims[3]["claim_text"] = "AMD will certainly benefit from this event."
+    cycle = cast(JsonObject, response["cycle_assessment"])
+    cycle["supporting_claim_paths"] = ["claims[3]"]
+
+    _, untyped = _run(research_input, response)
+    result = cast(SectorResearchExecutionResult, untyped)
+
+    assert result.status is AgentStatus.ERROR
+    assert result.error is not None
+    assert result.error.details is not None
+    assert result.error.details["validation_stage"] == "EVENT_LINEAGE"
+    assert result.error.details["error_code"] == "HIGH_EVENT_NOT_CITED"
+    assert result.error.details["mandatory_high_event_count"] == 1
+    assert result.error.details["covered_high_event_count"] == 0
+    assert result.error.details["candidate_claim_paths_that_referenced_event"] == [
+        "claims[3]"
+    ]
+    assert result.error.details["rejection_codes"] == [
+        "propagation_candidate_misstated_as_fact"
+    ]
+    assert result.error.details["accepted_claim_ids_covering_event"] == []
+
+
+def test_rejected_and_accepted_claim_for_same_high_event_passes() -> None:
+    """One accepted structured reference covers an Event despite a duplicate reject."""
+
+    research_input = _research_input()
+    response = _response(research_input)
+    claims = cast(list[JsonObject], response["claims"])
+    event_id = f"event:{research_input.anomaly_events[0].event_id}"
+    claims[3]["claim_text"] = "AMD will certainly benefit from this event."
+    claims.append(
+        {
+            "claim_path": "claims[4]",
+            "claim_text": (
+                "This uncertain propagation candidate does not confirm an impact."
+            ),
+            "category": "anomalies",
+            "evidence_ids": [event_id],
+            "numeric_literals": [],
+            "confidence": 0.5,
+        }
+    )
+
+    _, untyped = _run(research_input, response)
+    result = cast(SectorResearchExecutionResult, untyped)
+
+    assert result.status is AgentStatus.OK
+    assert result.output is not None
+    matrix = cast(
+        list[JsonObject],
+        result.diagnostics["mandatory_event_coverage_matrix"],
+    )
+    assert len(matrix) == 1
+    assert matrix[0]["coverage_status"] == "COVERED"
+    assert matrix[0]["candidate_claim_paths"] == ["claims[3]", "claims[4]"]
+    assert len(cast(list[str], matrix[0]["accepted_claim_ids"])) == 1
+
+
+def test_two_high_events_require_independent_accepted_coverage() -> None:
+    """Coverage cardinality is per unique mandatory Event, not per Claim."""
+
+    research_input = _research_input()
+    second_event = research_input.anomaly_events[0].model_copy(
+        update={"event_id": "sector_anomaly_abcdef0123456789abcdef01"}
+    )
+    research_input = SectorResearchInput.model_validate(
+        research_input.model_copy(
+            update={"anomaly_events": (*research_input.anomaly_events, second_event)}
+        ).model_dump()
+    )
+    response = _response(research_input)
+    claims = cast(list[JsonObject], response["claims"])
+    claims.append(
+        {
+            "claim_path": "claims[4]",
+            "claim_text": "A second uncertain propagation candidate is unconfirmed.",
+            "category": "anomalies",
+            "evidence_ids": [f"event:{second_event.event_id}"],
+            "numeric_literals": [],
+            "confidence": 0.5,
+        }
+    )
+
+    _, untyped = _run(research_input, response)
+    result = cast(SectorResearchExecutionResult, untyped)
+
+    assert result.status is AgentStatus.OK
+    matrix = cast(
+        list[JsonObject],
+        result.diagnostics["mandatory_event_coverage_matrix"],
+    )
+    assert len(matrix) == 2
+    assert all(item["coverage_status"] == "COVERED" for item in matrix)
+
+
+def test_two_high_events_fail_when_one_is_uncovered() -> None:
+    """Coverage by one HIGH Event cannot satisfy another mandatory Event."""
+
+    research_input = _research_input()
+    second_event = research_input.anomaly_events[0].model_copy(
+        update={"event_id": "sector_anomaly_abcdef0123456789abcdef01"}
+    )
+    research_input = SectorResearchInput.model_validate(
+        research_input.model_copy(
+            update={"anomaly_events": (*research_input.anomaly_events, second_event)}
+        ).model_dump()
+    )
+    response = _response(research_input)
+
+    _, untyped = _run(research_input, response)
+    result = cast(SectorResearchExecutionResult, untyped)
+
+    assert result.status is AgentStatus.ERROR
+    assert result.error is not None
+    assert result.error.details is not None
+    assert result.error.details["mandatory_high_event_count"] == 2
+    assert result.error.details["covered_high_event_count"] == 1
+    assert result.error.details["uncovered_event_ids"] == [second_event.event_id]
+
+
+def test_s02_three_month_literal_rejection_keeps_high_event_uncovered() -> None:
+    """Replay S02's ungrounded `3-month` literal without accepting its Event."""
+
+    research_input = _research_input()
+    response = _response(research_input)
+    claims = cast(list[JsonObject], response["claims"])
+    claims[3][
+        "claim_text"
+    ] = "An uncertain propagation candidate had a negative 3-month change."
+
+    _, untyped = _run(research_input, response)
+    result = cast(SectorResearchExecutionResult, untyped)
+
+    assert result.status is AgentStatus.ERROR
+    assert result.error is not None
+    assert result.error.details is not None
+    assert result.error.details["rejection_codes"] == ["numeric_literal_not_grounded:3"]
+    matrix = cast(
+        list[JsonObject],
+        result.error.details["mandatory_event_coverage_matrix"],
+    )
+    assert matrix[0]["coverage_status"] == "UNCOVERED"
+    assert matrix[0]["accepted_claim_ids"] == []
+
+
+def _with_event_summary(
+    research_input: SectorResearchInput,
+    summary: str,
+) -> SectorResearchInput:
+    """Replace only the deterministic HIGH Event summary for grounding tests."""
+
+    event = research_input.anomaly_events[0].model_copy(update={"summary": summary})
+    return SectorResearchInput.model_validate(
+        research_input.model_copy(update={"anomaly_events": (event,)}).model_dump()
+    )
+
+
+def test_s02_number_free_metric_wording_is_grounded_and_covers_event() -> None:
+    """A schema-key metric may be described without inventing its window number."""
+
+    research_input = _with_event_summary(
+        _research_input(),
+        "Macro candidate change_3m=-0.29692074; beta=0.04931928.",
+    )
+    response = _response(research_input)
+    claims = cast(list[JsonObject], response["claims"])
+    claims[3]["claim_text"] = (
+        "The uncertain macro candidate has a recent change metric of "
+        "-0.29692074 and historical beta 0.04931928."
+    )
+
+    _, untyped = _run(research_input, response)
+    result = cast(SectorResearchExecutionResult, untyped)
+
+    assert result.status is AgentStatus.OK
+    assert result.output is not None
+    event_claim = next(
+        item
+        for item in result.output.claims
+        if item.category is SectorClaimCategory.ANOMALIES
+    )
+    assert event_claim.numeric_literals == ("-0.29692074", "0.04931928")
+    assert result.diagnostics["covered_high_events"] == 1
+
+
+def test_explicit_grounded_duration_metadata_allows_duration_expression() -> None:
+    """A duration numeral is legal only when cited Evidence supplies that token."""
+
+    research_input = _with_event_summary(
+        _research_input(),
+        "Macro candidate window_months=3; change=-0.29692074.",
+    )
+    response = _response(research_input)
+    claims = cast(list[JsonObject], response["claims"])
+    claims[3][
+        "claim_text"
+    ] = "The uncertain macro candidate reports a 3-month change of -0.29692074."
+
+    _, untyped = _run(research_input, response)
+    result = cast(SectorResearchExecutionResult, untyped)
+
+    assert result.status is AgentStatus.OK
+    assert result.output is not None
+    event_claim = next(
+        item
+        for item in result.output.claims
+        if item.category is SectorClaimCategory.ANOMALIES
+    )
+    assert event_claim.numeric_literals == ("3", "-0.29692074")
+
+
+def test_dedicated_grounded_high_event_claim_passes_final_coverage() -> None:
+    """Mandatory Event coverage is resolved from the accepted Claim collection."""
+
+    research_input = _research_input()
+    response = _response(research_input)
+
+    _, untyped = _run(research_input, response)
+    result = cast(SectorResearchExecutionResult, untyped)
+
+    assert result.status is AgentStatus.OK
+    matrix = cast(
+        list[JsonObject],
+        result.diagnostics["mandatory_event_coverage_matrix"],
+    )
+    assert matrix == [
+        {
+            "event_id": research_input.anomaly_events[0].event_id,
+            "sector_id": "S01",
+            "event_evidence_id": (f"event:{research_input.anomaly_events[0].event_id}"),
+            "severity": "high",
+            "candidate_claim_paths": ["claims[3]"],
+            "candidate_claim_final_statuses": [
+                {
+                    "claim_path": "claims[3]",
+                    "final_status": "ACCEPTED",
+                    "rejection_code": None,
+                }
+            ],
+            "accepted_claim_ids": ["sector:S01:claim:3"],
+            "coverage_status": "COVERED",
+        }
+    ]
+
+
+def test_high_event_partial_evidence_without_disclosure_is_rejected() -> None:
+    """A HIGH Event Claim cannot hide PARTIAL Evidence semantics."""
+
+    research_input = _research_input(partial=True)
+    response = _response(research_input)
+    claims = cast(list[JsonObject], response["claims"])
+    claims[3]["claim_text"] = "The propagation candidate describes sector impact."
+    claims[3]["evidence_ids"] = [
+        f"event:{research_input.anomaly_events[0].event_id}",
+        _evidence_id(research_input, ":market:return_20d"),
+    ]
+
+    _, untyped = _run(research_input, response)
+    result = cast(SectorResearchExecutionResult, untyped)
+
+    assert result.status is AgentStatus.ERROR
+    assert result.error is not None
+    assert result.error.details is not None
+    assert result.error.details["rejection_codes"] == [
+        "partial_or_candidate_evidence_not_disclosed"
+    ]
+    assert result.error.details["covered_high_event_count"] == 0
+
+
+def test_high_event_partial_evidence_with_disclosure_is_accepted() -> None:
+    """Explicit PARTIAL uncertainty preserves legal mandatory Event lineage."""
+
+    research_input = _research_input(partial=True)
+    response = _response(research_input)
+    claims = cast(list[JsonObject], response["claims"])
+    claims[3][
+        "claim_text"
+    ] = "Partial and uncertain Evidence supports only a propagation candidate."
+    claims[3]["evidence_ids"] = [
+        f"event:{research_input.anomaly_events[0].event_id}",
+        _evidence_id(research_input, ":market:return_20d"),
+    ]
+
+    _, untyped = _run(research_input, response)
+    result = cast(SectorResearchExecutionResult, untyped)
+
+    assert result.status is AgentStatus.OK
+    assert result.output is not None
+    assert result.diagnostics["covered_high_events"] == 1
+
+
+def test_s03_artifact_claim_lineage_replays_as_partial() -> None:
+    """Replay the exact S03 claims[4] rejection/dependency shape offline."""
+
+    research_input = _research_input(partial=True)
+    partial_evidence_id = _evidence_id(
+        research_input,
+        ":market:return_20d",
+    )
+    response = _response(research_input)
+    claims = cast(list[JsonObject], response["claims"])
+    claims[1] = {
+        "claim_path": "claims[1]",
+        "claim_text": ("Financial stress is falling while growth signals are mixed."),
+        "category": "macro_environment",
+        "evidence_ids": [partial_evidence_id],
+        "numeric_literals": [],
+        "confidence": 0.8,
+    }
+    claims[2]["claim_text"] = (
+        "Partial macro sensitivity reports a -0.62 historical association, "
+        "not causality."
+    )
+    cycle = cast(JsonObject, response["cycle_assessment"])
+    cycle["supporting_claim_paths"] = ["claims[0]", "claims[1]", "claims[3]"]
+
+    _, untyped = _run(research_input, response)
+    result = cast(SectorResearchExecutionResult, untyped)
+
+    assert result.status is AgentStatus.OK
+    assert result.output is not None
+    assert result.output.rejected_claims[0].claim_path == "claims[1]"
+    assert result.output.rejected_claims[0].reason == (
+        "partial_or_candidate_evidence_not_disclosed"
+    )
+    cycle_output = result.output.cycle_assessment
+    assert cycle_output.status is SectorCapabilityStatus.PARTIAL
+    assert cycle_output.dropped_support_claim_paths == ("claims[1]",)
+    accepted_ids = {item.claim_id for item in result.output.claims}
+    assert set(cycle_output.supporting_claim_ids) <= accepted_ids
 
 
 def test_llm_cannot_add_canonical_graph_relationship() -> None:

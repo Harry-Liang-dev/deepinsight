@@ -30,6 +30,7 @@ from src.schemas.research_data import (
     ResearchDataBundleRequest,
 )
 from src.schemas.sector_research import SectorResearchInput, SectorResearchOutput
+from src.services.research_clock import parse_research_clock
 from src.services.research_data_bundle import ResearchDataBundleService
 from src.services.sector_context import (
     RepositorySectorContextResolver,
@@ -62,6 +63,7 @@ def _parser() -> argparse.ArgumentParser:
         default=Path("data/live_sector_radar/20260830T074510Z/sector_radar.duckdb"),
     )
     parser.add_argument("--prompt-root", type=Path, default=Path("config/prompts"))
+    parser.add_argument("--as-of", type=parse_research_clock)
     parser.add_argument(
         "--output-root", type=Path, default=Path("data/sector_asset_integration")
     )
@@ -84,10 +86,20 @@ def main(argv: Sequence[str] | None = None) -> int:
     if as_of_date is None:
         print(json.dumps({"status": "configuration_error", "reason": "state missing"}))
         return 2
-    research_as_of = datetime.combine(
-        as_of_date,
-        datetime.max.time(),
-        tzinfo=UTC,
+    if args.as_of is not None and args.as_of.snapshot_date != as_of_date:
+        print(
+            json.dumps(
+                {
+                    "status": "configuration_error",
+                    "reason": "source snapshot date differs",
+                }
+            )
+        )
+        return 2
+    research_as_of = (
+        args.as_of.research_as_of
+        if args.as_of is not None
+        else parse_research_clock(as_of_date.isoformat()).research_as_of
     )
     agent = SectorResearchAgent(
         _FixedSectorGateway(),

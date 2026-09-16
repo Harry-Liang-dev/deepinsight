@@ -1,0 +1,28 @@
+{
+  "schema_version": "day38_research_state_acceptance_v1",
+  "status": "pass",
+  "llm_calls": 0,
+  "network_calls": 0,
+  "phase3_golden": {
+    "source_run_id": "20260814T100747Z",
+    "research_state_id": "research_state_fd95d91fbf0a635951884295",
+    "asset_id": "US:AAPL",
+    "research_as_of": "2026-08-14T23:59:59.999999Z",
+    "accepted_claim_count": 54,
+    "sector_state": "not_available_at_source_run",
+    "industry_chain_state": "not_available_at_source_run",
+    "output": "phase3_aapl_golden.research_state.json"
+  },
+  "phase4a_sector_aware": {
+    "source_run_id": "agent_contract_20260830T135643Z_70442a96",
+    "research_state_id": "research_state_3da102d1a1515b82dbe4f9b7",
+    "asset_id": "US:AAPL",
+    "research_as_of": "2026-08-30T23:59:59.999999Z",
+    "macro_state": "partial",
+    "sector_state": "present",
+    "industry_chain_state": "present",
+    "sector_scope_id": "SECTOR:CONSUMER_ELECTRONICS",
+    "industry_chain_scope_ids": ["CHAIN:APPLE_CHAIN"],
+    "output": "phase4a_aapl_sector_aware.research_state.json"
+  }
+}

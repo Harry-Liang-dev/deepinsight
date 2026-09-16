@@ -4,11 +4,18 @@ All coding agents must read this file before changing the repository.
 
 ## Project boundary
 
-DeepInsight is an evidence-grounded investment research system. The current
-deliverable is research, not trading, execution, portfolio construction,
-backtesting, model training, Factor, Regime, or MoE functionality. Do not add
-those capabilities unless a later approved specification explicitly requires
-them.
+DeepInsight is an evidence-grounded Research Intelligence and Opportunity
+Discovery system. The long-term platform has three layers:
+
+1. Research Intelligence
+2. Quant Alpha / Strategy
+3. Portfolio / Execution
+
+This repository, `deepinsight`, owns only layer 1. A future separate repository,
+`deepinsight-quant`, owns layers 2 and 3. Do not add quantitative factor
+libraries, selection/timing models, Regime/MoE routing, backtests, portfolio
+construction, position sizing, orders, execution simulation, or live trading
+to this repository.
 
 `docs/MASTER_SPEC.md` is the product and architecture source of truth. Also
 read `docs/CODING_GUIDE.md`, `docs/MODULE_STATUS.md`, `docs/DECISIONS.md`, and
@@ -29,6 +36,22 @@ DeepInsight recommendations. They are allowed only with explicit third-party
 attribution, a valid citation, and exact numeric grounding. Rejected claims
 must never enter managers, reports, or evaluation as accepted facts.
 
+### Provider-native temporal boundary
+
+Provider-native time is authoritative at the ingestion boundary. All source
+timestamps must first be interpreted and validated in the provider's native
+timezone, calendar, and precision, and only then normalized onto the
+DeepInsight canonical UTC timeline. A provider-specific local date must never
+replace the global `research_as_of`, and a UTC calendar date must never be
+blindly reused as a provider-native date semantic.
+
+For live research, `research_as_of` is one exact timezone-aware UTC information
+cutoff captured by orchestration and reused end to end. It is not a market
+session date or provider calendar date. Live HTTP ingestion may finish after
+that cutoff, but only source information with `available_at <= research_as_of`
+is eligible; `ingested_at` remains acquisition lineage. Historical replay keeps
+its stricter original-observed ingestion gate.
+
 ## Architecture
 
 The production dependency direction is:
@@ -48,6 +71,44 @@ Data → Memory → LLM Gateway → Agents → Report → API
 - Preserve replaceability through dependency injection; avoid circular
   imports, global mutable state, hidden fallbacks, and duplicated schemas.
 
+## Research / Quant boundary
+
+The authoritative handoff direction is:
+
+```text
+Raw Evidence
+→ Validated Claim
+→ Research State Feature
+→ Satellite Alpha Observation
+→ ResearchQuantHandoffBundle
+→ future deepinsight-quant
+→ Processed Factor Exposure
+→ Alpha Signal
+→ Strategy
+→ Portfolio
+```
+
+`Planetary Alpha`（行星阿尔法）means traditional, low-cost, repeatable
+quantitative Alpha/Factor computed across a broad point-in-time market
+universe. Momentum, reversal, value, quality, growth, size, volatility,
+liquidity, technical, revisions, and traditional event factors belong to
+future `deepinsight-quant`, not this repository.
+
+`Satellite Alpha`（卫星阿尔法）means proprietary structured research
+descriptors produced from information mining, Macro/Sector/Industry-Chain
+reasoning, events, expectation changes, debate, risk, ResearchState, and
+Memory. In this repository it is not a validated Factor exposure or trading
+signal. It may describe `SELECTION`, `TIMING`, or `BOTH`, but cross-sectional
+ranking, normalization, neutralization, standardization, IC/RankIC/ICIR,
+Top-K selection, timing decisions, and portfolio use belong to
+`deepinsight-quant`.
+
+Prefer decomposed, attributable descriptors over a single opaque score. Do
+not create `AI_STOCK_SCORE`, `BUY_SCORE`, `SELL_SCORE`, `trade_signal`,
+`position_score`, `position_weight`, `order`, `quant_factor_zscore`, or
+`neutralized_factor` here. A Research Candidate Universe never replaces the
+complete Base PIT Market Universe required by future Quant research.
+
 ## Engineering standards
 
 - Python 3.12, FastAPI, DuckDB, FAISS, Pydantic v2, pytest, Ruff, mypy, Black.
@@ -63,7 +124,7 @@ Data → Memory → LLM Gateway → Agents → Report → API
 
 ## Quality gates
 
-Phase 3 has three gates only.
+The repository uses three gate classes only.
 
 ### Gate A — Engineering
 
@@ -138,3 +199,17 @@ in scope. Implement the smallest change that satisfies the approved task.
 Run tests proportional to risk, then all required gates. When requirements
 remain ambiguous after consulting the specification, stop and request
 clarification rather than inventing architecture.
+
+## Frozen Research Intelligence boundary
+
+Phase 4 freezes this repository at `ResearchQuantHandoffBundle v1`. It may
+produce ResearchState, ResearchEpisode, Learning Memory, Research Attribution,
+Satellite Alpha research descriptors, OpportunityCandidate, temporal State
+transitions, and the versioned Research-to-Quant handoff. These are research
+artifacts, not validated Quant factors or decisions.
+
+Planetary Alpha, Quant universe maintenance, Factor processing and validation,
+IC/RankIC, ranking, Top-K, timing decisions, Holdings, Regime/MoE routing,
+portfolio construction, orders, and execution belong to a future independent
+Quant system. Do not activate reserved interfaces for those capabilities in
+this repository.

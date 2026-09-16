@@ -13,6 +13,10 @@ from openai.types import CreateEmbeddingResponse
 from pydantic import SecretStr
 
 from src.core.settings import QwenSettings
+from src.services.provider_transport import (
+    ProviderTransportConfig,
+    resolve_provider_transport_config,
+)
 
 
 class EmbeddingServiceError(RuntimeError):
@@ -21,6 +25,27 @@ class EmbeddingServiceError(RuntimeError):
 
 class EmbeddingConfigurationError(EmbeddingServiceError):
     """Raised when required embedding configuration is missing."""
+
+    code = "embedding_configuration_error"
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        configuration_stage: str,
+        provider: str,
+        model: str,
+        proxy_mode: str,
+        transport_mode: str,
+    ) -> None:
+        """Retain only credential-free configuration diagnostics."""
+
+        super().__init__(message)
+        self.configuration_stage = configuration_stage
+        self.provider = provider
+        self.model = model
+        self.proxy_mode = proxy_mode
+        self.transport_mode = transport_mode
 
 
 class EmbeddingInputError(EmbeddingServiceError):
@@ -122,6 +147,22 @@ class OpenAIEmbeddingService:
         self._base_url = base_url
         self._provider_label = provider_label
         self._client = cast(_OpenAIEmbeddingClient | None, client)
+        self._transport_config = (
+            ProviderTransportConfig(
+                proxy_mode="injected_client",
+                transport_mode="injected_client",
+            )
+            if client is not None
+            else None
+        )
+        self._request_count = 0
+        self._embedding_count = 0
+
+    @property
+    def provider_name(self) -> str:
+        """Return a stable lowercase Provider identity."""
+
+        return self._provider_label.casefold()
 
     @property
     def model_name(self) -> str:
@@ -134,6 +175,30 @@ class OpenAIEmbeddingService:
         """Return the explicitly configured output dimension."""
 
         return self._dimension
+
+    @property
+    def request_count(self) -> int:
+        """Return SDK embedding requests attempted by this service."""
+
+        return self._request_count
+
+    @property
+    def embedding_count(self) -> int:
+        """Return validated embeddings received by this service."""
+
+        return self._embedding_count
+
+    @property
+    def proxy_mode(self) -> str:
+        """Return the credential-free resolved proxy mode."""
+
+        return self._resolved_transport().proxy_mode
+
+    @property
+    def transport_mode(self) -> str:
+        """Return the credential-free resolved HTTP client mode."""
+
+        return self._resolved_transport().transport_mode
 
     def embed(self, text: str) -> list[float]:
         """Embed one non-empty text value."""
@@ -157,7 +222,9 @@ class OpenAIEmbeddingService:
         vectors: list[list[float]] = []
         try:
             for batch in batches:
-                response = self._get_client().embeddings.create(
+                client = self._get_client()
+                self._request_count += 1
+                response = client.embeddings.create(
                     input=batch,
                     model=self.model_name,
                     dimensions=self.dimension,
@@ -168,9 +235,11 @@ class OpenAIEmbeddingService:
                     raise EmbeddingRemoteError(
                         "embedding provider returned an unexpected vector count"
                     )
-                vectors.extend(
+                batch_vectors = [
                     _validate_vector(item.embedding, self.dimension) for item in ordered
-                )
+                ]
+                vectors.extend(batch_vectors)
+                self._embedding_count += len(batch_vectors)
         except openai.APITimeoutError:
             raise EmbeddingRemoteError(
                 f"{self._provider_label} embedding request timed out"
@@ -205,14 +274,35 @@ class OpenAIEmbeddingService:
         if self._client is not None:
             return self._client
         secret = self._settings.api_key
+        transport = self._resolved_transport()
         if secret is None or not secret.get_secret_value().strip():
             raise EmbeddingConfigurationError(
-                f"{self._provider_label} API key is not configured"
+                f"{self._provider_label} API key is not configured",
+                configuration_stage="credential_resolution",
+                provider=self.provider_name,
+                model=self.model_name,
+                proxy_mode=transport.proxy_mode,
+                transport_mode=transport.transport_mode,
             )
         try:
-            if self._base_url is None:
+            http_client = transport.build_http_client()
+            if self._base_url is None and http_client is None:
                 sdk_client = OpenAI(
                     api_key=secret.get_secret_value(),
+                    timeout=float(self._settings.timeout_seconds),
+                    max_retries=self._settings.max_retries,
+                )
+            elif self._base_url is None:
+                sdk_client = OpenAI(
+                    api_key=secret.get_secret_value(),
+                    timeout=float(self._settings.timeout_seconds),
+                    max_retries=self._settings.max_retries,
+                    http_client=http_client,
+                )
+            elif http_client is None:
+                sdk_client = OpenAI(
+                    api_key=secret.get_secret_value(),
+                    base_url=self._base_url,
                     timeout=float(self._settings.timeout_seconds),
                     max_retries=self._settings.max_retries,
                 )
@@ -222,16 +312,45 @@ class OpenAIEmbeddingService:
                     base_url=self._base_url,
                     timeout=float(self._settings.timeout_seconds),
                     max_retries=self._settings.max_retries,
+                    http_client=http_client,
                 )
             self._client = cast(
                 _OpenAIEmbeddingClient,
                 sdk_client,
             )
+        except ValueError as exc:
+            error_text = str(exc).casefold()
+            message = (
+                f"{self._provider_label} embedding client initialization requires "
+                "a supported HTTPX SOCKS transport"
+                if "socks" in error_text or "proxy" in error_text
+                else f"{self._provider_label} embedding client initialization failed"
+            )
+            raise EmbeddingConfigurationError(
+                message,
+                configuration_stage="client_initialization",
+                provider=self.provider_name,
+                model=self.model_name,
+                proxy_mode=transport.proxy_mode,
+                transport_mode=transport.transport_mode,
+            ) from None
         except Exception:
             raise EmbeddingConfigurationError(
-                f"{self._provider_label} client initialization failed"
+                f"{self._provider_label} embedding client initialization failed",
+                configuration_stage="client_initialization",
+                provider=self.provider_name,
+                model=self.model_name,
+                proxy_mode=transport.proxy_mode,
+                transport_mode=transport.transport_mode,
             ) from None
         return self._client
+
+    def _resolved_transport(self) -> ProviderTransportConfig:
+        """Resolve and freeze transport policy for this service instance."""
+
+        if self._transport_config is None:
+            self._transport_config = resolve_provider_transport_config()
+        return self._transport_config
 
 
 class QwenEmbeddingService(OpenAIEmbeddingService):

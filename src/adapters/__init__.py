@@ -6,7 +6,7 @@ from src.adapters.base import (
     ProviderRecord,
     ProviderUnavailableError,
 )
-from src.adapters.fmp import FinancialModelingPrepAdapter
+from src.adapters.fmp import FinancialModelingPrepAdapter, FMPProviderSnapshot
 from src.adapters.mcp import (
     FakeMCPTransport,
     LocalFileMCPTokenStorage,
@@ -25,6 +25,7 @@ from src.adapters.providers import (
     CNINFOAdapter,
     FakeProviderAdapter,
     FREDAdapter,
+    FREDProviderRequestError,
     HKEXNewsAdapter,
     LSEGLicensedAdapter,
     SECEDGARAdapter,
@@ -44,8 +45,10 @@ __all__ = [
     "BloombergLicensedAdapter",
     "CNINFOAdapter",
     "FakeProviderAdapter",
+    "FMPProviderSnapshot",
     "FinancialModelingPrepAdapter",
     "FREDAdapter",
+    "FREDProviderRequestError",
     "FakeMCPTransport",
     "HKEXNewsAdapter",
     "LSEGLicensedAdapter",

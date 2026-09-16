@@ -17,7 +17,13 @@ from src.models.identifiers import AssetId
 from src.models.types import JsonObject
 from src.schemas.common import ErrorInfo, SourceReference
 from src.schemas.evaluation import EvaluationResult
+from src.schemas.memory import LearningMemoryMetadata
 from src.schemas.reports import GenerateReportRequest
+from src.schemas.research_dataset import (
+    ResearchDatasetLabelStatus,
+    ResearchDatasetQualityStatus,
+    ResearchDatasetSample,
+)
 
 
 class PersistenceRecord(BaseModel):
@@ -60,6 +66,7 @@ class MemoryItemRecord(PersistenceRecord):
     created_by: str = Field(min_length=1)
     created_at: datetime | None = None
     expires_at: datetime | None = None
+    metadata: LearningMemoryMetadata | None = None
 
 
 class AgentRunRecord(PersistenceRecord):
@@ -139,4 +146,25 @@ class EvaluationRecord(PersistenceRecord):
     deterministic_score: float = Field(ge=0.0, le=1.0)
     judge_score: float = Field(ge=0.0, le=1.0)
     result: EvaluationResult
+    created_at: datetime
+
+
+class ResearchDatasetSampleRecord(PersistenceRecord):
+    """Repository-owned audit row for one immutable dataset sample."""
+
+    sample_id: str = Field(pattern=r"^research_sample_[0-9a-f]{24}$")
+    asset_id: AssetId
+    market: str = Field(min_length=1)
+    research_as_of: datetime
+    research_state_id: str = Field(pattern=r"^research_state_[0-9a-f]{24}$")
+    research_episode_id: str = Field(pattern=r"^research_episode_[0-9a-f]{24}$")
+    data_snapshot_id: str = Field(min_length=1)
+    sector_context_id: str | None = None
+    attribution_bundle_id: str | None = None
+    quality_status: ResearchDatasetQualityStatus
+    label_status: ResearchDatasetLabelStatus
+    dataset_schema_version: str = Field(min_length=1)
+    dataset_build_version: str = Field(min_length=1)
+    input_fingerprint: str = Field(pattern=r"^[0-9a-f]{64}$")
+    sample: ResearchDatasetSample
     created_at: datetime

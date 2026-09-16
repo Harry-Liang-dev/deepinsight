@@ -9,6 +9,7 @@ from datetime import datetime
 from src.models.enums import AgentName, SectorCapabilityStatus, SectorId
 from src.models.identifiers import AssetId
 from src.repositories.sectors import SectorOntologyRepository
+from src.schemas.agents import ClaimEvidenceBinding
 from src.schemas.sector_context import (
     SectorContextBundle,
     SectorContextClaimSummary,
@@ -21,6 +22,7 @@ from src.schemas.sector_research import (
     SectorClaimCategory,
     SectorResearchOutput,
 )
+from src.schemas.sector_usage import SectorContextUsageDiagnostic
 from src.schemas.sectors import (
     IndustryChainDefinition,
     SectorAnomalyEvent,
@@ -107,6 +109,85 @@ _ROLE_CATEGORIES: dict[AgentName, frozenset[SectorClaimCategory]] = {
         }
     ),
 }
+
+
+def build_sector_context_usage(
+    bundle: SectorContextBundle,
+    claims_by_role: dict[AgentName, tuple[ClaimEvidenceBinding, ...]],
+) -> tuple[SectorContextUsageDiagnostic, ...]:
+    """Derive exact role-level Sector use from accepted Claim lineage."""
+
+    claim_index: dict[str, ClaimEvidenceBinding] = {
+        claim.claim_id: claim
+        for claim in bundle.accepted_claims
+        if claim.claim_id is not None
+    }
+    for claims in claims_by_role.values():
+        claim_index.update(
+            {claim.claim_id: claim for claim in claims if claim.claim_id is not None}
+        )
+    sector_ids = {
+        claim.claim_id for claim in bundle.accepted_claims if claim.claim_id is not None
+    }
+
+    def sector_ancestors(claim_id: str, visited: set[str]) -> set[str]:
+        if claim_id in visited:
+            return set()
+        if claim_id in sector_ids:
+            return {claim_id}
+        claim = claim_index.get(claim_id)
+        if claim is None:
+            return set()
+        next_visited = {*visited, claim_id}
+        return set().union(
+            *(
+                sector_ancestors(parent, next_visited)
+                for parent in claim.upstream_claim_ids
+            )
+        )
+
+    diagnostics: list[SectorContextUsageDiagnostic] = []
+    for role in AgentName:
+        projection = SectorContextProjector.for_role(bundle, role)
+        provided = tuple(
+            item.claim_id
+            for item in (
+                projection.validated_claims
+                if projection.validated_claims
+                else projection.context_claims
+            )
+            if item.claim_id is not None
+        )
+        used: set[str] = set()
+        for claim in claims_by_role.get(role, ()):
+            for upstream_id in claim.upstream_claim_ids:
+                used.update(sector_ancestors(upstream_id, set()))
+        used_ordered = tuple(item for item in provided if item in used)
+        provided_events = tuple(item.event_id for item in projection.event_references)
+        used_events = tuple(
+            event.event_id
+            for event in projection.event_references
+            if set(event.supporting_sector_claim_ids) & set(used_ordered)
+        )
+        serialized = json.dumps(
+            projection.model_dump(mode="json"),
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        diagnostics.append(
+            SectorContextUsageDiagnostic(
+                sector_context_id=bundle.context_id,
+                agent_role=role,
+                provided_sector_claim_ids=provided,
+                used_sector_claim_ids=used_ordered,
+                provided_event_ids=provided_events,
+                used_event_ids=used_events,
+                serialized_context_chars=len(serialized),
+            )
+        )
+    return tuple(diagnostics)
+
+
 _EVENT_ROLES = {
     AgentName.NEWS_EVENT_ANALYST,
     AgentName.RESEARCH_MANAGER,
@@ -458,6 +539,44 @@ class RepositorySectorContextResolver:
             macro_snapshot=macro_snapshot,
             anomaly_events=tuple(events_by_id.values()),
             industry_chains=chains,
+        )
+
+
+class FrozenSectorContextResolver:
+    """Expose one already-built PIT Sector context through the runtime protocol."""
+
+    def __init__(self, bundle: SectorContextBundle) -> None:
+        """Retain one validated artifact without rebuilding Sector intelligence."""
+
+        self._bundle = bundle
+
+    def resolve(
+        self,
+        *,
+        asset_id: AssetId,
+        research_as_of: datetime,
+    ) -> SectorContextResolution:
+        """Return the exact aligned artifact or an explicit missing resolution."""
+
+        if self._bundle.asset_id != asset_id:
+            return SectorContextResolution(
+                asset_id=asset_id,
+                research_as_of=research_as_of,
+                status=SectorCapabilityStatus.MISSING,
+                reason="Configured Sector context belongs to another asset.",
+            )
+        if self._bundle.research_as_of != research_as_of:
+            return SectorContextResolution(
+                asset_id=asset_id,
+                research_as_of=research_as_of,
+                status=SectorCapabilityStatus.MISSING,
+                reason="Configured Sector context does not match research_as_of.",
+            )
+        return SectorContextResolution(
+            asset_id=asset_id,
+            research_as_of=research_as_of,
+            status=self._bundle.quality,
+            bundle=self._bundle,
         )
 
 

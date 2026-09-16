@@ -18,11 +18,17 @@ from src.agents.contracts import (
 )
 from src.agents.evidence import numeric_literals
 from src.agents.input_contracts import AGENT_OUTPUT_SCHEMA_VERSION
+from src.agents.numeric_grounding import validate_numeric_grounding
 from src.models.compliance import infer_claim_intent, prohibited_claim_intent
 from src.models.enums import AgentName, AgentStatus, ClaimIntent
 from src.models.types import DomainModel, JsonObject, JsonValue
 from src.repositories.records import AgentRunRecord
-from src.schemas.agents import ClaimEvidenceBinding, RejectedClaim, RoleEvidenceManifest
+from src.schemas.agents import (
+    ClaimEvidenceBinding,
+    RejectedClaim,
+    RoleEvidenceManifest,
+    RoleEvidenceManifestEntry,
+)
 from src.schemas.common import ErrorInfo, SourceReference
 from src.schemas.llm import LLMRunMetadata
 from src.schemas.memory import MemorySearchRequest, MemorySearchResponse
@@ -1420,12 +1426,16 @@ def _validate_claim_candidate(
     for evidence_id in binding.evidence_ids:
         if evidence_id not in entries:
             return rejected("unknown_or_cross_role_evidence_id")
-    bound_entries = [entries[evidence_id] for evidence_id in binding.evidence_ids]
-    for literal in literals:
-        if not any(
-            literal in getattr(entry, "numeric_tokens", ()) for entry in bound_entries
-        ):
-            return rejected(f"numeric_literal_not_grounded:{literal}")
+    bound_entries = [
+        cast(RoleEvidenceManifestEntry, entries[evidence_id])
+        for evidence_id in binding.evidence_ids
+    ]
+    grounding = validate_numeric_grounding(text, bound_entries)
+    literals = grounding.numeric_literals
+    if grounding.ungrounded_literals:
+        return rejected(
+            f"numeric_literal_not_grounded:{grounding.ungrounded_literals[0]}"
+        )
     if prohibited_claim_intent(binding.claim_text) is not None:
         return rejected("prohibited_claim_intent")
     if binding.claim_intent in {

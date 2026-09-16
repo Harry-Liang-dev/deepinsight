@@ -12,10 +12,8 @@ from src.schemas.common import ErrorInfo, SourceReference
 from src.schemas.llm import LLMRunMetadata
 from src.schemas.memory import MemorySearchRequest
 from src.schemas.research_data import ResearchDataBundle
-from src.schemas.sector_context import (
-    SectorContextBundle,
-    SectorContextUsageDiagnostic,
-)
+from src.schemas.sector_context import SectorContextBundle
+from src.schemas.sector_usage import SectorContextUsageDiagnostic
 
 
 class PromptTemplate(DomainModel):

@@ -8,10 +8,13 @@ from typing import Self
 
 from pydantic import Field, field_validator, model_validator
 
-from src.models.enums import Market, MarketScope, MemoryLevel
+from src.models.enums import Market, MarketScope, MemoryLevel, ResearchScopeType
 from src.models.identifiers import AssetId
 from src.models.types import DomainModel
 from src.schemas.common import SourceReference
+from src.schemas.memory import LearningMemoryMetadata, LearningMemoryUsageClass
+from src.schemas.research_attribution import MemoryRetrievalCandidate
+from src.schemas.temporal import TemporalMetadata, validate_temporal_access
 
 
 class ResearchContextSection(StrEnum):
@@ -57,6 +60,10 @@ class ResearchContextRequest(DomainModel):
     min_importance_score: float = Field(default=0.0, ge=0.0, le=1.0)
     include_prior_reports: bool = True
     current_report_id: str | None = None
+    scope_ids: list[str] | None = None
+    scope_types: list[ResearchScopeType] | None = None
+    usage_classes: list[LearningMemoryUsageClass] | None = None
+    episode_ids: list[str] | None = None
 
     @field_validator("query_text")
     @classmethod
@@ -100,6 +107,14 @@ class ResearchContextRequest(DomainModel):
 
         if self.asset_id is not None and self.asset_id.market is not self.market:
             raise ValueError("asset_id market does not match requested market")
+        for name, value in (
+            ("scope_ids", self.scope_ids),
+            ("scope_types", self.scope_types),
+            ("usage_classes", self.usage_classes),
+            ("episode_ids", self.episode_ids),
+        ):
+            if value == []:
+                raise ValueError(f"{name} cannot be empty when supplied")
         return self
 
 
@@ -115,17 +130,21 @@ class ResearchContextMemory(DomainModel):
     memory_type: str = Field(min_length=1)
     summary_text: str = Field(min_length=1)
     effective_ts: datetime
+    available_at: datetime | None = None
     importance_score: float = Field(ge=0.0, le=1.0)
     retrieval_score: float
     retrieval_reason: str = Field(min_length=1)
     source: SourceReference
     created_by: str = Field(min_length=1)
+    metadata: LearningMemoryMetadata | None = None
 
-    @field_validator("effective_ts")
+    @field_validator("effective_ts", "available_at")
     @classmethod
-    def normalize_effective_time(cls, value: datetime) -> datetime:
+    def normalize_effective_time(cls, value: datetime | None) -> datetime | None:
         """Require unambiguous UTC time before Memory crosses its boundary."""
 
+        if value is None:
+            return None
         if value.tzinfo is None or value.utcoffset() is None:
             raise ValueError("Memory effective_ts must be timezone-aware")
         return value.astimezone(UTC)
@@ -151,6 +170,10 @@ class RetrievalMetadata(DomainModel):
     namespace_keys: list[str] = Field(min_length=1)
     requested_levels: list[MemoryLevel] = Field(min_length=1)
     current_report_id: str | None = None
+    scope_ids: list[str] | None = None
+    scope_types: list[ResearchScopeType] | None = None
+    usage_classes: list[LearningMemoryUsageClass] | None = None
+    episode_ids: list[str] | None = None
     min_importance_score: float = Field(ge=0.0, le=1.0)
     top_k_per_section: int = Field(gt=0)
     snapshot_id: str = Field(min_length=1)
@@ -164,9 +187,12 @@ class RetrievalMetadata(DomainModel):
     excluded_importance_count: int = Field(ge=0)
     excluded_expired_count: int = Field(ge=0)
     excluded_current_report_count: int = Field(ge=0)
+    excluded_learning_metadata_count: int = Field(default=0, ge=0)
+    eligible_candidates: tuple[MemoryRetrievalCandidate, ...] = ()
     section_counts: dict[ResearchContextSection, int]
     status: RetrievalStatus
     no_relevant_memory: bool
+    empty_valid: bool = False
 
     @field_validator("as_of")
     @classmethod
@@ -204,8 +230,17 @@ class ResearchContextBundle(DomainModel):
             for section in ResearchContextSection
             for item in self.items_for_section(section)
         ]
-        if any(item.effective_ts > as_of for item in items):
-            raise ValueError("ResearchContextBundle cannot contain future Memory")
+        for item in items:
+            validate_temporal_access(
+                TemporalMetadata(
+                    event_time=item.effective_ts,
+                    available_at=item.available_at or item.effective_ts,
+                    effective_from=item.effective_ts,
+                ),
+                as_of,
+            )
+            if item.metadata is not None:
+                validate_temporal_access(item.metadata.temporal, as_of)
         return self
 
     def items_for_section(

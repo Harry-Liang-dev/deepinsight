@@ -25,6 +25,12 @@ from src.schemas.sectors import (
     SectorUniverseSnapshot,
     SectorValuationState,
 )
+from src.schemas.temporal import (
+    TemporalAccessMode,
+    TemporalLeakageError,
+    validate_temporal_access,
+)
+from src.temporal_mapping import TemporalMappingError, temporal_metadata_for
 
 _FEATURE_VERSION = "sector_research_features_v1"
 _MARKET_BENCHMARK_ID = "US:SPY"
@@ -55,6 +61,8 @@ class SectorStateOperator:
         bars_by_asset: Mapping[str, Sequence[EodBarRecord]],
         fundamentals_by_asset: Mapping[str, Sequence[FundamentalRecord]],
         market_benchmark_id: str = _MARKET_BENCHMARK_ID,
+        research_as_of: datetime | None = None,
+        temporal_access_mode: TemporalAccessMode = TemporalAccessMode.HISTORICAL_REPLAY,
     ) -> SectorResearchSnapshot:
         """Compute one immutable state using observations available by ``as_of``."""
 
@@ -62,6 +70,8 @@ class SectorStateOperator:
             as_of=universe.as_of,
             bars_by_asset=bars_by_asset,
             fundamentals_by_asset=fundamentals_by_asset,
+            research_as_of=research_as_of,
+            temporal_access_mode=temporal_access_mode,
         )
         universe_ids = tuple(str(item) for item in universe.asset_ids)
         universe_count = len(universe_ids)
@@ -479,34 +489,38 @@ def _validate_point_in_time(
     as_of: date,
     bars_by_asset: Mapping[str, Sequence[EodBarRecord]],
     fundamentals_by_asset: Mapping[str, Sequence[FundamentalRecord]],
+    research_as_of: datetime | None = None,
+    temporal_access_mode: TemporalAccessMode = TemporalAccessMode.HISTORICAL_REPLAY,
 ) -> None:
-    cutoff = datetime.combine(as_of, time.max, tzinfo=UTC)
+    cutoff = research_as_of or datetime.combine(as_of, time.max, tzinfo=UTC)
+    if cutoff.date() != as_of:
+        raise SectorStateInputError("research instant and Sector snapshot date differ")
     for bar_records in bars_by_asset.values():
         for bar_record in bar_records:
             if bar_record.trade_date > as_of:
                 raise SectorStateInputError("future EOD observation is not allowed")
-            _require_observed_by(bar_record.ingestion_ts, cutoff, "EOD")
+            _require_usable(bar_record, cutoff, "EOD", temporal_access_mode)
     for fundamental_records in fundamentals_by_asset.values():
         for fundamental_record in fundamental_records:
             if fundamental_record.fiscal_period_end > as_of:
                 raise SectorStateInputError("future fundamental period is not allowed")
-            _require_observed_by(fundamental_record.ingestion_ts, cutoff, "fundamental")
-            if fundamental_record.accepted_at is not None:
-                _require_observed_by(
-                    fundamental_record.accepted_at, cutoff, "accepted filing"
-                )
+            label = (
+                "accepted filing"
+                if fundamental_record.accepted_at is not None
+                else "fundamental"
+            )
+            _require_usable(fundamental_record, cutoff, label, temporal_access_mode)
 
 
-def _require_observed_by(value: datetime, cutoff: datetime, label: str) -> None:
-    # DuckDB's existing TIMESTAMP columns persist normalized UTC as naive
-    # values. Canonical Repository reads therefore restore that documented
-    # UTC meaning here before enforcing the point-in-time cutoff.
-    observed = (
-        value.replace(tzinfo=UTC)
-        if value.tzinfo is None or value.utcoffset() is None
-        else value.astimezone(UTC)
-    )
-    if observed > cutoff:
+def _require_usable(
+    record: object,
+    cutoff: datetime,
+    label: str,
+    mode: TemporalAccessMode,
+) -> None:
+    try:
+        validate_temporal_access(temporal_metadata_for(record), cutoff, mode=mode)
+    except (TemporalLeakageError, TemporalMappingError):
         raise SectorStateInputError(f"future {label} observation is not allowed")
 
 

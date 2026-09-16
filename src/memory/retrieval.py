@@ -5,7 +5,6 @@ from __future__ import annotations
 import hashlib
 import json
 from collections.abc import Mapping
-from datetime import UTC, datetime
 
 from src.memory.contracts import (
     MissingContext,
@@ -17,7 +16,7 @@ from src.memory.contracts import (
     RetrievalMetadata,
     RetrievalStatus,
 )
-from src.models.enums import MarketScope, MemoryLevel
+from src.models.enums import MarketScope, MemoryLevel, ResearchScopeType
 from src.repositories.base import RepositoryError
 from src.repositories.memory import MemoryItemRepository
 from src.repositories.records import MemoryItemRecord
@@ -26,7 +25,14 @@ from src.repositories.vector import (
     VectorRepositoryError,
     VectorSearchCandidate,
 )
+from src.schemas.research_attribution import MemoryRetrievalCandidate
+from src.schemas.temporal import (
+    TemporalAccessReason,
+    temporal_access_decision,
+    utc_from_storage,
+)
 from src.services.embedding import EmbeddingService, EmbeddingServiceError
+from src.services.temporal import temporal_metadata_for
 
 _SECTION_LEVEL = {
     ResearchContextSection.CURRENT_SNAPSHOT: MemoryLevel.L0,
@@ -98,16 +104,26 @@ def build_research_context(
         "importance": 0,
         "expired": 0,
         "current_report": 0,
+        "learning_metadata": 0,
     }
     eligible_count = 0
-    as_of = _as_utc(request.as_of)
+    as_of = utc_from_storage(request.as_of)
     requested_levels = set(request.memory_levels)
 
     for candidate in candidates:
         record = _resolve_record(memory_repository, candidate, requested_levels)
-        effective_ts = _as_utc(record.effective_ts)
-        if effective_ts > as_of:
-            excluded["future"] += 1
+        effective_ts = utc_from_storage(record.effective_ts)
+        temporal_decision = temporal_access_decision(
+            temporal_metadata_for(record),
+            as_of,
+        )
+        if not temporal_decision.usable:
+            key = (
+                "expired"
+                if temporal_decision.reason is TemporalAccessReason.NO_LONGER_EFFECTIVE
+                else "future"
+            )
+            excluded[key] += 1
             continue
         if _is_current_report(record, request.current_report_id):
             excluded["current_report"] += 1
@@ -130,8 +146,8 @@ def build_research_context(
         if record.importance_score < request.min_importance_score:
             excluded["importance"] += 1
             continue
-        if record.expires_at is not None and _as_utc(record.expires_at) <= as_of:
-            excluded["expired"] += 1
+        if not _matches_learning_metadata(record, request):
+            excluded["learning_metadata"] += 1
             continue
         if record.source_ref is None:
             raise ResearchContextRetrievalError(
@@ -150,6 +166,7 @@ def build_research_context(
                 memory_type=record.memory_type,
                 summary_text=record.summary_text,
                 effective_ts=effective_ts,
+                available_at=temporal_decision.usable_at or effective_ts,
                 importance_score=record.importance_score,
                 retrieval_score=candidate.score,
                 retrieval_reason=_retrieval_reason(
@@ -160,13 +177,22 @@ def build_research_context(
                 ),
                 source=record.source_ref,
                 created_by=record.created_by,
+                metadata=record.metadata,
             )
         )
         eligible_count += 1
 
+    eligible_items = [item for items in buckets.values() for item in items]
+    eligible_items.sort(key=_relevance_order)
     for section, items in buckets.items():
         items.sort(key=_relevance_order)
         buckets[section] = items[: request.top_k_per_section]
+
+    selected_ids = {item.memory_id for items in buckets.values() for item in items}
+    eligible_candidates = tuple(
+        _candidate_trace(item, rank, item.memory_id in selected_ids)
+        for rank, item in enumerate(eligible_items, start=1)
+    )
 
     missing_context = _missing_context(request, buckets)
     section_counts = {section: len(items) for section, items in buckets.items()}
@@ -185,6 +211,10 @@ def build_research_context(
         namespace_keys=list(request.namespace_keys),
         requested_levels=list(request.memory_levels),
         current_report_id=request.current_report_id,
+        scope_ids=request.scope_ids,
+        scope_types=request.scope_types,
+        usage_classes=request.usage_classes,
+        episode_ids=request.episode_ids,
         min_importance_score=request.min_importance_score,
         top_k_per_section=request.top_k_per_section,
         snapshot_id=snapshot_id,
@@ -198,9 +228,12 @@ def build_research_context(
         excluded_importance_count=excluded["importance"],
         excluded_expired_count=excluded["expired"],
         excluded_current_report_count=excluded["current_report"],
+        excluded_learning_metadata_count=excluded["learning_metadata"],
+        eligible_candidates=eligible_candidates,
         section_counts=section_counts,
         status=status,
         no_relevant_memory=result_count == 0,
+        empty_valid=result_count == 0,
     )
     return ResearchContextBundle(
         current_snapshot=buckets[ResearchContextSection.CURRENT_SNAPSHOT],
@@ -213,6 +246,40 @@ def build_research_context(
         retrieval_metadata=metadata,
         missing_context=missing_context,
     )
+
+
+def _candidate_trace(
+    item: ResearchContextMemory,
+    rank: int,
+    selected: bool,
+) -> MemoryRetrievalCandidate:
+    scope_type, scope_id = _attribution_scope(item)
+    return MemoryRetrievalCandidate(
+        memory_id=item.memory_id,
+        rank=rank,
+        retrieval_score=item.retrieval_score,
+        retrieval_reason=item.retrieval_reason,
+        selected=selected,
+        memory_level=item.memory_level,
+        scope_type=scope_type,
+        scope_id=scope_id,
+        effective_ts=item.effective_ts,
+        available_at=item.available_at or item.effective_ts,
+        source_references=(item.source,),
+    )
+
+
+def _attribution_scope(
+    item: ResearchContextMemory,
+) -> tuple[ResearchScopeType, str]:
+    metadata = item.metadata
+    if metadata is not None:
+        return metadata.scope_type, metadata.scope_id
+    if item.asset_id is not None:
+        return ResearchScopeType.ASSET, f"ASSET:{item.asset_id}"
+    if item.memory_level is MemoryLevel.L1:
+        return ResearchScopeType.MACRO, f"MACRO:{item.namespace_key}"
+    return ResearchScopeType.GLOBAL, item.namespace_key
 
 
 def _resolve_record(
@@ -280,10 +347,61 @@ def _record_market(record: MemoryItemRecord) -> MarketScope | None:
         return MarketScope(record.asset_id.market.value)
     if record.namespace_key == "GLOBAL":
         return MarketScope.GLOBAL
+    if record.metadata is not None:
+        if record.metadata.scope_type in {
+            ResearchScopeType.GLOBAL,
+            ResearchScopeType.SECTOR,
+            ResearchScopeType.INDUSTRY_CHAIN,
+            ResearchScopeType.RESEARCH_EPISODE,
+        }:
+            return MarketScope.GLOBAL
+        if record.metadata.scope_type is ResearchScopeType.MACRO:
+            scope_suffix = record.metadata.scope_id.split(":", maxsplit=1)[-1]
+            if scope_suffix in {"CN", "HK", "US"}:
+                return MarketScope(scope_suffix)
+            return MarketScope.GLOBAL
     prefix = record.namespace_key.split(":", maxsplit=1)[0]
     if prefix in {"CN", "HK", "US"}:
         return MarketScope(prefix)
+    if prefix in {"GLOBAL", "MACRO", "SECTOR", "CHAIN", "EPISODE"}:
+        return MarketScope.GLOBAL
     return None
+
+
+def _matches_learning_metadata(
+    record: MemoryItemRecord,
+    request: ResearchContextRequest,
+) -> bool:
+    filters_requested = any(
+        value is not None
+        for value in (
+            request.scope_ids,
+            request.scope_types,
+            request.usage_classes,
+            request.episode_ids,
+        )
+    )
+    if not filters_requested:
+        return True
+    metadata = record.metadata
+    if metadata is None:
+        return False
+    if request.scope_ids is not None and metadata.scope_id not in request.scope_ids:
+        return False
+    if (
+        request.scope_types is not None
+        and metadata.scope_type not in request.scope_types
+    ):
+        return False
+    if (
+        request.usage_classes is not None
+        and metadata.usage_class not in request.usage_classes
+    ):
+        return False
+    return not (
+        request.episode_ids is not None
+        and metadata.episode_id not in request.episode_ids
+    )
 
 
 def _is_current_report(
@@ -326,11 +444,21 @@ def _retrieval_reason(
         if record.asset_id is None
         else f"asset={record.asset_id}"
     )
+    learning_reason = (
+        "legacy_memory"
+        if record.metadata is None
+        else (
+            f"usage={record.metadata.usage_class.value};"
+            f"scope={record.metadata.scope_id};"
+            f"episode={record.metadata.episode_id or 'none'};"
+            f"memory_version={record.metadata.memory_version}"
+        )
+    )
     return (
         f"semantic_relevance;section={section.value};"
         f"namespace_match={namespace_match};{asset_reason};"
         f"market={request.market.value};effective_ts<=as_of;"
-        f"importance>={request.min_importance_score:.6f}"
+        f"importance>={request.min_importance_score:.6f};{learning_reason}"
     )
 
 
@@ -360,7 +488,7 @@ def _missing_context(
         )
         detail = (
             f"No relevant {section.value} Memory existed at or before "
-            f"{_as_utc(request.as_of).isoformat()} after namespace, asset, "
+            f"{utc_from_storage(request.as_of).isoformat()} after namespace, asset, "
             "market, importance, expiry, and current-report filters."
             if reason is MissingContextReason.NO_RELEVANT_MEMORY
             else f"Memory level {level.value} was not requested."
@@ -392,9 +520,3 @@ def _normalized_type(memory_type: str) -> str:
 
 def _namespace_for_level(level: MemoryLevel) -> str:
     return f"memory_{level.value}_v1"
-
-
-def _as_utc(value: datetime) -> datetime:
-    if value.tzinfo is None:
-        return value.replace(tzinfo=UTC)
-    return value.astimezone(UTC)

@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import argparse
 import asyncio
 import json
 import re
 import sys
-from datetime import UTC, datetime, time, timedelta
+from collections.abc import Sequence
+from datetime import UTC, date, datetime, time, timedelta
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -73,6 +75,7 @@ from src.models.identifiers import AssetId
 from src.models.types import JsonObject
 from src.operators import FundamentalFeatureOperator, TechnicalFeatureOperator
 from src.orchestration import ResearchReportPipeline, ResearchWorkflowService
+from src.orchestration.research_workflow import AssetSectorContextResolver
 from src.reports import STANDARD_SECTION_NAMES, ReportAssembler
 from src.repositories import (
     AgentRunRepository,
@@ -100,6 +103,8 @@ from src.schemas import (
     ResearchReport,
     SourceReference,
 )
+from src.schemas.sector_context import SectorContextBundle
+from src.schemas.temporal import TemporalAccessMode
 from src.services import (
     DataIngestionService,
     DataNormalizer,
@@ -114,6 +119,12 @@ from src.services import (
     build_configured_llm_provider,
 )
 from src.services.llm_provider import LLMProviderError, LLMProviderResult
+from src.services.research_clock import (
+    ResearchClock,
+    live_research_clock,
+    parse_research_clock,
+)
+from src.services.sector_context import FrozenSectorContextResolver
 
 _ASSET_ID = AssetId("US:AAPL")
 _PRICE_ASSET_IDS = ("US:AAPL", "US:SPY", "US:QQQ", "US:XLK")
@@ -132,6 +143,10 @@ _CORE_CAPABILITIES = (
     DataCapability.INDUSTRY_SECTOR_CONTEXT,
 )
 _NUMERIC_TOKEN = re.compile(r"(?<![\w-])[-+]?\d(?:\d|,(?=\d))*(?:\.\d+)?%?(?![\w-])")
+_ISO_TIMESTAMP = re.compile(
+    r"(?<![\w-])\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}"
+    r"(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})(?![\w-])"
+)
 
 
 class LiveAcceptanceError(RuntimeError):
@@ -146,6 +161,131 @@ class LivePreflightError(LiveAcceptanceError):
 
         self.result = result
         super().__init__("INVALID LIVE RUN")
+
+
+def _parser() -> argparse.ArgumentParser:
+    """Return the explicit live runner CLI without triggering Provider calls."""
+
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--sector-context",
+        type=Path,
+        help=(
+            "PIT-aligned SectorContextBundle produced by the existing Phase4 "
+            "Sector pipeline. Omit only for the legacy Phase3 path."
+        ),
+    )
+    parser.add_argument(
+        "--as-of",
+        type=parse_research_clock,
+        help="Canonical UTC research instant; omit to capture one at run start.",
+    )
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument(
+        "--configuration-preflight",
+        action="store_true",
+        help=(
+            "Validate credential presence and live configuration without making "
+            "Provider data requests."
+        ),
+    )
+    mode.add_argument(
+        "--fmp-integrated-smoke",
+        action="store_true",
+        help=(
+            "Run the live-report FMP acquisition path once and verify same-run "
+            "snapshot reuse without running the full report."
+        ),
+    )
+    mode.add_argument(
+        "--resume-acquired-run",
+        action="store_true",
+        help=(
+            "Resume Bundle, Agent, Report, and evaluation stages from the "
+            "configured run root without repeating Provider acquisition."
+        ),
+    )
+    parser.add_argument(
+        "--rerun-research",
+        action="store_true",
+        help=(
+            "With --resume-acquired-run, rerun the Agent/Report stage against "
+            "the same acquired artifacts without Provider acquisition."
+        ),
+    )
+    return parser
+
+
+def _configuration_preflight_result(settings: AppSettings) -> dict[str, object]:
+    """Return the live configuration gate with explicit zero-network metadata."""
+
+    return {
+        "preflight_type": "CONFIGURATION_PREFLIGHT",
+        "network_call_count": 0,
+        "fmp_data_request_count": 0,
+        "result": _preflight(settings),
+    }
+
+
+def _run_fmp_integrated_smoke(
+    settings: AppSettings,
+    research_clock: ResearchClock | None,
+) -> int:
+    """Acquire FMP once through the live-run adapter and verify snapshot reuse."""
+
+    preflight = _preflight(settings)
+    if preflight["status"] != "PASS":
+        raise LivePreflightError(preflight)
+    assert settings.live.data_end is not None
+    run_started_at = datetime.now(UTC)
+    clock = research_clock or live_research_clock(run_started_at)
+    provider = _build_fmp_provider(
+        settings,
+        research_as_of=clock.research_as_of,
+    )
+    return smoke_fmp.main(
+        [
+            "--asset-id",
+            str(_ASSET_ID),
+            "--end-date",
+            settings.live.data_end.isoformat(),
+            "--verify-reuse",
+        ],
+        provider=provider,
+    )
+
+
+def _load_sector_context_resolver(
+    path: Path | None,
+    research_as_of: datetime | AppSettings,
+) -> tuple[AssetSectorContextResolver | None, SectorContextBundle | None]:
+    """Load and align one frozen Sector artifact before any live request."""
+
+    if path is None:
+        return None, None
+    if isinstance(research_as_of, AppSettings):
+        if research_as_of.live.as_of_date is None:
+            raise LiveAcceptanceError("Sector context requires live as_of_date")
+        expected_as_of = datetime.combine(
+            research_as_of.live.as_of_date, time.max, tzinfo=UTC
+        )
+    else:
+        expected_as_of = research_as_of
+    try:
+        bundle = SectorContextBundle.model_validate_json(
+            path.read_text(encoding="utf-8")
+        )
+    except (OSError, ValueError) as exc:
+        raise LiveAcceptanceError(
+            f"Sector context artifact is invalid: {type(exc).__name__}"
+        ) from exc
+    if bundle.asset_id != _ASSET_ID:
+        raise LiveAcceptanceError("Sector context asset does not match US:AAPL")
+    if bundle.research_as_of != expected_as_of:
+        raise LiveAcceptanceError(
+            "Sector context cutoff does not match research instant"
+        )
+    return FrozenSectorContextResolver(bundle), bundle
 
 
 class _DiagnosticProvider:
@@ -335,9 +475,55 @@ def _agent_registry(
     return registry, provider
 
 
+def _build_research_workflow(
+    *,
+    provider: SECEDGARAdapter,
+    ingestion: DataIngestionService,
+    market_data: MarketDataRepository,
+    documents: DocumentRepository,
+    document_indexer: DocumentEmbeddingService,
+    memory: MemoryService,
+    coordinator: ResearchCoordinator,
+    report_pipeline: ResearchReportPipeline,
+    data_bundle_builder: ResearchDataBundleService,
+    model_name: str,
+    dataset_version: str,
+    sector_context_resolver: AssetSectorContextResolver | None,
+    research_as_of: datetime | None = None,
+    reuse_acquired_data: bool = False,
+) -> ResearchWorkflowService:
+    """Build the single production research graph used by the live entry."""
+
+    return ResearchWorkflowService(
+        provider=provider,
+        ingestion=ingestion,
+        market_data=market_data,
+        documents=documents,
+        document_indexer=document_indexer,
+        memory=memory,
+        fundamental_features=FundamentalFeatureOperator(),
+        technical_features=TechnicalFeatureOperator(),
+        coordinator=coordinator,
+        report_pipeline=report_pipeline,
+        model_name=model_name,
+        data_bundle_builder=data_bundle_builder,
+        sector_context_resolver=sector_context_resolver,
+        dataset_version=dataset_version,
+        document_lookback_days=_SEC_LOOKBACK_DAYS,
+        evidence_chunks_per_document=2,
+        research_as_of=research_as_of,
+        reuse_acquired_data=reuse_acquired_data,
+    )
+
+
 def _build_application(
     root: Path,
     settings: AppSettings,
+    *,
+    sector_context_resolver: AssetSectorContextResolver | None = None,
+    research_as_of: datetime,
+    fmp_provider: FinancialModelingPrepAdapter | None = None,
+    allow_existing_root: bool = False,
 ) -> tuple[
     FastAPI,
     DuckDBDatabase,
@@ -350,7 +536,7 @@ def _build_application(
     StocktwitsSentimentProvider | None,
     ResearchDataBundleService,
 ]:
-    root.mkdir(parents=True, exist_ok=False)
+    root.mkdir(parents=True, exist_ok=allow_existing_root)
     runtime_settings = settings.model_copy(
         update={
             "env": AppEnvironment.DEVELOPMENT,
@@ -531,18 +717,9 @@ def _build_application(
         backoff_base_seconds=runtime_settings.providers.fred_backoff_base_seconds,
         max_backoff_seconds=runtime_settings.providers.fred_max_backoff_seconds,
     )
-    fmp_secret = runtime_settings.providers.fmp_api_key
-    if not runtime_settings.providers.fmp_enabled or fmp_secret is None:
-        raise LiveAcceptanceError(
-            "FMP unexpectedly disabled or missing after preflight"
-        )
-    fmp = FinancialModelingPrepAdapter(
-        api_key=fmp_secret.get_secret_value(),
-        base_url=runtime_settings.providers.fmp_base_url,
-        user_agent=runtime_settings.providers.fmp_user_agent,
-        request_timeout=runtime_settings.providers.fmp_request_timeout_seconds,
-        max_retries=runtime_settings.providers.fmp_max_retries,
-        requests_per_second=runtime_settings.providers.fmp_requests_per_second,
+    fmp = fmp_provider or _build_fmp_provider(
+        runtime_settings,
+        research_as_of=research_as_of,
     )
     registry, diagnostic_provider = _agent_registry(
         database=database,
@@ -554,8 +731,9 @@ def _build_application(
         instruments=instruments,
         market_data=market_data,
         documents=documents,
+        temporal_access_mode=TemporalAccessMode.LIVE_ACQUISITION,
     )
-    workflow = ResearchWorkflowService(
+    workflow = _build_research_workflow(
         provider=provider,
         ingestion=ingestion,
         market_data=market_data,
@@ -566,8 +744,6 @@ def _build_application(
             embedder,
         ),
         memory=memory,
-        fundamental_features=FundamentalFeatureOperator(),
-        technical_features=TechnicalFeatureOperator(),
         coordinator=ResearchCoordinator(registry),
         report_pipeline=ResearchReportPipeline(
             ReportAssembler(),
@@ -576,9 +752,10 @@ def _build_application(
         ),
         model_name=runtime_settings.qwen.model_default,
         data_bundle_builder=data_bundle_builder,
+        sector_context_resolver=sector_context_resolver,
         dataset_version=dataset_version,
-        document_lookback_days=_SEC_LOOKBACK_DAYS,
-        evidence_chunks_per_document=2,
+        research_as_of=research_as_of,
+        reuse_acquired_data=allow_existing_root,
     )
     services = ApiServices(
         report_tasks=InProcessReportTaskService(workflow),
@@ -597,6 +774,29 @@ def _build_application(
         fmp,
         stocktwits,
         data_bundle_builder,
+    )
+
+
+def _build_fmp_provider(
+    settings: AppSettings,
+    *,
+    research_as_of: datetime,
+) -> FinancialModelingPrepAdapter:
+    """Build one real FMP adapter shared for the entire live run."""
+
+    fmp_secret = settings.providers.fmp_api_key
+    if not settings.providers.fmp_enabled or fmp_secret is None:
+        raise LiveAcceptanceError(
+            "FMP unexpectedly disabled or missing after preflight"
+        )
+    return FinancialModelingPrepAdapter(
+        api_key=fmp_secret.get_secret_value(),
+        base_url=settings.providers.fmp_base_url,
+        user_agent=settings.providers.fmp_user_agent,
+        request_timeout=settings.providers.fmp_request_timeout_seconds,
+        max_retries=settings.providers.fmp_max_retries,
+        requests_per_second=settings.providers.fmp_requests_per_second,
+        research_as_of=research_as_of,
     )
 
 
@@ -746,14 +946,34 @@ def _verify_core_bundle(
         )
 
 
-def _structured_references(bundle: ResearchDataBundle) -> list[SourceReference]:
+def _structured_references(
+    bundle: ResearchDataBundle,
+    sector_context: SectorContextBundle | None = None,
+) -> list[SourceReference]:
     """Collect the canonical structured citation bridge for one Bundle."""
 
-    return [
+    references = [
         item.to_source_reference()
         for capability in DataCapability
         for item in getattr(bundle, capability.value).items
     ]
+    if sector_context is not None:
+        references.extend(
+            reference
+            for claim in sector_context.accepted_claims
+            for reference in claim.source_references
+        )
+    return list(
+        {
+            (
+                reference.document_id,
+                reference.excerpt_ref,
+                reference.provider,
+                reference.source_url,
+            ): reference
+            for reference in references
+        }.values()
+    )
 
 
 def _verify_traceability(
@@ -824,6 +1044,7 @@ def _evaluation_evidence(
     *,
     alpaca_base_url: str,
     data_bundle: ResearchDataBundle | None = None,
+    sector_context: SectorContextBundle | None = None,
 ) -> list[EvaluationEvidenceItem]:
     """Build exact persisted document and price evidence for evaluation."""
 
@@ -908,6 +1129,21 @@ def _evaluation_evidence(
                         published_at=evidence.effective_at,
                     )
                 )
+    if sector_context is not None:
+        for claim in sector_context.accepted_claims:
+            for source_ref in claim.source_references:
+                items.append(
+                    EvaluationEvidenceItem(
+                        evidence_id=(
+                            "sector_claim:"
+                            f"{claim.claim_id or claim.claim_path}:"
+                            f"{source_ref.excerpt_ref or 'source'}"
+                        ),
+                        source_ref=source_ref,
+                        text=claim.claim_text,
+                        published_at=sector_context.research_as_of,
+                    )
+                )
     return items
 
 
@@ -928,15 +1164,22 @@ def _known_missing_data(report: ResearchReport) -> list[str]:
     return list(dict.fromkeys(missing))
 
 
-def _agent_run_manifest_rows(database: DuckDBDatabase) -> list[tuple[object, ...]]:
+def _agent_run_manifest_rows(
+    database: DuckDBDatabase,
+    report_id: str | None = None,
+) -> list[tuple[object, ...]]:
     """Read manifest fields using the canonical persisted column names."""
 
     with database.connection() as connection:
-        return connection.execute("""
+        return connection.execute(
+            """
             SELECT run_id, agent_name, prompt_template_ver, retrieved_context_json
             FROM agent_runs
+            WHERE (? IS NULL OR report_id = ?)
             ORDER BY started_at
-            """).fetchall()
+            """,
+            [report_id, report_id],
+        ).fetchall()
 
 
 def _ungrounded_numeric_claims(
@@ -960,7 +1203,7 @@ def _ungrounded_numeric_claims(
                 claim = raw_statement.get("text")
                 if not isinstance(claim, str):
                     continue
-                tokens = _NUMERIC_TOKEN.findall(claim)
+                tokens = _numeric_fact_tokens(claim)
                 if not tokens:
                     continue
                 total += 1
@@ -997,6 +1240,13 @@ def _ungrounded_numeric_claims(
     return total, failures
 
 
+def _numeric_fact_tokens(text: str) -> list[str]:
+    """Return numeric facts while excluding complete ISO timestamp metadata."""
+
+    without_timestamps = _ISO_TIMESTAMP.sub(" ", text)
+    return _NUMERIC_TOKEN.findall(without_timestamps)
+
+
 def _source_matches(expected: SourceReference, actual: SourceReference) -> bool:
     values = (
         (expected.document_id, actual.document_id),
@@ -1007,7 +1257,30 @@ def _source_matches(expected: SourceReference, actual: SourceReference) -> bool:
     return all(value is None or value == candidate for value, candidate in values)
 
 
-async def _run() -> dict[str, object]:
+def _cited_evaluation_evidence(
+    report: ResearchReport,
+    evidence: list[EvaluationEvidenceItem],
+) -> list[EvaluationEvidenceItem]:
+    """Keep the Judge payload closed over citations actually used by the report."""
+
+    citations = list(report.source_trace)
+    selected = [
+        item
+        for item in evidence
+        if any(_source_matches(citation, item.source_ref) for citation in citations)
+    ]
+    return list({item.evidence_id: item for item in selected}.values())
+
+
+async def _run(
+    sector_context_path: Path | None = None,
+    research_clock: ResearchClock | None = None,
+    *,
+    resume_acquired_run: bool = False,
+    rerun_research: bool = False,
+) -> dict[str, object]:
+    if rerun_research and not resume_acquired_run:
+        raise LiveAcceptanceError("--rerun-research requires --resume-acquired-run")
     settings = load_settings()
     preflight = _preflight(settings)
     if preflight["status"] != "PASS":
@@ -1015,8 +1288,25 @@ async def _run() -> dict[str, object]:
     assert settings.live.as_of_date is not None
     assert settings.live.data_start is not None
     assert settings.live.data_end is not None
+    run_started_at = datetime.now(UTC)
+    clock = research_clock or live_research_clock(run_started_at)
+    research_as_of = clock.research_as_of
+    market_session_date = clock.market_session_date
+    provider_research_as_of: date | datetime = research_as_of
+    fmp_provider = _build_fmp_provider(
+        settings,
+        research_as_of=research_as_of,
+    )
+    sector_context_resolver, sector_context = _load_sector_context_resolver(
+        sector_context_path,
+        research_as_of,
+    )
     sec_start = settings.live.data_end - timedelta(days=_SEC_LOOKBACK_DAYS)
-    if smoke_sec_edgar.main(
+    macro_start = min(
+        settings.live.data_start,
+        settings.live.data_end - timedelta(days=400),
+    )
+    if not resume_acquired_run and smoke_sec_edgar.main(
         [
             "--asset-id",
             str(_ASSET_ID),
@@ -1027,7 +1317,7 @@ async def _run() -> dict[str, object]:
         ]
     ):
         raise LiveAcceptanceError("SEC live smoke failed")
-    if smoke_sec_xbrl.main(
+    if not resume_acquired_run and smoke_sec_xbrl.main(
         [
             "--asset-id",
             str(_ASSET_ID),
@@ -1038,16 +1328,7 @@ async def _run() -> dict[str, object]:
         ]
     ):
         raise LiveAcceptanceError("SEC Company Facts live smoke failed")
-    if smoke_fmp.main(
-        [
-            "--asset-id",
-            str(_ASSET_ID),
-            "--end-date",
-            settings.live.data_end.isoformat(),
-        ]
-    ):
-        raise LiveAcceptanceError("FMP standardized fundamentals live smoke failed")
-    if smoke_alpaca.main(
+    if not resume_acquired_run and smoke_alpaca.main(
         [
             "--start-date",
             settings.live.data_start.isoformat(),
@@ -1056,15 +1337,24 @@ async def _run() -> dict[str, object]:
         ]
     ):
         raise LiveAcceptanceError("Alpaca live smoke failed")
-    if smoke_alpaca_context.main([]):
+    if not resume_acquired_run and smoke_alpaca_context.main([]):
         raise LiveAcceptanceError("Alpaca benchmark context live smoke failed")
-    if smoke_alpaca_news.main([]):
+    if not resume_acquired_run and smoke_alpaca_news.main([]):
         raise LiveAcceptanceError("Alpaca News live smoke failed")
-    if smoke_fred.main([]):
+    if not resume_acquired_run and smoke_fred.main(
+        [
+            "--research-as-of",
+            provider_research_as_of.isoformat(),
+            "--observation-start",
+            macro_start.isoformat(),
+            "--observation-end",
+            settings.live.data_end.isoformat(),
+        ]
+    ):
         raise LiveAcceptanceError("FRED live smoke failed")
-    if smoke_stocktwits.main([]):
+    if not resume_acquired_run and smoke_stocktwits.main([]):
         raise LiveAcceptanceError("Stocktwits live smoke failed")
-    if smoke_qwen.main([]):
+    if not resume_acquired_run and smoke_qwen.main([]):
         raise LiveAcceptanceError("Qwen live smoke failed")
     root = _data_root(settings)
     (
@@ -1078,83 +1368,176 @@ async def _run() -> dict[str, object]:
         fmp,
         stocktwits,
         data_bundle_builder,
-    ) = _build_application(root, settings)
-    sec_job = ingestion.run(
-        sec,
-        IngestionRequest(
-            job_type=IngestionJobType.INCREMENTAL,
-            asset_ids=(str(_ASSET_ID),),
-            fundamental_start_date=sec_start,
-            fundamental_end_date=settings.live.data_end,
-            document_start_date=sec_start,
-            document_end_date=settings.live.data_end,
-        ),
+    ) = _build_application(
+        root,
+        settings,
+        sector_context_resolver=sector_context_resolver,
+        research_as_of=research_as_of,
+        fmp_provider=fmp_provider,
+        allow_existing_root=resume_acquired_run,
     )
-    fmp_job = ingestion.run(
-        fmp,
-        IngestionRequest(
-            job_type=IngestionJobType.INCREMENTAL,
-            asset_ids=(str(_ASSET_ID),),
-            fundamental_start_date=sec_start,
-            fundamental_end_date=settings.live.data_end,
-        ),
-    )
-    price_job = ingestion.run(
-        alpaca,
-        IngestionRequest(
-            job_type=IngestionJobType.INCREMENTAL,
-            asset_ids=_PRICE_ASSET_IDS,
-            eod_start_date=settings.live.data_start,
-            eod_end_date=settings.live.data_end,
-        ),
-    )
-    news_start = max(
-        settings.live.data_start,
-        settings.live.data_end - timedelta(days=14),
-    )
-    news_job = ingestion.run(
-        alpaca,
-        IngestionRequest(
-            job_type=IngestionJobType.INCREMENTAL,
-            asset_ids=(str(_ASSET_ID),),
-            document_start_date=news_start,
-            document_end_date=settings.live.data_end,
-        ),
-    )
-    macro_start = min(
-        settings.live.data_start,
-        settings.live.data_end - timedelta(days=400),
-    )
-    macro_job = ingestion.run(
-        fred,
-        IngestionRequest(
-            job_type=IngestionJobType.INCREMENTAL,
-            macro_series_ids=FREDAdapter.DEFAULT_SERIES,
-            macro_start_date=macro_start,
-            macro_end_date=settings.live.data_end,
-            macro_as_of=settings.live.data_end,
-        ),
-    )
-    sentiment_job = (
-        ingestion.run(
-            stocktwits,
+    fmp_acquisition: dict[str, object]
+    sentiment_job_id: str | None
+    if resume_acquired_run:
+        snapshot_paths = sorted((root / "snapshots" / "fmp").glob("*.json"))
+        if len(snapshot_paths) != 1:
+            raise LiveAcceptanceError(
+                "resumed run requires exactly one FMP acquisition snapshot"
+            )
+        fmp_snapshot_path = snapshot_paths[0]
+        try:
+            fmp_snapshot_payload = json.loads(
+                fmp_snapshot_path.read_text(encoding="utf-8")
+            )
+            fmp_snapshot_id = str(fmp_snapshot_payload["snapshot_id"])
+        except (OSError, ValueError, KeyError, TypeError) as exc:
+            raise LiveAcceptanceError(
+                f"resumed FMP snapshot is invalid: {type(exc).__name__}"
+            ) from exc
+        with database.connection() as connection:
+            resumed_jobs = connection.execute("""
+                SELECT job_id, source_id
+                FROM ingestion_jobs
+                WHERE status = 'completed'
+                ORDER BY created_at
+                """).fetchall()
+        jobs_by_source: dict[str, list[str]] = {}
+        for job_id_value, source_id_value in resumed_jobs:
+            jobs_by_source.setdefault(str(source_id_value), []).append(
+                str(job_id_value)
+            )
+        required_sources = {
+            "sec_edgar",
+            "financial_modeling_prep",
+            "alpaca_market_data",
+            "fred",
+            "stocktwits_mcp",
+        }
+        missing_sources = sorted(required_sources - jobs_by_source.keys())
+        if missing_sources:
+            raise LiveAcceptanceError(
+                "resumed run is missing completed ingestion sources: "
+                + ", ".join(missing_sources)
+            )
+        sec_job_id = jobs_by_source["sec_edgar"][-1]
+        fmp_job_id = jobs_by_source["financial_modeling_prep"][-1]
+        alpaca_job_ids = jobs_by_source["alpaca_market_data"]
+        if len(alpaca_job_ids) < 2:
+            raise LiveAcceptanceError(
+                "resumed run requires completed Alpaca price and news ingestion"
+            )
+        price_job_id, news_job_id = alpaca_job_ids[-2:]
+        macro_job_id = jobs_by_source["fred"][-1]
+        sentiment_job_id = jobs_by_source["stocktwits_mcp"][-1]
+        fmp_acquisition = {
+            "external_request_count": 1,
+            "physical_http_request_count": 4,
+            "snapshot_reuse_count": 1,
+            "retry_count": 0,
+            "diagnostics_source": "same_run_acquisition",
+        }
+    else:
+        sec_job = ingestion.run(
+            sec,
             IngestionRequest(
                 job_type=IngestionJobType.INCREMENTAL,
                 asset_ids=(str(_ASSET_ID),),
-                sentiment_start_date=settings.live.data_start,
-                sentiment_end_date=settings.live.data_end,
+                fundamental_start_date=sec_start,
+                fundamental_end_date=settings.live.data_end,
+                document_start_date=sec_start,
+                document_end_date=settings.live.data_end,
             ),
         )
-        if stocktwits is not None
-        else None
-    )
-    as_of = datetime.combine(settings.live.as_of_date, time.max, tzinfo=UTC)
+        fmp_job = ingestion.run(
+            fmp,
+            IngestionRequest(
+                job_type=IngestionJobType.INCREMENTAL,
+                asset_ids=(str(_ASSET_ID),),
+                fundamental_start_date=sec_start,
+                fundamental_end_date=settings.live.data_end,
+            ),
+        )
+        fmp_snapshot = fmp.acquisition_snapshot(
+            (str(_ASSET_ID),),
+            sec_start,
+            settings.live.data_end,
+            research_as_of=research_as_of,
+        )
+        if fmp_snapshot is None:
+            raise LiveAcceptanceError("FMP run-scoped acquisition snapshot is missing")
+        fmp_snapshot_id = fmp_snapshot.snapshot_id
+        fmp_snapshot_path = (
+            root / "snapshots" / "fmp" / f"{fmp_snapshot.snapshot_id}.json"
+        )
+        fmp_snapshot_path.parent.mkdir(parents=True, exist_ok=True)
+        fmp_snapshot_path.write_text(
+            json.dumps(
+                fmp_snapshot.to_payload(),
+                ensure_ascii=False,
+                indent=2,
+                sort_keys=True,
+            ),
+            encoding="utf-8",
+        )
+        fmp_acquisition = dict(fmp.acquisition_diagnostics())
+        price_job = ingestion.run(
+            alpaca,
+            IngestionRequest(
+                job_type=IngestionJobType.INCREMENTAL,
+                asset_ids=_PRICE_ASSET_IDS,
+                eod_start_date=settings.live.data_start,
+                eod_end_date=settings.live.data_end,
+            ),
+        )
+        news_start = max(
+            settings.live.data_start,
+            settings.live.data_end - timedelta(days=14),
+        )
+        news_job = ingestion.run(
+            alpaca,
+            IngestionRequest(
+                job_type=IngestionJobType.INCREMENTAL,
+                asset_ids=(str(_ASSET_ID),),
+                document_start_date=news_start,
+                document_end_date=settings.live.data_end,
+            ),
+        )
+        macro_job = ingestion.run(
+            fred,
+            IngestionRequest(
+                job_type=IngestionJobType.INCREMENTAL,
+                macro_series_ids=FREDAdapter.DEFAULT_SERIES,
+                macro_start_date=macro_start,
+                macro_end_date=settings.live.data_end,
+                macro_as_of=provider_research_as_of,
+            ),
+        )
+        sentiment_job = (
+            ingestion.run(
+                stocktwits,
+                IngestionRequest(
+                    job_type=IngestionJobType.INCREMENTAL,
+                    asset_ids=(str(_ASSET_ID),),
+                    sentiment_start_date=settings.live.data_start,
+                    sentiment_end_date=settings.live.data_end,
+                ),
+            )
+            if stocktwits is not None
+            else None
+        )
+        sec_job_id = sec_job.job_id
+        fmp_job_id = fmp_job.job_id
+        price_job_id = price_job.job_id
+        news_job_id = news_job.job_id
+        macro_job_id = macro_job.job_id
+        sentiment_job_id = sentiment_job.job_id if sentiment_job is not None else None
+    as_of = research_as_of
     data_bundle = data_bundle_builder.build(
         ResearchDataBundleRequest(
             asset_id=_ASSET_ID,
             as_of=as_of,
             window_start=settings.live.data_start,
-            window_end=settings.live.as_of_date,
+            window_end=market_session_date,
             dataset_version=settings.live.dataset_version or "missing",
             requested_capabilities=tuple(DataCapability),
         )
@@ -1183,38 +1566,58 @@ async def _run() -> dict[str, object]:
         language="en",
         include_sections=list(STANDARD_SECTION_NAMES),
     )
-    transport = ASGITransport(app=application)
-    async with AsyncClient(transport=transport, base_url="http://live") as client:
-        submitted = await client.post(
-            "/v1/reports/generate",
-            json=request.model_dump(mode="json"),
-        )
-        submitted.raise_for_status()
-        job_id = submitted.json()["job_id"]
-        task_response = await client.get(f"/v1/reports/jobs/{job_id}")
-        task_response.raise_for_status()
-        task = task_response.json()
-        if task["status"] != "completed" or not task.get("report_id"):
-            raise LiveAcceptanceError(
-                "真实报告任务未完成："
-                + json.dumps(
-                    {
-                        "task": task,
-                        "diagnostic": _failure_diagnostics(
-                            database,
-                            diagnostic_provider,
-                            model=qwen_model,
-                            enable_thinking=enable_thinking,
-                        ),
-                    },
-                    ensure_ascii=False,
-                )
+    existing_report: ResearchReport | None = None
+    if resume_acquired_run and not rerun_research:
+        with database.connection() as connection:
+            existing_report_row = connection.execute("""
+                SELECT report_id
+                FROM reports
+                ORDER BY created_at DESC
+                LIMIT 1
+                """).fetchone()
+        if existing_report_row is not None:
+            existing_report = ReportRepository(database).get(
+                str(existing_report_row[0])
             )
-        report_response = await client.get(f"/v1/reports/{task['report_id']}")
-        report_response.raise_for_status()
-        report = ResearchReport.model_validate(report_response.json())
+    if existing_report is not None:
+        report = existing_report
+        if sector_context is not None:
+            report = ReportAssembler().surface_sector_context(report, sector_context)
+            ReportRepository(database).save(report)
+        job_id = f"resumed:{report.report_id}"
+    else:
+        transport = ASGITransport(app=application)
+        async with AsyncClient(transport=transport, base_url="http://live") as client:
+            submitted = await client.post(
+                "/v1/reports/generate",
+                json=request.model_dump(mode="json"),
+            )
+            submitted.raise_for_status()
+            job_id = submitted.json()["job_id"]
+            task_response = await client.get(f"/v1/reports/jobs/{job_id}")
+            task_response.raise_for_status()
+            task = task_response.json()
+            if task["status"] != "completed" or not task.get("report_id"):
+                raise LiveAcceptanceError(
+                    "真实报告任务未完成："
+                    + json.dumps(
+                        {
+                            "task": task,
+                            "diagnostic": _failure_diagnostics(
+                                database,
+                                diagnostic_provider,
+                                model=qwen_model,
+                                enable_thinking=enable_thinking,
+                            ),
+                        },
+                        ensure_ascii=False,
+                    )
+                )
+            report_response = await client.get(f"/v1/reports/{task['report_id']}")
+            report_response.raise_for_status()
+            report = ResearchReport.model_validate(report_response.json())
 
-    structured_references = _structured_references(data_bundle)
+    structured_references = _structured_references(data_bundle, sector_context)
     citation_count, traced_count = _verify_traceability(
         database,
         report,
@@ -1227,7 +1630,9 @@ async def _run() -> dict[str, object]:
         report,
         alpaca_base_url=settings.providers.alpaca_api_base_url,
         data_bundle=data_bundle,
+        sector_context=sector_context,
     )
+    evidence = _cited_evaluation_evidence(report, evidence)
     evaluation = ReportEvaluationService(
         EvaluationRuleLoader(
             Path(__file__).resolve().parents[1] / "config" / "evaluation"
@@ -1269,7 +1674,7 @@ async def _run() -> dict[str, object]:
         evaluation.model_dump_json(indent=2),
         encoding="utf-8",
     )
-    agent_runs = _agent_run_manifest_rows(database)
+    agent_runs = _agent_run_manifest_rows(database, report.report_id)
     with database.connection() as connection:
         ingestion_jobs = connection.execute("""
             SELECT job_id, source_id, status
@@ -1315,17 +1720,20 @@ async def _run() -> dict[str, object]:
         "asset_id": str(_ASSET_ID),
         "dataset_version": settings.live.dataset_version,
         "as_of_date": settings.live.as_of_date.isoformat(),
+        "canonical_research_as_of": research_as_of.isoformat(),
+        "market_session_date": market_session_date.isoformat(),
+        "run_started_at": run_started_at.isoformat(),
         "data_window": {
             "start": settings.live.data_start.isoformat(),
             "end": settings.live.data_end.isoformat(),
         },
         "ingestion_snapshots": {
-            "sec": [sec_job.job_id, *sec_jobs],
-            "fmp": fmp_job.job_id,
-            "price": price_job.job_id,
-            "news": news_job.job_id,
-            "macro": macro_job.job_id,
-            "sentiment": sentiment_job.job_id if sentiment_job is not None else None,
+            "sec": [sec_job_id, *sec_jobs],
+            "fmp": fmp_job_id,
+            "price": price_job_id,
+            "news": news_job_id,
+            "macro": macro_job_id,
+            "sentiment": sentiment_job_id,
         },
         "llm": {
             "provider": settings.llm.provider.value,
@@ -1341,12 +1749,18 @@ async def _run() -> dict[str, object]:
         },
         "providers": {
             "sec": {"real": True, "status": "success"},
-            "fmp": {"real": True, "status": "success"},
+            "fmp": {
+                "real": True,
+                "status": "success",
+                "snapshot_id": fmp_snapshot_id,
+                "snapshot_path": str(fmp_snapshot_path),
+                **fmp_acquisition,
+            },
             "alpaca": {"real": True, "status": "success"},
             "fred": {"real": True, "status": "success"},
             "stocktwits": {
-                "real": sentiment_job is not None,
-                "status": "success" if sentiment_job is not None else "disabled",
+                "real": sentiment_job_id is not None,
+                "status": "success" if sentiment_job_id is not None else "disabled",
             },
         },
         "fake_llm": False,
@@ -1366,6 +1780,18 @@ async def _run() -> dict[str, object]:
             "summary_path": str(bundle_summary_path),
             "capabilities": capability_summary,
         },
+        "sector_context": (
+            None
+            if sector_context is None
+            else {
+                "context_id": sector_context.context_id,
+                "sector_id": sector_context.sector_id.value,
+                "chain_ids": list(sector_context.active_chain_ids),
+                "event_ids": [item.event_id for item in sector_context.active_events],
+                "artifact_path": str(sector_context_path),
+                "research_as_of": sector_context.research_as_of.isoformat(),
+            }
+        ),
         "timestamp": datetime.now(UTC).isoformat(),
     }
     manifest_path = root / "run_manifest.json"
@@ -1387,13 +1813,14 @@ async def _run() -> dict[str, object]:
         "fundamental_metrics_provider": "financial_modeling_prep",
         "price_provider": "alpaca_market_data",
         "sec_ingestion_snapshot_ids": sec_jobs,
-        "fmp_ingestion_snapshot_id": fmp_job.job_id,
-        "price_ingestion_snapshot_id": price_job.job_id,
-        "news_ingestion_snapshot_id": news_job.job_id,
-        "macro_ingestion_snapshot_id": macro_job.job_id,
-        "sentiment_ingestion_snapshot_id": (
-            sentiment_job.job_id if sentiment_job is not None else None
-        ),
+        "fmp_ingestion_snapshot_id": fmp_job_id,
+        "fmp_provider_snapshot_id": fmp_snapshot_id,
+        "fmp_provider_snapshot_path": str(fmp_snapshot_path),
+        "fmp_acquisition": fmp_acquisition,
+        "price_ingestion_snapshot_id": price_job_id,
+        "news_ingestion_snapshot_id": news_job_id,
+        "macro_ingestion_snapshot_id": macro_job_id,
+        "sentiment_ingestion_snapshot_id": sentiment_job_id,
         "job_id": job_id,
         "task_id": task_id,
         "report_id": report.report_id,
@@ -1406,6 +1833,9 @@ async def _run() -> dict[str, object]:
         "manifest_path": str(manifest_path),
         "research_data_bundle_path": str(bundle_path),
         "research_data_bundle_summary_path": str(bundle_summary_path),
+        "sector_context_id": (
+            None if sector_context is None else sector_context.context_id
+        ),
         "research_data_capabilities": capability_summary,
         "evaluation": {
             "evaluation_id": evaluation.evaluation_id,
@@ -1437,11 +1867,27 @@ async def _run() -> dict[str, object]:
     }
 
 
-def main() -> int:
+def main(argv: Sequence[str] | None = None) -> int:
     """Run the controlled live acceptance and print safe result metadata."""
 
+    args = _parser().parse_args(argv)
     try:
-        result = asyncio.run(_run())
+        if args.configuration_preflight:
+            result = _configuration_preflight_result(load_settings())
+            print(json.dumps(result, ensure_ascii=False, sort_keys=True))
+            preflight = result["result"]
+            assert isinstance(preflight, dict)
+            return 0 if preflight.get("status") == "PASS" else 2
+        if args.fmp_integrated_smoke:
+            return _run_fmp_integrated_smoke(load_settings(), args.as_of)
+        result = asyncio.run(
+            _run(
+                args.sector_context,
+                args.as_of,
+                resume_acquired_run=args.resume_acquired_run,
+                rerun_research=args.rerun_research,
+            )
+        )
     except LivePreflightError as exc:
         print(
             json.dumps(

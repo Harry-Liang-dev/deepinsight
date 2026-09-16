@@ -5,7 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 from collections.abc import Sequence
-from datetime import UTC, date, datetime, time, timedelta
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
 from src.adapters import AlpacaAdapter, FREDAdapter, ProviderUnavailableError
@@ -17,7 +17,9 @@ from src.repositories import (
     MarketDataRepository,
     SectorOntologyRepository,
 )
+from src.schemas.temporal import TemporalAccessMode
 from src.services import DataNormalizer, NormalizationError
+from src.services.research_clock import ResearchAsOfMode, parse_research_clock
 
 _SECTORS = (
     SectorId.SEMICONDUCTORS_AI_COMPUTE,
@@ -31,7 +33,7 @@ def _parser() -> argparse.ArgumentParser:
         description="Generate live deterministic Sector cycle and sensitivity states."
     )
     parser.add_argument("--sector-state-db", type=Path, required=True)
-    parser.add_argument("--as-of", type=date.fromisoformat)
+    parser.add_argument("--as-of", type=parse_research_clock)
     parser.add_argument(
         "--output-root", type=Path, default=Path("data/live_sector_macro")
     )
@@ -59,7 +61,9 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     source_database = DuckDBDatabase(args.sector_state_db)
     source_sectors = SectorOntologyRepository(source_database)
-    as_of = args.as_of or _latest_common_as_of(source_sectors)
+    source_as_of = _latest_common_as_of(source_sectors)
+    clock = args.as_of
+    as_of = clock.snapshot_date if clock is not None else source_as_of
     if as_of is None:
         print(
             json.dumps(
@@ -67,6 +71,19 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
         )
         return 2
+    if source_as_of != as_of:
+        print(
+            json.dumps(
+                {
+                    "status": "configuration_error",
+                    "reason": "source snapshot date differs",
+                }
+            )
+        )
+        return 2
+    if clock is None:
+        clock = parse_research_clock(as_of.isoformat())
+    market_session_date = clock.market_session_date
     pairs = []
     for sector_id in _SECTORS:
         universe = source_sectors.get_latest_universe_snapshot(sector_id, as_of=as_of)
@@ -110,8 +127,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
             for raw in alpaca.fetch_eod_bars_range(
                 benchmark_ids,
-                as_of - timedelta(days=1_550),
-                as_of,
+                market_session_date - timedelta(days=1_550),
+                market_session_date,
             )
         ]
         fred = FREDAdapter(
@@ -131,7 +148,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 (),
                 as_of - timedelta(days=1_825),
                 as_of,
-                as_of,
+                clock.research_as_of,
             )
         ]
     except (ProviderUnavailableError, NormalizationError, ValueError) as exc:
@@ -148,6 +165,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 1
 
     run_dir = args.output_root / checked_at.strftime("%Y%m%dT%H%M%SZ")
+    latest_completed_market_session = max(item.trade_date for item in bars)
     run_dir.mkdir(parents=True, exist_ok=False)
     database_path = run_dir / "sector_macro.duckdb"
     database = DuckDBDatabase(database_path)
@@ -157,11 +175,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     for bar in bars:
         market_repository.upsert_eod_bar(bar)
     market_repository.upsert_macro_observations(macro)
-    cutoff = datetime.combine(as_of, time.max, tzinfo=UTC)
     macro_history = market_repository.list_macro_observations(
         FREDAdapter.DEFAULT_SERIES,
         end_date=as_of,
-        as_of=cutoff,
+        as_of=checked_at,
     )
     outputs = []
     try:
@@ -172,7 +189,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             benchmark_id = universe.benchmark_ids[0]
             benchmark_bars = market_repository.list_eod_bars(
                 benchmark_id,
-                end_date=as_of,
+                end_date=market_session_date,
                 limit=1_200,
             )
             output = SectorMacroOperator().compute(
@@ -180,6 +197,12 @@ def main(argv: Sequence[str] | None = None) -> int:
                 sector_state=state,
                 benchmark_bars=benchmark_bars,
                 macro_observations=macro_history,
+                research_as_of=clock.research_as_of,
+                temporal_access_mode=(
+                    TemporalAccessMode.LIVE_ACQUISITION
+                    if clock.mode is ResearchAsOfMode.INSTANT
+                    else TemporalAccessMode.HISTORICAL_REPLAY
+                ),
             )
             sector_repository.save_macro_snapshot(output)
             outputs.append(output)
@@ -199,7 +222,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         json.dumps(
             {
                 "status": "ok",
-                "as_of": as_of.isoformat(),
+                "as_of": clock.research_as_of.isoformat(),
+                "as_of_mode": clock.mode.value,
+                "snapshot_date": as_of.isoformat(),
+                "market_session_date": latest_completed_market_session.isoformat(),
+                "market_query_end": market_session_date.isoformat(),
                 "database_path": str(database_path),
                 "bar_count": len(bars),
                 "macro_observation_count": len(macro_history),

@@ -9,7 +9,7 @@ from openai import OpenAI
 from openai.types.responses import Response
 from pydantic import SecretStr
 
-from src.core.settings import OpenAISettings
+from src.core.settings import OpenAISettings, QwenSettings
 from src.models.types import JsonObject
 from src.services.llm_provider import (
     FakeLLMProvider,
@@ -23,6 +23,7 @@ from src.services.llm_provider import (
     LLMRemoteError,
     LLMTimeoutError,
     OpenAIProvider,
+    QwenProvider,
 )
 
 
@@ -434,6 +435,60 @@ def test_openai_provider_maps_missing_socks_transport_safely(
 
     assert "secret-proxy-value" not in str(raised.value)
     assert "unit-test-secret" not in str(raised.value)
+    assert raised.value.configuration_stage == "client_initialization"
+
+
+def test_qwen_prefers_protocol_http_proxy_over_conflicting_all_proxy(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Qwen initialization must not select an ambiguous generic SOCKS proxy."""
+
+    proxy_secret = "proxy-secret-must-not-leak"
+    captured_http: dict[str, object] = {}
+    captured_sdk: dict[str, object] = {}
+    responses = StubResponses(response=_response('{"ok":true}'))
+
+    def fake_http_client(**kwargs: object) -> object:
+        captured_http.update(kwargs)
+        return object()
+
+    def fake_client_factory(**kwargs: object) -> StubClient:
+        captured_sdk.update(kwargs)
+        return StubClient(responses)
+
+    for name in (
+        "HTTPS_PROXY",
+        "https_proxy",
+        "HTTP_PROXY",
+        "http_proxy",
+        "ALL_PROXY",
+        "all_proxy",
+    ):
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv("HTTPS_PROXY", "http://proxy.unit.test:8080")
+    monkeypatch.setenv(
+        "ALL_PROXY",
+        f"socks5://user:{proxy_secret}@proxy.unit.test:1080",
+    )
+    monkeypatch.setattr(
+        "src.services.llm_provider.openai.DefaultHttpxClient",
+        fake_http_client,
+    )
+    monkeypatch.setattr("src.services.llm_provider.OpenAI", fake_client_factory)
+
+    provider = QwenProvider(
+        QwenSettings(api_key=SecretStr("offline-qwen-key")),
+    )
+    result = provider.invoke_json("qwen-offline", "system", {"input": "value"})
+
+    assert result.content == {"ok": True}
+    assert captured_http == {
+        "proxy": "http://proxy.unit.test:8080",
+        "trust_env": False,
+    }
+    assert captured_sdk["http_client"] is not None
+    assert proxy_secret not in repr(captured_http)
+    assert proxy_secret not in repr(captured_sdk)
 
 
 def test_openai_sdk_stops_after_configured_rate_limit_retries(

@@ -44,18 +44,28 @@ def main(argv: Sequence[str] | None = None) -> int:
             normalizer.normalize_news_evidence(adapter.provider_name, raw)
             for raw in adapter.fetch_documents(["US:AAPL"], start, end)
         ]
+        diagnostics = adapter.news_fetch_diagnostics()
         print(
             json.dumps(
                 {
                     "status": "ok",
+                    "ALPACA_NEWS_RANGE_VALIDATION": "PASS",
                     "provider": adapter.provider_name,
                     "news_count": len(records),
+                    "raw_record_count": diagnostics["provider_returned_count"],
+                    "accepted_count": diagnostics["accepted_count"],
+                    "filtered_count": diagnostics["filtered_count"],
+                    "filter_reasons": diagnostics["filter_reasons"],
                     "first_date": min(
                         (record.created_at.date().isoformat() for record in records),
                         default=None,
                     ),
                     "last_date": max(
                         (record.created_at.date().isoformat() for record in records),
+                        default=None,
+                    ),
+                    "latest_accepted_timestamp": max(
+                        (record.created_at.isoformat() for record in records),
                         default=None,
                     ),
                     "source_locators_present": all(
@@ -71,6 +81,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             json.dumps(
                 {
                     "status": "provider_error",
+                    "ALPACA_NEWS_RANGE_VALIDATION": "FAIL",
                     "provider": "alpaca_market_data",
                     "message": str(exc),
                 },

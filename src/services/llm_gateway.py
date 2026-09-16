@@ -170,6 +170,26 @@ class LLMRunMetadataSink(Protocol):
         ...
 
 
+@dataclass(frozen=True, slots=True)
+class LLMFailureMetadata:
+    """Credential-free failure metadata for runtime acceptance artifacts."""
+
+    provider: str
+    model: str
+    error_code: str
+    error_message_safe: str
+    configuration_stage: str | None
+    timestamp: datetime
+
+
+class LLMFailureMetadataSink(Protocol):
+    """Optional observer for safe Provider failure diagnostics."""
+
+    def record_failure(self, metadata: LLMFailureMetadata) -> None:
+        """Record one immutable, credential-free failure summary."""
+        ...
+
+
 class LLMCache(Protocol):
     """Persistence boundary required by the LLM gateway."""
 
@@ -207,6 +227,7 @@ class LLMGateway:
         *,
         provider: LLMProvider | _LegacyLLMProvider | None = None,
         metadata_sink: LLMRunMetadataSink | None = None,
+        failure_sink: LLMFailureMetadataSink | None = None,
         cache_policy: LLMCacheReliabilityPolicy | None = None,
         singleflight: LLMSingleFlight | None = None,
         logger: FilteringBoundLogger | None = None,
@@ -221,6 +242,7 @@ class LLMGateway:
             settings: Legacy OpenAI settings used only when provider is absent.
             provider: Injected OpenAI, Qwen, or offline Fake provider.
             metadata_sink: Optional run metadata audit store.
+            failure_sink: Optional credential-free Provider failure observer.
             cache_policy: Optional bounded cache retry policy.
             singleflight: Optional identical-request concurrency coordinator.
             logger: Optional credential-safe structured logger.
@@ -238,6 +260,7 @@ class LLMGateway:
             else OpenAIProvider(cast(OpenAISettings, settings))
         )
         self._metadata_sink = metadata_sink
+        self._failure_sink = failure_sink
         self._cache_policy = cache_policy or LLMCacheReliabilityPolicy()
         self._singleflight = singleflight or LLMSingleFlight()
         self._logger = (
@@ -479,6 +502,10 @@ class LLMGateway:
                 retry_count=result.retry_count,
             )
         except LLMProviderError as exc:
+            self._record_failure(model=model, error=exc)
+            schema_validation = (
+                exc if isinstance(exc, LLMSchemaValidationError) else None
+            )
             self._log_failure(
                 model=model,
                 prompt_version=prompt_version,
@@ -487,14 +514,27 @@ class LLMGateway:
                 started_at=started_at,
                 retry_count=exc.retry_count,
                 error_code=exc.code,
+                error_message_safe=str(exc),
+                configuration_stage=exc.configuration_stage,
                 cache_read_status=cache_read.status,
                 cache_retry_count=cache_read.retry_count,
                 cache_read_error_type=cache_read.error_type,
                 provider_invoked=True,
+                validation_errors=(
+                    schema_validation.validation_errors
+                    if schema_validation is not None
+                    else None
+                ),
+                contract_diff=(
+                    schema_validation.contract_diff
+                    if schema_validation is not None
+                    else None
+                ),
             )
             raise
         except Exception:
             provider_error = LLMProviderError("LLM provider request failed")
+            self._record_failure(model=model, error=provider_error)
             self._log_failure(
                 model=model,
                 prompt_version=prompt_version,
@@ -503,6 +543,8 @@ class LLMGateway:
                 started_at=started_at,
                 retry_count=0,
                 error_code=provider_error.code,
+                error_message_safe=str(provider_error),
+                configuration_stage=provider_error.configuration_stage,
                 cache_read_status=cache_read.status,
                 cache_retry_count=cache_read.retry_count,
                 cache_read_error_type=cache_read.error_type,
@@ -646,7 +688,7 @@ class LLMGateway:
         try:
             validated = response_model.model_validate(content)
         except ValidationError as exc:
-            raw_errors = exc.errors(include_input=False, include_url=False)
+            raw_errors = exc.errors(include_input=True, include_url=False)
             errors = tuple(
                 (
                     ".".join(str(part) for part in item["loc"]) or "model",
@@ -658,11 +700,22 @@ class LLMGateway:
             extra = [
                 path for path, error_type in errors if error_type == "extra_forbidden"
             ]
-            type_mismatch = [
-                {"path": path, "error_type": error_type}
-                for path, error_type in errors
-                if error_type not in {"missing", "extra_forbidden"}
-            ]
+            type_mismatch: list[JsonObject] = []
+            for item, (path, error_type) in zip(raw_errors, errors, strict=True):
+                if error_type in {"missing", "extra_forbidden"}:
+                    continue
+                mismatch: JsonObject = {
+                    "path": path,
+                    "error_type": error_type,
+                }
+                observed = item.get("input")
+                if (
+                    error_type == "enum"
+                    and isinstance(observed, str)
+                    and re.fullmatch(r"[A-Za-z_]{1,64}", observed) is not None
+                ):
+                    mismatch["observed_identifier"] = observed
+                type_mismatch.append(mismatch)
             analysis = content.get("analysis")
             actual: JsonObject = {
                 "top_level_fields": cast(JsonValue, sorted(content)),
@@ -775,11 +828,15 @@ class LLMGateway:
         started_at: float,
         retry_count: int,
         error_code: str,
+        error_message_safe: str | None = None,
+        configuration_stage: str | None = None,
         cache_hit: bool = False,
         cache_read_status: CacheReadLogStatus = "miss",
         cache_retry_count: int = 0,
         cache_read_error_type: str | None = None,
         provider_invoked: bool = False,
+        validation_errors: tuple[tuple[str, str], ...] | None = None,
+        contract_diff: JsonObject | None = None,
     ) -> None:
         self._logger.error(
             "llm_request_failed",
@@ -792,13 +849,40 @@ class LLMGateway:
             latency_ms=self._latency_ms(started_at),
             retry_count=retry_count,
             error_code=error_code,
+            error_message_safe=error_message_safe,
+            configuration_stage=configuration_stage,
             remote_storage_enabled=self._remote_storage_enabled(),
             cache_read_status=cache_read_status,
             cache_retry_count=cache_retry_count,
             cache_read_error_type=cache_read_error_type,
             provider_invoked=provider_invoked,
             request_fingerprint=request_fingerprint,
+            validation_errors=validation_errors,
+            contract_diff=contract_diff,
         )
+
+    def _record_failure(self, *, model: str, error: LLMProviderError) -> None:
+        """Emit one safe Provider failure without masking the original error."""
+
+        if self._failure_sink is None:
+            return
+        metadata = LLMFailureMetadata(
+            provider=self._provider.provider_name,
+            model=model,
+            error_code=error.code,
+            error_message_safe=str(error),
+            configuration_stage=error.configuration_stage,
+            timestamp=self._clock(),
+        )
+        try:
+            self._failure_sink.record_failure(metadata)
+        except Exception:
+            self._logger.error(
+                "llm_failure_metadata_sink_failed",
+                provider=metadata.provider,
+                model=metadata.model,
+                error_code=metadata.error_code,
+            )
 
     def _remote_storage_enabled(self) -> bool:
         capabilities = getattr(self._provider, "capabilities", None)

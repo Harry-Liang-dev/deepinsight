@@ -13,6 +13,7 @@ from src.models.types import DomainModel
 from src.schemas.agents import AgentContext
 from src.schemas.common import SourceReference
 from src.schemas.reports import GenerateReportRequest
+from src.schemas.sector_context import SectorContextBundle
 
 STANDARD_SECTION_NAMES = (
     "executive_view",
@@ -75,6 +76,7 @@ class ReportAssemblyInput(DomainModel):
     input_context: AgentContext
     agent_result: ResearchTaskResult
     created_at: datetime
+    sector_context: SectorContextBundle | None = None
 
     @model_validator(mode="after")
     def validate_single_asset_boundary(self) -> Self:

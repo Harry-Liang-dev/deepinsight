@@ -1,0 +1,229 @@
+{
+  "manifest_schema_version": "golden_replay_manifest_v1",
+  "replay_id": "golden_replay_4da67395bcdf1dadaa958e37",
+  "replay_name": "phase4a_aapl_sector_aware",
+  "source_run_id": "agent_contract_20260830T135643Z_70442a96",
+  "asset_id": "US:AAPL",
+  "research_as_of": "2026-08-30T23:59:59.999999Z",
+  "source_artifact_ids": [
+    "data/sector_asset_integration/20260830T134805Z/AAPL.research_data_bundle.json",
+    "data/live_sector_research/20260830T135456Z/AAPL.real_qwen_sector_context.json",
+    "data/live_sector_research/20260830T135456Z/manifest.json",
+    "data/live_agent_contract/agent_contract_20260830T135643Z_70442a96/summary.json",
+    "data/research_state/day38/phase4a_aapl_sector_aware.research_state.json",
+    "data/research_episode/day39/phase4a_aapl_sector_aware.research_episode.json",
+    "data/research_attribution/day41/phase4a_aapl_sector_aware.research_attribution.json",
+    "data/research_dataset/day42/phase4a_aapl_sector_aware.research_dataset_sample.json"
+  ],
+  "research_state_id": "research_state_3da102d1a1515b82dbe4f9b7",
+  "research_episode_id": "research_episode_d4a588c6bac4fa6fe558cad5",
+  "research_dataset_sample_id": "research_sample_f1b426e6b3eea228bdc61dba",
+  "retrieval_ids": [],
+  "attribution_ids": [
+    "research_attribution_2b5f4f002879d942f1b1c436",
+    "context_attribution_3fe5e2281c45dc0ba5315686",
+    "context_attribution_2927e44588abd8629f8102d6",
+    "context_attribution_db8405917d8bb950b8cdb0f2",
+    "context_attribution_48d7431b3d032c366192d5c4",
+    "context_attribution_2cea09d49640b0c0316815a8",
+    "context_attribution_71f6cc285729a64c4aa3ef91",
+    "context_attribution_6570e008fc585be30abdd97b",
+    "context_attribution_402d1dedb4184636c46dad65",
+    "context_attribution_b311fbdd21f3399370673979",
+    "context_attribution_b9cfbc110be5773b25ae7b33",
+    "context_attribution_5b4712fb515ce730733f061d",
+    "context_attribution_0ec1f7416b7fbd550e815f75",
+    "context_attribution_621fd42e63653e792d68c397",
+    "context_attribution_364649e24b99b3c4c22f405a",
+    "context_attribution_9a0957c16e97b524a273d5ae",
+    "context_attribution_361962a3b856a1acf61f32f6",
+    "context_attribution_a03d59428b99cbb184cb4bbd",
+    "context_attribution_fc5c2f1c13ad0d461fd6dd38",
+    "context_attribution_16cd0f04af1ff4c1eddec2e4",
+    "context_attribution_d98bfa520c94b81eb0ccc8d4",
+    "context_attribution_88844140b8b578a872914f38",
+    "context_attribution_7b6d2365eef2d1fc5e9b25e8",
+    "context_attribution_d149255b86f56bfabe4194f6",
+    "context_attribution_069b4dbc44eb014f1fef8661",
+    "context_attribution_8a3ff16a9df9da462d99c509",
+    "context_attribution_60ab1d31a33f06dc64d07946",
+    "context_attribution_9e764229e483b934f0420814",
+    "context_attribution_598cc67b098d5e3d142e0dd7",
+    "context_attribution_6291a23d18365c73a3a29a7b",
+    "context_attribution_5ff0690090e7663babe9194f"
+  ],
+  "accepted_claim_count": 52,
+  "rejected_claim_count": 5,
+  "final_research_claim_count": 0,
+  "sector_claims_provided": 24,
+  "sector_claims_used": 10,
+  "events_provided": 6,
+  "events_used": 4,
+  "memory_retrieval_count": 0,
+  "memory_empty_valid": true,
+  "memory_status": "empty_valid",
+  "temporal_validation_status": "pass",
+  "provider_call_count": 0,
+  "llm_call_count": 0,
+  "versions": [
+    {
+      "component": "temporal_contract",
+      "version": "temporal_contract_v1"
+    },
+    {
+      "component": "research_state_schema",
+      "version": "research_state_snapshot_v1"
+    },
+    {
+      "component": "research_state",
+      "version": "research_state_v1"
+    },
+    {
+      "component": "research_state_feature",
+      "version": "research_state_feature_v1"
+    },
+    {
+      "component": "research_episode_schema",
+      "version": "research_episode_v1"
+    },
+    {
+      "component": "research_dataset_schema",
+      "version": "research_dataset_sample_v1"
+    },
+    {
+      "component": "research_dataset_build",
+      "version": "pit_research_dataset_build_v1"
+    },
+    {
+      "component": "research_attribution",
+      "version": "research_attribution_v1"
+    }
+  ],
+  "determinism_checks": [
+    {
+      "check_name": "research_state_semantic_identity",
+      "status": "pass",
+      "evidence_ids": [
+        "research_state_3da102d1a1515b82dbe4f9b7"
+      ],
+      "details": "Repeated frozen-artifact build produced the same identity."
+    },
+    {
+      "check_name": "research_episode_identity",
+      "status": "pass",
+      "evidence_ids": [
+        "research_episode_d4a588c6bac4fa6fe558cad5"
+      ],
+      "details": "Repeated frozen-artifact build produced the same identity."
+    },
+    {
+      "check_name": "research_dataset_sample_identity",
+      "status": "pass",
+      "evidence_ids": [
+        "research_sample_f1b426e6b3eea228bdc61dba"
+      ],
+      "details": "Repeated frozen-artifact build produced the same identity."
+    }
+  ],
+  "leakage_checks": [
+    {
+      "check_name": "future_news",
+      "status": "pass",
+      "evidence_ids": [
+        "future_available"
+      ],
+      "details": "Rejected by Unified Temporal Contract: future_available"
+    },
+    {
+      "check_name": "future_radar_event",
+      "status": "pass",
+      "evidence_ids": [
+        "future_available"
+      ],
+      "details": "Rejected by Unified Temporal Contract: future_available"
+    },
+    {
+      "check_name": "future_memory",
+      "status": "pass",
+      "evidence_ids": [
+        "future_available"
+      ],
+      "details": "Rejected by Unified Temporal Contract: future_available"
+    },
+    {
+      "check_name": "future_sector_membership",
+      "status": "pass",
+      "evidence_ids": [
+        "not_yet_effective"
+      ],
+      "details": "Rejected by Unified Temporal Contract: not_yet_effective"
+    },
+    {
+      "check_name": "future_filing",
+      "status": "pass",
+      "evidence_ids": [
+        "future_available"
+      ],
+      "details": "Rejected by Unified Temporal Contract: future_available"
+    }
+  ],
+  "traceability_examples": [
+    {
+      "trace_name": "deterministic_feature_to_evidence_provider",
+      "status": "complete",
+      "reference_path": [
+        "feature:fundamental_state:fundamentals.book_value_per_share",
+        "ev_2d2ccf555eab159f58a17321",
+        "US:AAPL|2026-06-27|TTM_STANDARDIZED"
+      ],
+      "terminal_providers": [
+        "financial_modeling_prep"
+      ],
+      "limitation": null
+    },
+    {
+      "trace_name": "asset_manager_to_sector_claim_to_evidence",
+      "status": "partial",
+      "reference_path": [
+        "asset_manager_claim:not_available_at_source_run",
+        "agent_role:research_manager",
+        "sector:S03:claim:0",
+        "membership:US:AAPL:S03:phase4_day30_seed_v1"
+      ],
+      "terminal_providers": [
+        "phase4_day30_test_seed",
+        "sector_ontology"
+      ],
+      "limitation": "Day36 retained Agent-role usage but not the accepted Asset Claim ID; the missing identity was not inferred."
+    },
+    {
+      "trace_name": "context_to_agent_to_claim_to_episode",
+      "status": "partial",
+      "reference_path": [
+        "sector:S03:claim:0",
+        "agent:research_manager",
+        "accepted_claim:not_available_at_source_run",
+        "research_episode_d4a588c6bac4fa6fe558cad5"
+      ],
+      "terminal_providers": [
+        "phase4_day30_test_seed",
+        "sector_ontology"
+      ],
+      "limitation": "The source run persisted context use but omitted downstream Claim IDs."
+    },
+    {
+      "trace_name": "dataset_to_episode_to_state",
+      "status": "complete",
+      "reference_path": [
+        "research_sample_f1b426e6b3eea228bdc61dba",
+        "research_episode_d4a588c6bac4fa6fe558cad5",
+        "research_state_3da102d1a1515b82dbe4f9b7"
+      ],
+      "terminal_providers": [],
+      "limitation": null
+    }
+  ],
+  "replay_status": "pass",
+  "created_at": "2026-09-01T12:00:00Z",
+  "input_fingerprint": "4da67395bcdf1dadaa958e372c6401892ca82725e69d77816bda18549201505e"
+}

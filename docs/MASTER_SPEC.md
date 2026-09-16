@@ -1,5 +1,168 @@
 # System Engineering Specification for a Multi-Market AI Investment Research Platform
 
+## Phase 4C Architecture Governance Addendum — Research / Quant Boundary
+
+This addendum is the current authority for ownership beyond Phase 4B. Where
+older sections reserve phase-two factor, router, strategy, backtest, training,
+portfolio, or execution runtime inside this repository, those reservations are
+superseded by this boundary. Historical interfaces and nullable `p2_*` fields
+remain non-operational compatibility artifacts; they do not authorize new
+runtime implementation in `deepinsight`.
+
+DeepInsight's long-term architecture has three layers:
+
+| Layer | System ownership | Responsibility |
+|---|---|---|
+| Research Intelligence | current `deepinsight` repository | Evidence, research understanding, opportunity discovery, structured research descriptors, and Research-to-Quant handoff |
+| Quant Alpha / Strategy | future `deepinsight-quant` repository | broad PIT universe, Factor processing/validation, selection, timing, Regime/MoE routing, strategy, and backtest |
+| Portfolio / Execution | future `deepinsight-quant` repository | holdings ranking/decay, portfolio optimization, position sizing, orders, and execution simulation/runtime |
+
+The governing principle is: AI understands markets and discovers
+opportunities; Quant measures Alpha and performs selection, timing, portfolio,
+and risk transforms; the Portfolio Engine converts validated predictions into
+executable positions. The current repository stops before Quant processing.
+
+### Current repository responsibilities
+
+`deepinsight` owns raw information mining; SEC/FMP/Alpaca/FRED/news/sentiment
+Evidence; Macro, Sector, and Industry-Chain research; Radar/anomaly detection;
+multi-Agent research and Bull/Bear/Risk debate; ResearchState;
+ResearchEpisode; Learning Memory; Research Attribution; Opportunity Candidate
+generation; proprietary Research Features; raw Satellite Alpha descriptors;
+and `ResearchQuantHandoffBundle` production.
+
+It does not own a broad-market traditional Factor library, quantitative
+universe maintenance, winsorization, neutralization, z-score exposures,
+IC/RankIC/ICIR, Factor portfolios/weights, Alpha Models, Quant Top-K, timing
+rules, Holdings Top-K/decay, trading Regime/MoE routing, portfolio optimization,
+position sizing, order generation, backtesting, execution, or live trading.
+
+### Planetary Alpha / 行星阿尔法
+
+Planetary Alpha is a traditional Quant Alpha/Factor that can be computed
+cheaply, stably, and repeatedly over a large point-in-time market universe
+from standardized market/fundamental data and versioned quantitative
+transforms. Typical families are Momentum, Reversal, Value, Quality, Growth,
+Size, Volatility, Liquidity, Technical, Fundamental revisions, and traditional
+event factors. Broker factor libraries, market/fundamental data, and standard
+Quant transforms are its primary future sources. Planetary Alpha belongs to
+`deepinsight-quant`; this repository may name the concept but may not implement
+its formal Factor library.
+
+### Satellite Alpha / 卫星阿尔法
+
+Satellite Alpha is a proprietary structured research descriptor produced by
+DeepInsight Research Intelligence through information mining, Macro/Sector/
+Industry-Chain reasoning, event interpretation, fundamental expectation
+change, research debate, risk analysis, ResearchState, and Memory. Within this
+repository it is not a validated quantitative Factor exposure. Only after a
+future Quant pipeline performs cross-sectional/time-series processing,
+normalization, neutralization, standardization, Factor validation, and
+incremental-Alpha evaluation may it become a Quant Factor/Alpha exposure.
+
+The fixed boundary pipeline is:
+
+```text
+Raw Evidence
+↓
+Validated Claim
+↓
+Research State Feature
+↓
+Satellite Alpha Observation
+↓
+ResearchQuantHandoffBundle
+↓
+future deepinsight-quant
+↓
+Processed Factor Exposure
+↓
+Alpha Signal
+↓
+Strategy
+↓
+Portfolio
+```
+
+This repository may produce only through `ResearchQuantHandoffBundle`. It must
+not produce `quant_factor_zscore`, `neutralized_factor`, IC, `BUY_SCORE`,
+`SELL_SCORE`, `trade_signal`, `position_score`, `position_weight`, or orders.
+Satellite descriptors support `SELECTION`, `TIMING`, or `BOTH` intent.
+
+Selection descriptors answer which issuers deserve expensive Research
+Coverage at the same cutoff—using decomposed concepts such as business-binding
+depth, revenue exposure, earnings-increment potential, Evidence quality,
+Sector/Chain alignment, Bull/Bear disagreement, catalyst quality, and risk
+burden. Quant performs cross-sectional processing and ranking. Timing
+descriptors describe how one Asset's own State changed—expectation revision
+velocity, risk escalation, thesis transition, Evidence confirmation, event
+window, or catalyst proximity. Quant decides whether those changes imply
+entry, exit, or sizing.
+
+Do not collapse these descriptors into one opaque `AI_STOCK_SCORE`. Prefer
+structured components and categorical states such as
+`logic_stage = ORDER_CONFIRMED`; any later numeric mapping is versioned and
+owned by Quant.
+
+### Future selection, timing, and holdings architecture
+
+```text
+Base Quant PIT Universe
+├── Planetary Alpha cheap scan
+└── DeepInsight Opportunity Discovery
+        ↓
+Candidate Universe
+        ↓
+expensive AI research
+        ↓
+Planetary + Satellite Alpha processing in deepinsight-quant
+        ↓
+Top-K Research Coverage Pool
+```
+
+Research Candidate selection never replaces the independent, complete Base PIT
+Market Universe used for Planetary Alpha research, Factor validation, and
+cross-sectional comparison. Future timing operates only in
+`deepinsight-quant` over Planetary time-series factors, Satellite timing
+descriptors, and future Regime/MoE context. Future Holdings is a separate
+Top-K system over current holdings and the current Research Coverage Pool;
+performance, potential, Alpha, risk, and time decay affect ranking, while the
+future all-weather/MoE strategy system owns rebalance frequency. None of these
+systems is implemented in this repository.
+
+Day44 froze ownership. Day45–47 implement deterministic, PIT-safe
+`SatelliteAlphaDefinition`/`SatelliteAlphaObservation`,
+`OpportunityCandidate`, and `ResearchStateTransition` over frozen Research
+artifacts. Day48 implements `ResearchQuantHandoffBundle v1` as the sole
+versioned, reference-only Research export plus canonical JSON/JSONL artifacts.
+It may carry qualified, insufficient, partial, negative, or history-missing
+Research; it performs no Quant processing. Existing ValidatedClaim grounding,
+ResearchState/ResearchEpisode identities, Unified Temporal Contract, and
+Golden Replay behavior remain unchanged.
+
+### Legacy planning classification
+
+| Class | Existing concept | Day44 disposition |
+|---|---|---|
+| A — rename/reframe | ResearchState features, proprietary event/Sector/Macro/Memory descriptors, research hints | Research Feature or raw Satellite Alpha; retain Evidence/PIT lineage and no Quant semantics |
+| B — migrate ownership | Factor Miner/Registry/Evaluation, Factor blobs, Market Regime router, MoE, strategy pool, training, backtest, signal, portfolio, execution | future `deepinsight-quant`; current stubs/fields stay disabled and unread |
+| C — retain as concept/history | deterministic research operators, descriptive Sector cycle, L4 historical market narratives, references to future Quant integration | retain when clearly descriptive and non-operational; ADR history is not deleted |
+
+Any old use of “AI Factor” in planning should be interpreted as a Research
+Feature or raw Satellite Alpha descriptor until Quant independently processes
+and validates it. A descriptive cycle or historical regime narrative in
+Research Memory is not a trading Market Regime model.
+
+### Phase 4C Window ownership
+
+| Window | Research-repository responsibility | Prohibited ownership |
+|---|---|---|
+| Window 1 — Main | architecture, shared schema, integration, ResearchQuant handoff, acceptance, freeze | implementing the future Quant repository during Research work |
+| Window 2 — Data | canonical Asset identity, temporal semantics, Research/Quant join contract, event/calendar metadata, handoff integrity | traditional Quant Factor library or Quant universe engine |
+| Window 3 — Agent System | ResearchState semantic outputs, Selection Satellite Alpha, OpportunityCandidate, structured Research output | Quant ranking, Top-K, timing decision, or Holdings logic |
+| Window 4 — Memory | historical State/Episode continuity, Timing Satellite source history, transition lineage, retrieval | entry/exit strategy, Holdings decay, or performance decision |
+| Window 5 — LLM Gateway | structured-output support, Prompt/schema compatibility, Provider/model lineage | separate factor-scoring LLM call or hidden scoring pipeline |
+
 This document is a direct engineering specification for a **phase-one MVP that produces standardized AI investment research reports only**, while reserving clean extension points for phase-two factor mining, model training, routing, backtesting, and execution. It is intentionally designed so that a coding agent can scaffold the full repository, database, APIs, schedulers, and deployment stack **without later reworking the core data flow**. The design is aligned with the user-provided conceptual report, especially its multi-agent topology and hierarchical memory direction. fileciteturn0file0
 
 The architecture uses **DuckDB** as the single-node analytical and relational store, **FAISS** as the local persistent vector index, **FastAPI** for service APIs, **GPT via the OpenAI API** for every agent inference in phase one, and **Docker Compose** for deployment. DuckDB supports persistent tables and indexes, including `CREATE TABLE`, `CREATE INDEX`, and a full-text-search extension, making it a strong fit for a lightweight single-node analytical store. FAISS is a mature library for efficient dense-vector similarity search with Python wrappers, while Docker Compose is explicitly designed for defining and running multi-container applications with reusable services and volumes. citeturn1search5turn1search4turn1search0turn1search2turn2search2turn0search2turn0search4turn0search0
@@ -827,6 +990,11 @@ Each folder contains:
 
 ### Reserved phase-two routes
 
+> **Superseded ownership note (Phase 4C Day44):** these 501 routes are retained
+> only as historical compatibility boundaries. Factor, router, training,
+> backtest, and execution runtime now belongs to future `deepinsight-quant` and
+> must not be activated in this repository.
+
 These paths must exist in the router but return `501 Not Implemented` in phase one:
 
 - `POST /v1/phase2/factors/mine`
@@ -1466,6 +1634,12 @@ Implement web UI, operational dashboard, health checks, retries, tests, document
 
 ## Phase-Two Reserved Interfaces and Final Deliverables
 
+> **Superseded ownership note (Phase 4C Day44):** the interfaces and `p2_*`
+> fields below document the original Phase-One extension plan. They remain
+> non-operational for compatibility and audit history. Their Quant runtime
+> responsibility has moved to the future independent `deepinsight-quant`
+> repository; Day44 does not delete or implement them.
+
 ### Reserved abstract classes
 
 The following code must exist in phase one but remain non-operational.
@@ -1615,3 +1789,39 @@ The MVP should be coded as if phase two is guaranteed, but operated as if phase 
 That is the combination that keeps the system both **investor-grade in architecture** and **Codex-friendly in implementation sequencing**.
 
 The technical choices in this document are intentionally conservative where the business constraints are hard: single-node first, local authoritative memory, report-only output, and no hidden phase-two logic. They are also intentionally ambitious where future extensibility matters most: multi-market canonical schemas, five-level memory, brokerage-style debate chain, traceable agent runs, and reserved interfaces for factor mining, routing, backtesting, and execution. The result is a spec that can be implemented immediately while remaining structurally compatible with the broader multi-agent quant platform envisioned in the supplied concept document. fileciteturn0file0
+
+## Phase 4 freeze — Research Intelligence v1
+
+Phase 4A Sector Intelligence, Phase 4B Structured Research Intelligence, and
+Phase 4C Satellite Alpha/Opportunity/Transition/Handoff contracts passed the
+Day49 offline Golden Acceptance. The frozen production boundary is:
+
+```text
+Provider → Evidence → Validated Claim → Macro/Sector/Radar/Chain
+→ Multi-Agent Research → ResearchState → ResearchEpisode → Learning Memory
+→ Selection/Timing Satellite descriptors → OpportunityCandidate
+→ ResearchStateTransition → ResearchQuantHandoffBundle
+```
+
+Golden acceptance is deterministic and uses zero Provider and LLM calls.
+Phase3 historical artifacts receive no later Sector, Chain, Memory, or Timing
+backfill. Satellite descriptors remain unvalidated as Quant Alpha; the future
+Quant repository owns all Factor, ranking, signal, portfolio, and execution
+semantics. The auditable result is stored at
+`data/golden_replay/day49/acceptance_summary.json`.
+
+### Canonical live research instant
+
+A live run freezes one timezone-aware exact UTC `research_as_of` at its
+orchestration boundary. That instant is the information cutoff for Macro,
+Sector, Radar, Agent research, ResearchState, Satellite descriptors, and the
+Handoff. It is never replaced by a latest market session, provider-local date,
+fiscal period, or UTC calendar date.
+
+Each Provider deterministically projects the instant into its native timezone,
+calendar, and precision before retrieval, then normalizes attributable source
+times back to UTC. Source `available_at <= research_as_of` is mandatory. The
+later live HTTP/persistence timestamp is `ingested_at` lineage; historical
+replay additionally requires ingestion by the replay cutoff. Existing
+date-only commands retain their frozen UTC-EOD behavior, while live execution
+uses instant mode and forbids date-to-future-EOD expansion.

@@ -2,6 +2,38 @@
 
 ---
 
+## ADR-0053
+
+### Separate the canonical live research instant from provider calendars and ingestion
+
+Status: Accepted
+
+Decision
+
+Capture one timezone-aware UTC `research_as_of` at the live orchestration
+boundary and reuse it across Macro, Sector State, Radar, Sector Research,
+asset research, State, Satellite, and Handoff. Provider adapters project that
+instant into native calendars (for example US completed-session date or FRED
+America/Chicago date) without replacing it. Phase4 CLIs accept aware ISO-8601
+instants and retain legacy `YYYY-MM-DD` UTC-EOD mode for frozen replay.
+
+Use `available_at <= research_as_of` as the live information-eligibility rule.
+Record later HTTP/persistence time in `ingested_at`; historical replay retains
+the stricter `ingested_at <= research_as_of` original-observed rule. Naive
+provider timestamps remain rejected unless the provider contract establishes
+their timezone.
+
+Reason
+
+The previous live path promoted the latest completed market date to UTC EOD,
+creating a false global cutoff and future-EOD failures. It also treated a
+post-cutoff fetch time as if the underlying public information appeared after
+the cutoff. Separating information availability, acquisition lineage, and
+provider calendar projections preserves PIT safety without backdating or
+changing historical semantic identities.
+
+---
+
 ## ADR-0001
 
 Date
@@ -1529,3 +1561,670 @@ quarantine policy. The smoke runner persists successful credential-free
 to the downstream asset contract and audited independently from its summary.
 
 ---
+
+## ADR-0039
+
+Date
+
+2026-08-31
+
+Decision
+
+Adopt `Unified Temporal Contract v1` as the single point-in-time eligibility
+rule for Data, Sector, Event, accepted Sector Claim, Memory, and research
+context inputs. Preserve existing Provider/domain field names and map them into
+nullable `TemporalMetadata` rather than performing a repository-wide rename.
+Use one UTC-aware `validate_temporal_access()` entry point and half-open
+effective intervals.
+
+Treat event and period time as descriptive only. A record is research-usable
+only when every present canonical availability, ingestion, snapshot, and
+effective-bound constraint permits it at `research_as_of`. Filing fiscal end
+does not replace acceptance/publication time; FRED observation date does not
+replace its vintage; a news publication does not replace ingestion; and a
+Memory effective time does not replace creation/availability time.
+
+Persist the Memory service clock's `created_at` and reject later-created
+Memory during replay even if `effective_ts` is older. Decode legacy DuckDB
+naive `TIMESTAMP` values only through an explicitly named UTC storage
+compatibility function. Do not interpret naive values using the host timezone
+and do not rewrite legacy rows automatically.
+
+Reason
+
+Phase 4B needs replayable future ResearchState and Episode data, but building
+those objects before agreeing on visibility would encode leakage into every
+later dataset. Existing modules already implemented mostly correct local PIT
+checks, yet their rules differed and Memory could be backfilled after the
+requested cutoff. A shared contract removes drift while preserving Phase 3
+and Phase 4A schemas. Explicit storage compatibility makes legacy behavior
+auditable without pretending uncertain historical timestamp provenance is
+known.
+
+---
+
+## ADR-0040
+
+Date
+
+2026-08-31
+
+Decision
+
+Establish `ResearchStateSnapshot v1` as the immutable machine-facing research
+artifact at one `research_as_of`. Build it only from frozen
+`ResearchDataBundle`, compact Sector/Memory context projections, accepted
+Claims, and centrally recorded run/version references. The builder cannot call
+an LLM or Provider and has no Report input; report prose is never parsed back
+into factual state.
+
+Represent features as deterministic numeric, versioned normalized research
+state, or semantic/categorical. Available features reference Claim, Evidence,
+or artifact IDs without embedding their upstream payload. Normalized features
+must name a deterministic transform and version. Accepted Manager Claims stay
+machine-state facts by Claim ID and retain recursive lineage through Analyst or
+Sector Claims to canonical Evidence.
+
+Keep the Snapshot frozen and identify it with a SHA-256 fingerprint of all
+typed inputs. Centralize source run, dataset/data snapshot, Sector/Memory
+context, Agent run, Prompt, and model versions in snapshot lineage. Reuse
+Unified Temporal Contract v1 for every feature and reject mismatched cutoffs,
+future values, unknown upstream Claims, Claim cycles, and direct Claims without
+source references.
+
+For historical compatibility, missing frozen artifacts remain
+`NOT_AVAILABLE_AT_SOURCE_RUN`. The Phase 3 AAPL Golden Run therefore does not
+receive newer Sector/Chain context. The Day36 AAPL State uses its own
+SectorContextBundle and retains PARTIAL macro semantics when macro Claims are
+available through Sector research but the asset Bundle did not persist direct
+FRED observations.
+
+Reason
+
+Reports are presentation artifacts and cannot be a safe dataset or training
+source. A small claim/evidence-referenced State preserves the already validated
+fact chain while making replay and future dataset construction possible. A
+pure builder prevents hidden inference and network drift; explicit historical
+missingness prevents later Phase 4 information from contaminating Phase 3
+baselines. No Factor, Regime, Episode, reward, backtest, trading, or RL contract
+is introduced.
+
+---
+
+## ADR-0041
+
+Date
+
+2026-08-31
+
+Decision
+
+Establish `ResearchEpisode v1` as the immutable, reference-only audit record
+of one research process performed under a `ResearchStateSnapshot`. Keep State
+and Episode separate: State records what was knowable at `research_as_of`,
+while Episode records frozen input identities, minimal Agent execution
+metadata, structured Claim identities and counts, existing Sector usage
+diagnostics, version references, and optional report identity.
+
+Do not persist private model reasoning, chain-of-thought, raw prompts, or
+report prose in an Episode. Reuse the Day36
+`SectorContextUsageDiagnostic` contract from a neutral schema module. A
+complete Episode requires exact accepted/rejected Claim identity closure; a
+historical source that retained only counts materializes as explicitly
+`PARTIAL` with named missing metadata and no invented Claim IDs.
+
+Identify an Episode by a deterministic SHA-256 fingerprint of its typed frozen
+inputs. Episode construction is offline and cannot call an LLM, Provider, or
+live data source. Future Outcomes may reference `episode_id`, but must not
+overwrite the original Episode.
+
+Reason
+
+Replay and future training need an auditable record of what the system did,
+not hidden model thought. Separating process identity from machine research
+state avoids mixing facts with execution metadata, while exact/partial trace
+semantics preserve old runs without fabricating precision. Reusing Day36
+usage diagnostics prevents a second Sector-observation channel and keeps the
+artifact small enough to remain a provenance index rather than a trajectory
+platform.
+
+---
+
+## ADR-0042
+
+Date
+
+2026-08-31
+
+Decision
+
+Establish `LearningMemoryMetadata v1` as an optional, structured extension of
+the existing L0–L4 Memory records. L0–L4 continue to describe Memory level;
+GLOBAL, MACRO, SECTOR, INDUSTRY_CHAIN, ASSET, and RESEARCH_EPISODE continue to
+describe the independent Day30 research scope. DuckDB remains authoritative
+for metadata and FAISS remains a private similarity index.
+
+Persist the metadata in one additive `memory_items.metadata_json` column with
+an idempotent migration. Legacy rows and Day35 JSON-header summaries remain
+readable with null structured metadata; they are not guessed, rewritten, or
+silently promoted. New records may declare EPISODIC, SEMANTIC, or PERFORMANCE
+usage. Day40 operationalizes EPISODIC for selected validated Claims, thesis,
+risks, catalysts, important Events, State references, and Episode references.
+It does not define an undifferentiated report content type.
+
+EPISODIC records require `episode_id`, `research_state_id`, versioned Scope,
+canonical source references, structured temporal metadata, and Claim/Event
+lineage appropriate to their content kind. SEMANTIC records require an
+explicit CANDIDATE, VALIDATED, or RETIRED lifecycle; a record tied to one
+Episode cannot be marked VALIDATED. PERFORMANCE records reserve only Episode,
+Outcome, Factor, and research references and compute no performance value.
+
+Both legacy semantic search and `ResearchContextBundle` retrieval use the
+Day37 Unified Temporal Contract. Effective time, persisted creation time, and
+structured availability are all gates; the strict latest availability must
+be no later than `research_as_of`. Retrieval may filter structured Scope,
+usage class, and Episode identity and retains query filters, score, reason,
+source, Episode/State linkage, and Memory version. A zero-result retrieval is
+explicitly `empty_valid`; similarity never creates a historical analog or
+promotes Semantic Truth.
+
+Reason
+
+Learning workflows need replayable links between Scope, time, State, Episode,
+and retrieval without replacing the proven DuckDB/FAISS implementation or
+turning reports into training data. An additive JSON sidecar avoids a risky
+table rewrite while giving new writes a strict typed contract. Reusing Day37
+prevents a second future-leakage policy, and explicit lifecycle/reference-only
+rules keep Day40 from inventing Outcome, Factor, performance, or durable
+knowledge before their own approved contracts exist.
+
+---
+
+## ADR-0043
+
+Date
+
+2026-08-31
+
+Decision
+
+Establish `ResearchEpisodeAttribution v1` as an immutable companion artifact
+that records which Memory, Sector Claim, and Radar Event context was provided,
+selected, and used by each Agent run in a ResearchEpisode. Do not mutate the
+Day39 Episode, duplicate the Day36 collection path, or store private reasoning.
+Reuse `SectorContextUsageDiagnostic` through an adapter and require an explicit
+accepted Claim reference before new-run context may be marked used.
+
+Establish `MemoryRetrievalRecord v1` for every observed Memory retrieval,
+including an explicit `empty_valid` record when no relevant Memory is selected.
+Record query/purpose, role/run/Episode/cutoff, eligible candidates, selected
+IDs, rank, score, reason, Scope filters, snapshot identity, source lineage, and
+future exclusion count. Candidate recording occurs after authoritative DuckDB
+metadata filtering and Day37 temporal validation; FAISS remains a private
+similarity implementation.
+
+Preserve truthful historical degradation. If a PARTIAL source Episode retained
+Day36 used IDs but omitted accepted asset Claim IDs, record
+`NOT_AVAILABLE_AT_SOURCE_RUN` and an empty `used_by_claim_ids`; never infer the
+missing Claim. If the source run did not persist a Memory retrieval, do not
+manufacture an empty RetrievalRecord. All future Outcome/usefulness fields are
+status-only and their score remains null until an approved later contract.
+
+Reason
+
+Learning and replay need exact observation lineage without confusing prompt
+presence with evidentiary use. One composable contract avoids incompatible
+Memory/Sector/Event trackers, while accepted Claim linkage preserves the
+authoritative Evidence-to-Claim chain. Explicit historical absence prevents
+retroactive precision and Day37 reuse prevents a second time-safety policy.
+
+---
+
+## ADR-0044
+
+Date
+
+2026-09-01
+
+Decision
+
+Establish `ResearchDatasetSample v1` as a reference-only, immutable,
+point-in-time sample linking one Asset and cutoff to its frozen
+ResearchState, ResearchEpisode, data snapshot, optional Sector/Memory context,
+optional ResearchEpisodeAttribution, Agent runs, and centralized version
+lineage. Do not copy State, Claims, Evidence, Memory, Report, or SectorContext
+payloads into the Sample.
+
+Build Sample identity from canonical sorted JSON containing the State,
+Episode, and optional Attribution identities/fingerprints plus the dataset
+schema/build version. Materialization time is not identity-bearing. Reuse the
+Day37 temporal validator for every upstream artifact and reject mismatched
+State/Episode/Attribution identities or cutoffs.
+
+Persist validated Samples in the existing DuckDB through the immutable
+`research_dataset_samples` Repository and write a small credential-free
+artifact manifest. Duplicate audit columns are verified against Sample JSON
+on read. Historical absence is explicit: Phase 3 receives no later Sector
+backfill, PARTIAL Day36 trace quality remains PARTIAL, and empty-valid Memory
+does not invalidate a Sample.
+
+Day42 computes no Outcome or future return. `label_ids` remains empty and
+`label_status` remains `PENDING` or `NOT_AVAILABLE`. Factor, Reward, Regime,
+Backtest, SFT, DPO, Offline RL, and model training remain out of scope.
+
+Reason
+
+Future replay and evaluation need a stable row-level unit without duplicating
+large upstream artifacts or creating a second provenance graph. Referencing
+the already frozen State, Episode, and Attribution keeps the fact chain
+auditable, while one shared temporal policy prevents Dataset-specific future
+leakage. DuckDB plus JSON manifests meets current scale and operational needs
+without introducing a feature store or data lake.
+
+---
+
+## ADR-0045
+
+Date
+
+2026-09-01
+
+Decision
+
+Close Phase 4B with `GoldenReplayManifest v1`, a credential-free audit result
+that deterministically rebuilds ResearchState, ResearchEpisode, optional
+Research Attribution, and ResearchDatasetSample from frozen artifacts. Replay
+is explicitly not a new research run: its service has no Provider, LLM,
+Gateway, or live ingestion dependency and records literal zero call counts.
+
+Require exact equality with the previously materialized State, Episode, and
+Attribution, and exact Dataset Sample equality excluding audit `created_at`.
+Stable Replay identity is computed from canonical source artifact and rebuilt
+artifact identities. Repeated builds must preserve State, Episode, Dataset
+Sample, and Replay identities.
+
+Use Unified Temporal Contract v1 for the Golden leakage challenge. Future
+News, Radar Event, Memory, Sector Membership, and Filing fixtures must be
+rejected before a Replay can pass. Preserve historical absence rather than
+enriching it: Phase 3 receives no later Sector/Chain/Memory context; Day36
+retains its original empty-valid Memory and partial downstream Claim identity.
+Trace samples may be PARTIAL only when they name the exact metadata omitted by
+the source run. Missing historical identities are never inferred.
+
+Reason
+
+Phase 4B needs a single executable proof that its temporal, State, Episode,
+Memory, Attribution, and Dataset contracts compose without network access or
+future leakage. Exact identity reproduction is stronger and more auditable
+than rerunning Agents for a merely similar output. Truthful partial traces
+preserve the evidence boundary while exposing what older instrumentation did
+not retain.
+
+---
+
+## ADR-0046
+
+Date
+
+2026-09-14
+
+Decision
+
+Reset Phase 4C ownership around a hard Research/Quant repository boundary.
+The long-term system has three layers: Research Intelligence, Quant Alpha /
+Strategy, and Portfolio / Execution. The current `deepinsight` repository owns
+only Research Intelligence and Opportunity Discovery. A future independent
+`deepinsight-quant` repository owns Quant Alpha, selection, timing, holdings,
+Regime/MoE routing, backtest, portfolio, risk transformation, and execution.
+
+Define Planetary Alpha（行星阿尔法）as low-cost, repeatable traditional
+quantitative Alpha/Factor over a broad PIT Market Universe. Define Satellite
+Alpha（卫星阿尔法）as proprietary, attributable Research-produced descriptors
+derived from Evidence, Claims, ResearchState, Sector/Industry-Chain research,
+events, debate, risk, and Memory. Satellite Alpha inside `deepinsight` is raw
+research output, not a validated Factor exposure, rank, signal, or position.
+
+Freeze the handoff direction as Evidence → Validated Claim → Research State
+Feature → Satellite Alpha Observation → ResearchQuantHandoffBundle. Quant may
+later transform that bundle into processed Factor exposures, Alpha signals,
+strategies, and portfolios. `deepinsight` may not emit z-scores, neutralized
+Factors, IC metrics, buy/sell scores, trade signals, position scores/weights,
+or orders. Satellite intent is `SELECTION`, `TIMING`, or `BOTH`, but all
+ranking and decision semantics remain Quant-owned.
+
+Require a selection-bias safeguard: the Research Candidate Universe cannot
+replace the independent Base Quant PIT Market Universe. Planetary Factor
+research and validation must always use the full Quant universe; DeepInsight
+Opportunity Discovery only helps form the expensive Research Candidate and
+Coverage pools.
+
+Supersede the ownership implied by older Phase-Two reserved Factor Miner,
+router, strategy, training, backtest, portfolio, and execution interfaces and
+`p2_*` columns. Retain them as non-operational historical compatibility
+artifacts and 501 boundaries until a later migration removes or relocates
+them; do not activate them in this repository. ResearchState features remain
+Research Features. Legacy factor/regime/router/reward names in nullable fields
+do not authorize computation.
+
+Day44 changes governance documentation only. It introduces no Satellite Alpha
+schema, Opportunity Candidate schema, handoff runtime, Quant repository,
+Factor, Regime, strategy, portfolio, or execution code. Phase 3, Phase 4A, and
+Phase 4B contracts—including ValidatedClaim grounding, temporal rules,
+ResearchState/ResearchEpisode identity, and Golden Replay—remain frozen.
+
+Reason
+
+Research interpretation and large-universe Quant processing have different
+cost, validation, and operational requirements. Keeping them in one repository
+would encourage opaque AI scores, selection-biased Factor research, and hidden
+trading semantics in research artifacts. A reference-only handoff preserves
+DeepInsight's evidence and PIT advantages while allowing a future Quant system
+to maintain a complete universe and independently validate incremental Alpha.
+
+---
+
+## ADR-0047
+
+Date
+
+2026-09-15
+
+Decision
+
+Adopt Satellite Alpha Ontology v1 as versioned, attributable raw Research
+descriptors. Separate stable `SatelliteAlphaDefinition` meaning from PIT
+`SatelliteAlphaObservation` values. Selection/Timing/Both are intended research
+usage only and do not authorize ranks, Quant Factors, signals, or decisions.
+
+Require explicit comparison and coverage semantics. Missing inputs must never
+be numeric zero. Complex families remain decomposed components with unit,
+scale, transform version, section-qualified State feature references, and
+Claim/Evidence/artifact lineage. Observation identity uses canonical semantic
+content and excludes `created_at`; `available_at` remains an independent PIT
+consumption boundary.
+
+Implement only deterministic Evidence Strength inventory and truthful partial
+State projections on Day45. History-dependent Timing families remain
+`REQUIRES_HISTORY`; `PEER_GROUP` remains unsupported without a formal PIT
+contract. The mapper consumes frozen ResearchState and optional Episode, calls
+Unified Temporal Contract v1, and makes zero LLM/Provider calls. It does not
+parse report prose.
+
+Do not expand ResearchState v1. Its current accepted structured content can
+support several partial descriptors, but logic stage, expectation direction,
+risk component type, catalyst/invalidator identity, debate disposition,
+canonical Sector ID, and event identity/time are not retained as formal fields.
+Future State versions may preserve those semantics only from already accepted
+upstream structure; they must not request another LLM score.
+
+Reason
+
+A small definition/observation split provides stable, interpretable research
+semantics while preserving historical truth, provenance, and the Research/
+Quant repository boundary. Explicit partial and history-required states are
+safer than opaque synthetic scores or inferred backfill.
+
+---
+
+## ADR-0048
+
+Date
+
+2026-09-15
+
+Decision
+
+Produce Day46 Selection Satellite observations only from frozen structured
+State features, existing accepted Claim paths, and a compact PIT projection of
+SectorContext event identities. Exact versioned feature names may carry
+alignment, expectation direction/subtype, logic stage, and decomposed chain
+semantics. Claim prose is never parsed to infer a missing category.
+
+Map existing Bull/Bear paths deterministically to disagreement and preserve
+the existing Risk Agent sections as separate coarse components. Sector context
+presence alone remains UNCERTAIN rather than positive. Detailed risk and chain
+components remain PARTIAL when State lacks their accepted structured source.
+ResearchState v1 and ResearchEpisode identity remain unchanged.
+
+Adopt `OpportunityCandidate v1` as a Research qualification artifact over
+Selection Observations. Eligibility is an auditable union of structured
+Sector/Chain alignment, expectation change, material event/logic stage,
+accepted Research Manager thesis, structured debate, or structured Risk
+review. Evidence Strength or State presence alone cannot qualify an asset.
+There is no weighted score or minimum-score threshold.
+
+Candidate identity is deterministic over research semantics and reference-only
+lineage and excludes `created_at`. Candidate availability is the latest source
+Observation availability. Qualified candidates may be PARTIAL, while
+insufficient inputs remain explicit. No rank, Top-K, Factor exposure, target
+price, trade action, position, or portfolio field is permitted.
+
+Reason
+
+Exact structured mappings increase currently supported Selection coverage
+without inventing facts or another LLM scoring pass. A transparent eligibility
+artifact provides a safe Research-to-future-Quant consideration boundary while
+leaving all comparison, ranking, and decision logic to `deepinsight-quant`.
+
+---
+
+## ADR-0049
+
+Date
+
+2026-09-15
+
+Decision
+
+Adopt `ResearchStateTransition v1` as a deterministic, reference-only derived
+research artifact. Select the nearest strictly earlier same-Asset
+ResearchState; require both States to remain independently PIT-valid; reject
+same-time and future predecessors. Prefer explicit lineage when a future State
+contract supplies it, but do not infer lineage using embeddings or prose.
+
+Project Day47 Timing semantics through the existing
+`SatelliteAlphaObservation`. Add only optional previous-State and transition
+references to that contract. Two grounded expectation points may describe
+direction, delta, and rate; at least three are required for acceleration or
+deceleration. Event and catalyst windows use versioned calendar thresholds and
+separate schedule availability from later outcome availability.
+
+Keep existing Memory L0–L4 and DuckDB/FAISS boundaries unchanged. Retrieved
+Memory is reference-only lineage and must pass Unified Temporal Contract v1.
+Do not add a Timing Memory database, an L5 layer, model calls, Quant timing,
+ranking, signals, positions, or execution semantics.
+
+Reason
+
+Immutable ordered State comparison provides auditable historical continuity
+without rewriting frozen research or crossing the Research/Quant boundary.
+Explicit missing coverage is safer than fabricated predecessors, neutral
+values, prose-derived categories, or leaked later outcomes.
+
+---
+
+## ADR-0050
+
+Date
+
+2026-09-15
+
+Decision
+
+Adopt `ResearchQuantHandoffBundle v1` as the only formal, versioned export from
+DeepInsight Research to future `deepinsight-quant`. Export canonical Asset and
+cutoff, ResearchState/ResearchEpisode IDs, optional OpportunityCandidate and
+ResearchStateTransition IDs, compact Selection/Timing Satellite references,
+explicit coverage/quality, source run/data snapshot, version manifest, and
+reference-only provenance. Do not copy internal Research payloads.
+
+Candidate and Transition linkage is optional. Qualified, insufficient,
+negative, partial, source-run-unavailable, and history-required Research must
+remain exportable so the future Quant system does not receive a
+selection-biased positive-only feed. Missing remains categorical and never
+becomes zero or a score.
+
+Derive `bundle_id` from canonical semantic content and sorted Observation
+references; exclude `created_at`. Require exact Asset/cutoff/State/Episode
+alignment, Candidate Observation closure, Transition termination at the
+current State, source feature/provenance references, and Unified Temporal
+Contract-compatible materialization. Export sorted-key JSON or ordered JSONL
+with a credential-free deterministic batch manifest.
+
+The handoff ends Research ownership. It must not contain Planetary Alpha,
+Factor exposure/normalization/rank, IC, expected return, Top-K, signals,
+selection/timing decisions, Holdings, Regime/MoE, portfolio, orders, or
+execution. Its Builder and exporter make zero LLM and Provider calls.
+
+Reason
+
+A small reference-only wire contract decouples future Quant implementation
+from Research internals while preserving historical truth, negative examples,
+semantic versions, PIT safety, and recursive provenance. JSON/JSONL provides a
+stable artifact boundary without prematurely introducing transport or storage
+infrastructure.
+
+---
+
+## ADR-0051
+
+### Freeze Phase 4 as Research Intelligence v1 after Day49 Golden Acceptance
+
+Status: Accepted
+
+Decision
+
+Freeze the current `deepinsight` repository at the versioned
+`ResearchQuantHandoffBundle v1` boundary. Day49 accepts Phase3 AAPL and the
+Day36 sector-aware real-Qwen AAPL run through deterministic frozen-artifact
+replay, plus explicitly labelled Selection and Timing contract fixtures. The
+acceptance makes zero Provider and LLM calls, preserves source-run missingness,
+uses the unified temporal validator, and keeps `(asset_id, research_as_of)`
+unique in every Handoff batch.
+
+Treat Satellite Alpha as Research descriptors only. OpportunityCandidate is a
+research opportunity object, not ranking or advice. Timing observations are
+State evolution, not entry/exit. Quant validation, universe, Factor
+processing, IC/RankIC, Top-K, strategy, portfolio, and execution remain outside
+this repository.
+
+Do not create the proposed release tag while the accepted Phase 4 tree remains
+uncommitted. Tag only a reviewed commit containing the exact accepted files.
+
+Reason
+
+The Golden Acceptance proves deterministic identity, PIT exclusion,
+provenance, negative/partial coverage, and external-consumer readability while
+preserving the Research/Quant ownership boundary. It does not prove predictive
+Alpha, Memory usefulness, or trading performance.
+
+---
+
+## ADR-0052
+
+### Use one explicit PIT Sector artifact at the live report composition root
+
+Status: Accepted
+
+Decision
+
+Allow `scripts.live_report` to accept one prebuilt `SectorContextBundle` via
+`--sector-context`. Validate its canonical Asset identity and exact
+`research_as_of` before any network request, wrap it with the existing
+`AssetSectorContextResolver` contract, and inject that resolver into the same
+`ResearchWorkflowService` used by the standard live report path. Preserve the
+legacy Phase 3 degradation path when no artifact is supplied. Do not duplicate
+Day36 Sector construction, rerun a Sector Agent inside Report assembly, or let
+the Report create Sector facts.
+
+Move record-to-temporal compatibility mapping out of the eager Services export
+package into neutral `src.temporal_mapping`, retaining
+`src.services.temporal` as a compatibility export. Lazily expose Memory runtime
+services so importing Memory contracts from Sector schemas does not initialize
+retrieval, Services, Golden Replay, and Sector schemas recursively.
+
+Reason
+
+The Phase 4 runtime capability already existed below the composition root; the
+live entry had simply omitted the resolver dependency. Explicit artifact
+injection preserves PIT alignment and avoids a second Sector pipeline. Neutral
+temporal mapping and lazy runtime exports remove the two concrete package
+initialization cycles without weakening the Unified Temporal Contract or
+renaming frozen schemas.
+
+---
+
+## ADR-0053
+
+### Adopt Numeric Grounding Equivalence v1 without weakening Claim quarantine
+
+Status: Accepted
+
+Decision
+
+Validate Analyst and Sector Claim numerals through one shared semantic
+grounder. Digits embedded in an exact canonical identifier are presentation
+components only when that complete identifier occurs in the Claim's bound
+Evidence. A separate human-readable duration such as `10-year` still requires
+explicit `window_value`/`window_unit` or equivalent formal window metadata;
+opaque keys such as `change_5d` do not provide it.
+
+Treat decimal spellings with equal `Decimal` value as the same fact. Permit a
+shorter decimal rendering only when it is the exact deterministic rounding of
+a specifically bound Evidence numeric token and retains at least six
+significant digits. Do not introduce epsilon matching, percentage/ratio,
+basis-point, currency, unit, or annualization conversions. Preserve the
+Evidence ID and source token for every successful match.
+
+Partial/candidate disclosure, mandatory HIGH-event accepted-Claim coverage,
+Claim lineage, PIT validation, and the minimum of three accepted Sector Claims
+remain unchanged.
+
+Reason
+
+Exact string matching incorrectly quarantined high-precision values rendered
+with safe decimal precision, while the old tokenizer did not formally
+distinguish identifier digits from facts. The versioned semantic policy removes
+that false positive without allowing ungrounded duration language or material
+numeric changes.
+
+---
+# ADR: Phase 4 live FMP precheck is configuration-only
+
+**Status:** Accepted — 2026-09-15
+
+Phase 4 release acceptance must not execute `scripts.smoke_fmp` before
+`scripts.live_report`. That smoke is a complete data acquisition rather than a
+configuration check and can consume the Provider rate limit immediately before
+the authoritative run. Operators use
+`scripts.live_report --configuration-preflight`, which performs zero Provider
+data requests. The subsequent full invocation owns one run-scoped FMP
+acquisition, validates its `FMPProviderSnapshot`, and reuses the same snapshot
+for formal ingestion and downstream consumers.
+
+The invariant is: **PRECHECK != ACQUISITION; ACQUIRE ONCE; VALIDATE ON
+SNAPSHOT; REUSE DOWNSTREAM**. Persistent HTTP 429 remains fail-closed; no old
+snapshot, Fake Provider, or unbounded retry is allowed.
+
+---
+
+## ADR-0054
+
+### Scope live reruns and frozen materialization to one report execution
+
+Status: Accepted
+
+An authorized live repair may reuse one exact run-scoped acquisition only when
+Asset, canonical `research_as_of`, request window, and snapshot identity match.
+`--resume-acquired-run --rerun-research` skips Provider acquisition and
+ingestion, but reruns the Agent/Report layer when a versioned Prompt changes.
+Live manifests and downstream State/Episode materializers select Agent runs by
+the resulting `report_id`; two research executions in one DuckDB must never be
+merged into one ResearchState or ResearchEpisode.
+
+At the Qwen Judge boundary, compatibility normalization remains an exact
+allowlist. The observed `known_missing_data` evidence label maps to the existing
+`diagnostic` category; arbitrary evidence kinds remain invalid. Complete ISO
+timestamps are structured metadata in acceptance diagnostics, so their
+components are not independently reclassified as financial numeric facts.
+Numbers outside the timestamp remain subject to Numeric Grounding v2.

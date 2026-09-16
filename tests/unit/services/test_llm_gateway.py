@@ -17,12 +17,14 @@ from src.repositories.records import LLMCacheRecord
 from src.services.llm_gateway import (
     LLMCacheError,
     LLMCacheReliabilityPolicy,
+    LLMFailureMetadata,
     LLMGateway,
     LLMRunMetadata,
     LLMSchemaValidationError,
 )
 from src.services.llm_provider import (
     FakeLLMProvider,
+    LLMConfigurationError,
     LLMProviderError,
     LLMProviderResult,
     LLMTimeoutError,
@@ -88,6 +90,16 @@ class MetadataSink:
         self.records: list[LLMRunMetadata] = []
 
     def record(self, metadata: LLMRunMetadata) -> None:
+        self.records.append(metadata)
+
+
+class FailureSink:
+    """Capture safe failure metadata without external persistence."""
+
+    def __init__(self) -> None:
+        self.records: list[LLMFailureMetadata] = []
+
+    def record_failure(self, metadata: LLMFailureMetadata) -> None:
         self.records.append(metadata)
 
 
@@ -339,6 +351,40 @@ def test_gateway_logs_only_safe_request_metadata() -> None:
     log = logger.calls[-1].kwargs
     assert log["error_code"] == "timeout"
     assert log["status"] == "error"
+
+
+def test_gateway_persists_safe_configuration_failure_metadata() -> None:
+    """Configuration stage and safe message survive without secret content."""
+
+    secret = "gateway-secret-must-not-leak"
+    failure_sink = FailureSink()
+    bound_logger, logger = _capturing_logger()
+    error = LLMConfigurationError(
+        f"Qwen client initialization failed; API key: {secret}",
+        configuration_stage="client_initialization",
+        api_key=secret,
+    )
+    gateway = LLMGateway(
+        InMemoryCache(),
+        provider=FakeLLMProvider({}, error=error),
+        failure_sink=failure_sink,
+        logger=bound_logger,
+    )
+
+    with pytest.raises(LLMConfigurationError):
+        gateway.invoke_json("qwen-offline", "sensitive prompt", {"secret": secret})
+
+    assert len(failure_sink.records) == 1
+    metadata = failure_sink.records[0]
+    assert metadata.provider == "fake"
+    assert metadata.model == "qwen-offline"
+    assert metadata.error_code == "configuration_error"
+    assert metadata.configuration_stage == "client_initialization"
+    assert secret not in metadata.error_message_safe
+    serialized_logs = repr(logger.calls)
+    assert secret not in serialized_logs
+    assert "sensitive prompt" not in serialized_logs
+    assert logger.calls[-1].kwargs["configuration_stage"] == "client_initialization"
 
 
 def test_permanent_cache_read_error_fails_before_provider() -> None:

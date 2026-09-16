@@ -16,10 +16,18 @@ interpretation, debate, risk reasoning, and report synthesis.
 - Evidence-grounded and numerically validated claims
 - Point-in-time-safe data and Memory boundaries
 - Auditable Markdown and JSON research reports
+- Macro, Sector, Radar, and Industry-Chain intelligence
+- Deterministic ResearchState, Episode, Attribution, and PIT datasets
+- Satellite Alpha research descriptors and a versioned Research-to-Quant handoff
 
-The current Phase 3 product output is an **AI Research Report**. Trading,
-portfolio allocation, backtesting, model training, Factor, Regime, and MoE
-capabilities are not part of the current release.
+The current release is **DeepInsight Phase 4 — Research Intelligence v1**. It
+produces an evidence-grounded human Research Report and deterministic,
+PIT-safe machine research artifacts through `ResearchQuantHandoffBundle v1`.
+
+DeepInsight is the Research Intelligence layer. Quant Factor processing,
+IC/RankIC, Top-K selection, trading timing, Regime/MoE, portfolio construction,
+positions, orders, and execution belong to a future independent
+`deepinsight-quant` system and are not implemented here.
 
 ## How it works
 
@@ -31,11 +39,14 @@ flowchart TD
     R[FRED] --> D
     T[Stocktwits] --> D
     D --> B[ResearchDataBundle]
-    B --> E[Evidence + Memory]
-    E --> FA[Fundamental Analyst]
-    E --> TA[Technical Analyst]
-    E --> SA[Sentiment Analyst]
-    E --> NA[News / Event Analyst]
+    B --> E[Evidence + Validated Claims]
+    E --> MS[Macro + Sector State]
+    MS --> RD[Sector Radar + Sector Research]
+    RD --> IC[Industry Chain + SectorContext]
+    IC --> FA[Fundamental Analyst]
+    IC --> TA[Technical Analyst]
+    IC --> SA[Sentiment Analyst]
+    IC --> NA[News / Event Analyst]
     FA --> RM[Research Manager]
     TA --> RM
     SA --> RM
@@ -46,6 +57,10 @@ flowchart TD
     BE --> RI
     RI --> RP[Auditable Research Report]
     RP --> EV[Evaluation]
+    RP --> RS[ResearchState + ResearchEpisode]
+    RS --> MA[Memory + Attribution]
+    RS --> SAT[Satellite Alpha + OpportunityCandidate]
+    SAT --> HQ[ResearchQuantHandoffBundle v1]
 ```
 
 The deterministic layer computes and normalizes financial values before model
@@ -58,10 +73,50 @@ The authoritative fact flow is:
 Multi-source Data
 → Canonical Research Data
 → Evidence
-→ Analyst Validated Claims
-→ Manager Claims
-→ Research Report
+→ Validated Claims
+→ Macro / Sector / Radar / Industry Chain Context
+→ Eight-Agent Research
+→ Research Report + ResearchState + ResearchEpisode
+→ Satellite Alpha Observation + OpportunityCandidate
+→ ResearchQuantHandoffBundle v1
 ```
+
+## Phase 4 at a glance
+
+| Layer | Delivered capability | Contract boundary |
+|---|---|---|
+| Phase 4A — Sector Intelligence | Macro, Sector State, Radar, Sector Research, Industry Chain, SectorContext-to-Agent propagation | Accepted Sector Claims and Events remain Evidence-grounded and PIT-safe |
+| Phase 4B — Structured Research | Unified Temporal Contract, ResearchState, ResearchEpisode, Learning Memory, Attribution, PIT Dataset, Golden Replay | Historical identity is deterministic; replay performs zero Provider and LLM calls |
+| Phase 4C — Research-to-Quant Foundation | Satellite Alpha descriptors, OpportunityCandidate, State transitions, ResearchQuantHandoff | Research descriptors only—no rank, z-score, trading decision, or position |
+
+The full real-Provider AAPL live acceptance and final independent audit both
+passed. The recommended release tag is
+`phase4-research-intelligence-v1`. See the
+[Phase 4 release notes](docs/releases/PHASE4_RESEARCH_INTELLIGENCE_V1.md) for
+the accepted scope, limitations, artifact policy, and product backlog.
+
+### Research / Quant boundary
+
+```text
+Raw Evidence
+→ Validated Claim
+→ Research State Feature
+→ Satellite Alpha Observation
+→ ResearchQuantHandoffBundle v1
+──────────────── Research repository boundary ────────────────
+→ future deepinsight-quant
+→ Processed Factor Exposure
+→ Alpha Signal
+→ Strategy
+→ Portfolio
+```
+
+`Planetary Alpha` means traditional, repeatable quantitative Factors computed
+across a broad PIT market universe. It belongs to future `deepinsight-quant`.
+`Satellite Alpha` means attributable descriptors produced by this Research
+system. A Satellite observation may be categorical, numeric and grounded, or a
+structured component set; it is never silently replaced by an opaque stock
+score.
 
 ## Research capabilities
 
@@ -102,6 +157,43 @@ Multi-source Data
 - SEC filings and corporate events
 - Alpaca financial news
 - Point-in-time event lineage and source references
+
+### Sector and Industry-Chain intelligence
+
+- Versioned Sector ontology and PIT membership
+- Sector State and Macro context
+- Radar anomaly and Event detection
+- Claim-first Sector Research with mandatory material-Event coverage
+- Industry-Chain membership and accepted-Claim propagation
+- Role-specific SectorContext projection into all eight asset Agents
+
+### Structured research intelligence
+
+- Deterministic `ResearchStateSnapshot` semantic identity
+- `ResearchEpisode` run, Agent, Claim, and model lineage
+- L0–L4 Learning Memory lifecycle with PIT-safe retrieval
+- Research Attribution across Context, Agent, Claim, Evidence, Radar, and Memory
+- PIT dataset samples and versioned Golden Replay manifests
+- Frozen-artifact reconstruction without Provider or LLM calls
+
+### Satellite Alpha and Research-to-Quant handoff
+
+Satellite Alpha means proprietary Research descriptors derived from accepted
+Evidence, Claims, ResearchState, Sector/Chain reasoning, events, debate, risk,
+and Memory. It supports `SELECTION`, `TIMING`, or `BOTH`, but is not a validated
+Quant Factor exposure or trading signal.
+
+- Seven Selection descriptor families with explicit coverage and missingness
+- Research opportunity representation through `OpportunityCandidate`
+- Deterministic `ResearchStateTransition` and Timing descriptor contracts
+- Compact, versioned `ResearchQuantHandoffBundle v1`
+- JSON/JSONL external-consumer support with canonical
+  `(asset_id, research_as_of)` batch identity
+- Positive, negative, partial, missing, and history-insufficient samples
+
+Missing is never converted to zero. `PARTIAL`, `MISSING_INPUT`,
+`NOT_AVAILABLE_AT_SOURCE_RUN`, `REQUIRES_HISTORY`, and `UNSUPPORTED` remain
+explicit contract states.
 
 ## Data sources
 
@@ -144,11 +236,46 @@ if a fact cannot be validated, it is rejected or disclosed as missing.
 
 ## Point-in-time safety
 
-Research data, source timestamps, and Memory retrieval share an explicit
-`as_of` cutoff. Records observed after that cutoff are not eligible for the
-run. This prevents future leakage and establishes the foundation for future
-point-in-time research datasets, factor research, regime representation, and
-backtesting—none of which are claimed as implemented here.
+Each live run freezes one exact timezone-aware UTC `research_as_of`. Providers
+first interpret that cutoff in their native timezone, calendar, and precision,
+then normalize eligible source information back onto the canonical UTC
+timeline. A market session date, FRED local date, or fiscal period never
+replaces the global research instant.
+
+Only information available by the cutoff is eligible. Live `ingested_at`
+records acquisition lineage; historical replay additionally preserves the
+stricter original-observed ingestion boundary. This Unified Temporal Contract
+protects ResearchState, Episode, Memory, Satellite, and Handoff artifacts from
+future leakage.
+
+## Phase 4 validation snapshot
+
+Research Intelligence v1 passed a complete real US:AAPL release acceptance:
+
+| Check | Result |
+|---|---:|
+| Default pytest | 751 passed, 5 live tests deselected |
+| Leakage regression | 8 passed |
+| Real Providers | SEC, FMP, Alpaca Market/News, FRED/ALFRED, Stocktwits |
+| Qwen generation / embedding | Real / PASS |
+| Eight asset Agents | 8/8 completed |
+| Human Report claims | 68 |
+| Numeric claims grounded | 47/47 |
+| Unique citations traced | 82/82 |
+| Invalid citations | 0 |
+| Future leakage | 0 |
+| Overall report evaluation | 0.9567 |
+| Phase 4A Sector/Chain surfacing | PASS |
+| Phase 4B State/Episode/Attribution | PASS |
+| Phase 4C Satellite/Candidate/Handoff | PASS |
+| External Handoff consumer | PASS |
+
+The accepted run produced a human Report, ResearchState, ResearchEpisode,
+Attribution, seven Selection and seven Timing observations,
+OpportunityCandidate, ResearchStateTransition, and ResearchQuantHandoff.
+Memory retrieval was honestly `EMPTY_VALID`; current live Timing descriptor
+values remained `MISSING_INPUT`. Neither result is presented as validated
+predictive Alpha.
 
 ## Phase 3 validation snapshot
 
@@ -169,36 +296,46 @@ Research Completeness v1 was frozen on the real US:AAPL acceptance run
 | Trading-instruction compliance | 1.00 |
 | Overall report evaluation | 0.9675 |
 
-This is one live **research-quality acceptance** using real SEC, FMP, Alpaca,
+Phase 3 remains the apples-to-apples historical baseline. It is one live
+**research-quality acceptance** using real SEC, FMP, Alpaca,
 FRED, Stocktwits, and Qwen services. It is not an investment-return result,
 trading benchmark, or statement of future performance.
 
-## Example output
+## Phase 4 output
 
-The accepted AAPL report combines:
+The accepted AAPL research product combines:
 
 - a standardized growth, margin, profitability, liquidity, and valuation snapshot;
 - rates, inflation, labor, growth, and financial-stress context;
+- S03 Consumer Electronics Sector state, catalysts, and risks;
+- `APPLE_CHAIN` context with accepted Claim propagation into the asset thesis;
+- Radar Events connected to Sector, Chain, and asset implications where material;
 - trend, momentum, volatility, volume, drawdown, and benchmark-relative strength;
 - aggregate community sentiment and attributable financial news;
-- separate Bull, Bear, Risk, and final synthesis sections.
+- separate Bull, Bear, Risk, and final synthesis sections;
+- deterministic State, Episode, Attribution, Satellite, Candidate, Transition,
+  and Handoff artifacts for machine consumption.
 
 Local live artifacts are written to a timestamped, Git-ignored directory:
 
 ```text
-data/live_acceptance/20260814T100747Z/
-├── run_manifest.json
-├── research_data_bundle.json
-├── research_data_bundle_summary.json
-├── duckdb/platform.duckdb
-└── reports/
-    ├── rep_27ce48e18b5443f297c485405792c535.md
-    ├── rep_27ce48e18b5443f297c485405792c535.json
-    └── rep_27ce48e18b5443f297c485405792c535.evaluation.json
+data/live_acceptance/phase4_prefreeze/<run_id>_aapl/
+├── acceptance_summary.json
+├── provider_temporal_freshness_summary.json
+├── provider_request_budget.json
+├── sector_state / sector_macro / sector_radar
+├── sector_research / SectorContext
+├── final_report
+├── ResearchState / ResearchEpisode / Attribution
+├── Satellite observations / OpportunityCandidate / Transition
+├── ResearchQuantHandoff
+└── phase3_comparison.json / phase3_comparison.md
 ```
 
 Generated acceptance data is evidence for a local run and is not intended for
-source control.
+source control. Compact deterministic Golden Replay and regression JSON
+artifacts are versioned separately under `data/golden_replay/` and the
+Day38–Day42 artifact directories.
 
 ## Installation
 
@@ -328,6 +465,19 @@ DEEPINSIGHT_LLM_PROVIDER=qwen \
 `scripts.live_report` is fail-closed: every required Provider, Qwen Judge, and
 dataset field must be configured, and no Fake fallback is allowed.
 
+Run the configuration-only preflight first. It performs zero Provider data
+requests; in particular, do not run `scripts.smoke_fmp` immediately before the
+full acceptance because that command is a complete four-endpoint acquisition.
+
+```bash
+FMP_ENABLED=true STOCKTWITS_MCP_ENABLED=true \
+  "$CONDA_PREFIX/bin/python" -m scripts.live_report --configuration-preflight
+```
+
+The following full command owns the run's single authoritative FMP
+acquisition, validates the resulting run-scoped snapshot, and reuses it during
+formal ingestion.
+
 ```bash
 source ~/.local/bin/load_deepinsight_keys.sh
 env -u ALL_PROXY -u all_proxy \
@@ -371,15 +521,15 @@ apps/                    API, Worker, Scheduler, and Web composition roots
 config/                  Provider metadata, prompts, and evaluation rules
 src/
 ├── adapters/            External Provider boundaries
-├── agents/              Eight-agent contracts and coordination
+├── agents/              Eight-agent and Sector Research contracts
 ├── benchmark/           Offline benchmark runner
 ├── evaluation/          Deterministic and LLM-Judge evaluation
-├── memory/              Point-in-time research Memory
-├── operators/           Deterministic financial feature calculations
+├── memory/              Point-in-time L0–L4 Research Memory
+├── operators/           Financial, Macro, Sector State, and Radar operators
 ├── repositories/        DuckDB and FAISS persistence boundaries
 ├── reports/             Report contracts and assembly
-├── schemas/             Shared Pydantic v2 domain contracts
-└── services/            Ingestion, Gateway, and Bundle services
+├── schemas/             State, Episode, Satellite, Transition, and Handoff contracts
+└── services/            Ingestion, Gateway, replay, State, and handoff services
 scripts/                 Explicit operations and live-smoke entry points
 tests/                   Offline unit/integration tests and isolated live tests
 docs/                    Specifications, decisions, tasks, releases, and operations
@@ -390,17 +540,16 @@ docs/                    Specifications, decisions, tasks, releases, and operati
 - **Phase 1 — Research Operating System Foundation:** done
 - **Phase 2 — Evaluation, Benchmark, and Real Data Validation:** done
 - **Phase 3 — Research Completeness v1:** done and frozen
-- **Phase 4 — Structured Research Intelligence:** planned
-  - `ResearchStateSnapshot`
-  - point-in-time research datasets
-  - factor infrastructure
-  - regime representation
-- **Future research:** factor mining, regime-aware routing, MoE, backtesting,
-  model post-training, and a strategy layer
+- **Phase 4A — Sector Intelligence:** done and frozen
+- **Phase 4B — Structured Research Intelligence:** done and frozen
+- **Phase 4C — Research-to-Quant Satellite Alpha Foundation:** done and frozen
+- **Future `deepinsight-quant`:** independent Base PIT Universe, Planetary
+  Alpha, Factor processing and validation, IC/RankIC, selection, timing,
+  Holdings, Regime/MoE, backtesting, portfolio, risk, and execution
 
-The long-term direction is an end-to-end research and quantitative-development
-system, but the implementation sequence starts with trustworthy research data
-and auditable claims—not trading.
+DeepInsight stops at `ResearchQuantHandoffBundle v1`. OpportunityCandidate is a
+Research opportunity object—not a BUY recommendation, Top-K result, or
+portfolio instruction.
 
 ## Documentation
 
@@ -410,6 +559,11 @@ and auditable claims—not trading.
 - [Architecture decisions](docs/DECISIONS.md)
 - [Schema reference](docs/schema.md)
 - [Operations guide](docs/operations.md)
+- [Satellite Alpha contract](docs/SATELLITE_ALPHA.md)
+- [OpportunityCandidate contract](docs/OPPORTUNITY_CANDIDATE.md)
+- [ResearchStateTransition contract](docs/RESEARCH_STATE_TRANSITION.md)
+- [Research-to-Quant handoff](docs/RESEARCH_QUANT_HANDOFF.md)
+- [Phase 4 release notes](docs/releases/PHASE4_RESEARCH_INTELLIGENCE_V1.md)
 - [Phase 3 release notes](docs/releases/PHASE3_RESEARCH_COMPLETENESS_V1.md)
 - [Phase 3 founder roadshow (Chinese)](docs/roadshow/DEEPINSIGHT_PHASE3_ROADSHOW_CN.md)
 

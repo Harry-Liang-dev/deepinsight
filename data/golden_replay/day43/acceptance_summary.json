@@ -1,0 +1,26 @@
+{
+  "llm_call_count": 0,
+  "known_limitations": [
+    "Learning Memory has only passed empty-state PIT replay validation; no replayed run currently has memory_retrieval_count > 0."
+  ],
+  "provider_call_count": 0,
+  "replays": [
+    {
+      "episode_id": "research_episode_67b3b89872e7d4246c37d7da",
+      "replay_id": "golden_replay_cebec632adbd5d09f334c4f8",
+      "replay_name": "phase3_aapl_golden",
+      "sample_id": "research_sample_4b98c4b3f722981a81d51f5d",
+      "state_id": "research_state_fd95d91fbf0a635951884295",
+      "status": "pass"
+    },
+    {
+      "episode_id": "research_episode_d4a588c6bac4fa6fe558cad5",
+      "replay_id": "golden_replay_4da67395bcdf1dadaa958e37",
+      "replay_name": "phase4a_aapl_sector_aware",
+      "sample_id": "research_sample_f1b426e6b3eea228bdc61dba",
+      "state_id": "research_state_3da102d1a1515b82dbe4f9b7",
+      "status": "pass"
+    }
+  ],
+  "status": "pass"
+}

@@ -1,0 +1,129 @@
+{
+  "dataset_schema_version": "research_dataset_sample_v1",
+  "sample_id": "research_sample_4b98c4b3f722981a81d51f5d",
+  "asset_id": "US:AAPL",
+  "market": "US",
+  "sector_id": null,
+  "industry_chain_ids": [],
+  "research_as_of": "2026-08-14T23:59:59.999999Z",
+  "research_state_id": "research_state_fd95d91fbf0a635951884295",
+  "research_episode_id": "research_episode_67b3b89872e7d4246c37d7da",
+  "data_snapshot_id": "rdb_0d8108c7792bdbbdf887d7da",
+  "sector_context_id": null,
+  "memory_context_id": null,
+  "attribution_bundle_id": null,
+  "agent_run_ids": [
+    "task_2d59d86f9997478bb72638faaac73b88:fundamental_analyst",
+    "task_2d59d86f9997478bb72638faaac73b88:technical_text_analyst",
+    "task_2d59d86f9997478bb72638faaac73b88:sentiment_analyst",
+    "task_2d59d86f9997478bb72638faaac73b88:news_event_analyst",
+    "task_2d59d86f9997478bb72638faaac73b88:research_manager",
+    "task_2d59d86f9997478bb72638faaac73b88:bull_manager",
+    "task_2d59d86f9997478bb72638faaac73b88:bear_manager",
+    "task_2d59d86f9997478bb72638faaac73b88:risk_manager"
+  ],
+  "versions": {
+    "research_state_schema_version": "research_state_snapshot_v1",
+    "research_state_version": "research_state_v1",
+    "research_episode_schema_version": "research_episode_v1",
+    "research_episode_trace_quality": "complete",
+    "source_dataset_version": "live_aapl_fmp_completeness_v1",
+    "attribution_version": null,
+    "model_versions": [
+      {
+        "name": "fundamental_analyst",
+        "version": "qwen3.7-flash"
+      },
+      {
+        "name": "technical_text_analyst",
+        "version": "qwen3.7-flash"
+      },
+      {
+        "name": "sentiment_analyst",
+        "version": "qwen3.7-flash"
+      },
+      {
+        "name": "news_event_analyst",
+        "version": "qwen3.7-flash"
+      },
+      {
+        "name": "research_manager",
+        "version": "qwen3.7-flash"
+      },
+      {
+        "name": "bull_manager",
+        "version": "qwen3.7-flash"
+      },
+      {
+        "name": "bear_manager",
+        "version": "qwen3.7-flash"
+      },
+      {
+        "name": "risk_manager",
+        "version": "qwen3.7-flash"
+      }
+    ],
+    "prompt_versions": [
+      {
+        "name": "fundamental_analyst",
+        "version": "v10"
+      },
+      {
+        "name": "technical_text_analyst",
+        "version": "v9"
+      },
+      {
+        "name": "sentiment_analyst",
+        "version": "v8"
+      },
+      {
+        "name": "news_event_analyst",
+        "version": "v9"
+      },
+      {
+        "name": "research_manager",
+        "version": "v6"
+      },
+      {
+        "name": "bull_manager",
+        "version": "v8"
+      },
+      {
+        "name": "bear_manager",
+        "version": "v10"
+      },
+      {
+        "name": "risk_manager",
+        "version": "v7"
+      }
+    ],
+    "feature_versions": [
+      {
+        "name": "research_state",
+        "version": "research_state_v1"
+      },
+      {
+        "name": "research_state_feature",
+        "version": "research_state_feature_v1"
+      }
+    ]
+  },
+  "label_status": "pending",
+  "label_ids": [],
+  "quality": {
+    "status": "partial",
+    "state_status": "available",
+    "episode_status": "available",
+    "sector_context_status": "not_available_in_source_run",
+    "memory_context_status": "not_available_in_source_run",
+    "attribution_status": "not_available_in_source_run",
+    "missing_reasons": [
+      "sector_context_not_available_in_source_run",
+      "memory_context_not_available_in_source_run",
+      "attribution_not_available_in_source_run"
+    ]
+  },
+  "dataset_build_version": "pit_research_dataset_build_v1",
+  "created_at": "2026-09-01T00:00:00Z",
+  "input_fingerprint": "4b98c4b3f722981a81d51f5d46b7622c6f9d57a1cddc5e432780f8686868310c"
+}

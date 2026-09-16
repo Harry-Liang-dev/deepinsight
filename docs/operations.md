@@ -545,9 +545,20 @@ Run the complete opt-in acceptance from the repository root:
 
 ```bash
 source ~/.local/bin/load_deepinsight_keys.sh
+FMP_ENABLED=true STOCKTWITS_MCP_ENABLED=true \
+  "$CONDA_PREFIX/bin/python" -m scripts.live_report --configuration-preflight
+
 env -u ALL_PROXY -u all_proxy \
+  FMP_ENABLED=true STOCKTWITS_MCP_ENABLED=true \
   "$CONDA_PREFIX/bin/python" -m scripts.live_report
 ```
+
+The first command is a zero-network `CONFIGURATION_PREFLIGHT`. Do not place
+`scripts.smoke_fmp` between it and the full invocation: that smoke performs the
+same complete four-endpoint acquisition. The full invocation is authoritative
+for the run: **PRECHECK != ACQUISITION; ACQUIRE ONCE; VALIDATE ON SNAPSHOT;
+REUSE DOWNSTREAM**. Its manifest records the high-level acquisition, physical
+endpoint attempts, snapshot reuse, and retry counts.
 
 The SEC adapter reads official submissions metadata and at most one recent
 10-Q/10-K primary document for `US:AAPL`. It declares the configured

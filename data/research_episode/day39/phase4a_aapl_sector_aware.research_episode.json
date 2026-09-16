@@ -1,0 +1,507 @@
+{
+  "schema_version": "research_episode_v1",
+  "episode_id": "research_episode_d4a588c6bac4fa6fe558cad5",
+  "asset_id": "US:AAPL",
+  "market": "US",
+  "research_as_of": "2026-08-30T23:59:59.999999Z",
+  "research_state_id": "research_state_3da102d1a1515b82dbe4f9b7",
+  "data_snapshot_id": "rdb_2eb392bf5871eb865dd9f5d5",
+  "sector_context_id": "sector_context_1a8a5f251dda24246ea83161",
+  "memory_context_id": null,
+  "agent_run_ids": [
+    "fixed:fundamental_analyst",
+    "fixed:technical_text_analyst",
+    "fixed:sentiment_analyst",
+    "fixed:news_event_analyst",
+    "fixed:research_manager",
+    "fixed:bull_manager",
+    "fixed:bear_manager",
+    "fixed:risk_manager"
+  ],
+  "provided_claim_ids": [
+    "sector:S03:claim:4",
+    "sector:S03:claim:5",
+    "sector:S03:claim:0",
+    "sector:S03:claim:1",
+    "sector:S03:claim:2",
+    "sector:S03:claim:3"
+  ],
+  "accepted_claim_ids": [],
+  "rejected_claim_ids": [],
+  "accepted_claim_count": 52,
+  "rejected_claim_count": 5,
+  "sector_claim_ids": [
+    "sector:S03:claim:1",
+    "sector:S03:claim:2",
+    "sector:S03:claim:3",
+    "sector:S03:claim:0",
+    "sector:S03:claim:4",
+    "sector:S03:claim:5"
+  ],
+  "bull_claim_ids": [],
+  "bear_claim_ids": [],
+  "risk_claim_ids": [],
+  "final_research_claim_ids": [],
+  "report_id": null,
+  "model_versions": [
+    {
+      "name": "fundamental_analyst",
+      "version": "qwen3.7-flash"
+    },
+    {
+      "name": "technical_text_analyst",
+      "version": "qwen3.7-flash"
+    },
+    {
+      "name": "sentiment_analyst",
+      "version": "qwen3.7-flash"
+    },
+    {
+      "name": "news_event_analyst",
+      "version": "qwen3.7-flash"
+    },
+    {
+      "name": "research_manager",
+      "version": "qwen3.7-flash"
+    },
+    {
+      "name": "bull_manager",
+      "version": "qwen3.7-flash"
+    },
+    {
+      "name": "bear_manager",
+      "version": "qwen3.7-flash"
+    },
+    {
+      "name": "risk_manager",
+      "version": "qwen3.7-flash"
+    }
+  ],
+  "prompt_versions": [
+    {
+      "name": "fundamental_analyst",
+      "version": "v10"
+    },
+    {
+      "name": "technical_text_analyst",
+      "version": "v9"
+    },
+    {
+      "name": "sentiment_analyst",
+      "version": "v8"
+    },
+    {
+      "name": "news_event_analyst",
+      "version": "v9"
+    },
+    {
+      "name": "research_manager",
+      "version": "v6"
+    },
+    {
+      "name": "bull_manager",
+      "version": "v8"
+    },
+    {
+      "name": "bear_manager",
+      "version": "v10"
+    },
+    {
+      "name": "risk_manager",
+      "version": "v7"
+    }
+  ],
+  "feature_versions": [
+    {
+      "name": "research_state",
+      "version": "research_state_v1"
+    },
+    {
+      "name": "research_state_feature",
+      "version": "research_state_feature_v1"
+    }
+  ],
+  "agent_traces": [
+    {
+      "agent_role": "fundamental_analyst",
+      "agent_run_id": "fixed:fundamental_analyst",
+      "status": "ok",
+      "input_context_ids": [
+        "research_state_3da102d1a1515b82dbe4f9b7",
+        "rdb_2eb392bf5871eb865dd9f5d5",
+        "sector_context_1a8a5f251dda24246ea83161"
+      ],
+      "provided_claim_ids": [
+        "sector:S03:claim:4"
+      ],
+      "output_claim_ids": [],
+      "accepted_claim_ids": [],
+      "rejected_claim_ids": [],
+      "accepted_claim_count": 5,
+      "rejected_claim_count": 0,
+      "latency_ms": null,
+      "provider": "qwen",
+      "model": "qwen3.7-flash",
+      "prompt_version": "v10",
+      "trace_quality": "partial",
+      "missing_metadata": [
+        "accepted_claim_ids_not_persisted",
+        "latency_ms_not_persisted"
+      ]
+    },
+    {
+      "agent_role": "technical_text_analyst",
+      "agent_run_id": "fixed:technical_text_analyst",
+      "status": "ok",
+      "input_context_ids": [
+        "research_state_3da102d1a1515b82dbe4f9b7",
+        "rdb_2eb392bf5871eb865dd9f5d5",
+        "sector_context_1a8a5f251dda24246ea83161"
+      ],
+      "provided_claim_ids": [
+        "sector:S03:claim:4",
+        "sector:S03:claim:5"
+      ],
+      "output_claim_ids": [],
+      "accepted_claim_ids": [],
+      "rejected_claim_ids": [],
+      "accepted_claim_count": 7,
+      "rejected_claim_count": 0,
+      "latency_ms": null,
+      "provider": "qwen",
+      "model": "qwen3.7-flash",
+      "prompt_version": "v9",
+      "trace_quality": "partial",
+      "missing_metadata": [
+        "accepted_claim_ids_not_persisted",
+        "latency_ms_not_persisted"
+      ]
+    },
+    {
+      "agent_role": "sentiment_analyst",
+      "agent_run_id": "fixed:sentiment_analyst",
+      "status": "ok",
+      "input_context_ids": [
+        "research_state_3da102d1a1515b82dbe4f9b7",
+        "rdb_2eb392bf5871eb865dd9f5d5",
+        "sector_context_1a8a5f251dda24246ea83161"
+      ],
+      "provided_claim_ids": [
+        "sector:S03:claim:4"
+      ],
+      "output_claim_ids": [],
+      "accepted_claim_ids": [],
+      "rejected_claim_ids": [],
+      "accepted_claim_count": 1,
+      "rejected_claim_count": 3,
+      "latency_ms": null,
+      "provider": "qwen",
+      "model": "qwen3.7-flash",
+      "prompt_version": "v8",
+      "trace_quality": "partial",
+      "missing_metadata": [
+        "accepted_claim_ids_not_persisted",
+        "latency_ms_not_persisted",
+        "rejected_claim_ids_not_persisted"
+      ]
+    },
+    {
+      "agent_role": "news_event_analyst",
+      "agent_run_id": "fixed:news_event_analyst",
+      "status": "ok",
+      "input_context_ids": [
+        "research_state_3da102d1a1515b82dbe4f9b7",
+        "rdb_2eb392bf5871eb865dd9f5d5",
+        "sector_context_1a8a5f251dda24246ea83161"
+      ],
+      "provided_claim_ids": [
+        "sector:S03:claim:0",
+        "sector:S03:claim:4"
+      ],
+      "output_claim_ids": [],
+      "accepted_claim_ids": [],
+      "rejected_claim_ids": [],
+      "accepted_claim_count": 4,
+      "rejected_claim_count": 2,
+      "latency_ms": null,
+      "provider": "qwen",
+      "model": "qwen3.7-flash",
+      "prompt_version": "v9",
+      "trace_quality": "partial",
+      "missing_metadata": [
+        "accepted_claim_ids_not_persisted",
+        "latency_ms_not_persisted",
+        "rejected_claim_ids_not_persisted"
+      ]
+    },
+    {
+      "agent_role": "research_manager",
+      "agent_run_id": "fixed:research_manager",
+      "status": "ok",
+      "input_context_ids": [
+        "research_state_3da102d1a1515b82dbe4f9b7",
+        "rdb_2eb392bf5871eb865dd9f5d5",
+        "sector_context_1a8a5f251dda24246ea83161"
+      ],
+      "provided_claim_ids": [
+        "sector:S03:claim:0",
+        "sector:S03:claim:1",
+        "sector:S03:claim:2",
+        "sector:S03:claim:3",
+        "sector:S03:claim:4",
+        "sector:S03:claim:5"
+      ],
+      "output_claim_ids": [],
+      "accepted_claim_ids": [],
+      "rejected_claim_ids": [],
+      "accepted_claim_count": 20,
+      "rejected_claim_count": 0,
+      "latency_ms": null,
+      "provider": "qwen",
+      "model": "qwen3.7-flash",
+      "prompt_version": "v6",
+      "trace_quality": "partial",
+      "missing_metadata": [
+        "accepted_claim_ids_not_persisted",
+        "latency_ms_not_persisted"
+      ]
+    },
+    {
+      "agent_role": "bull_manager",
+      "agent_run_id": "fixed:bull_manager",
+      "status": "ok",
+      "input_context_ids": [
+        "research_state_3da102d1a1515b82dbe4f9b7",
+        "rdb_2eb392bf5871eb865dd9f5d5",
+        "sector_context_1a8a5f251dda24246ea83161"
+      ],
+      "provided_claim_ids": [
+        "sector:S03:claim:0",
+        "sector:S03:claim:1",
+        "sector:S03:claim:5"
+      ],
+      "output_claim_ids": [],
+      "accepted_claim_ids": [],
+      "rejected_claim_ids": [],
+      "accepted_claim_count": 7,
+      "rejected_claim_count": 0,
+      "latency_ms": null,
+      "provider": "qwen",
+      "model": "qwen3.7-flash",
+      "prompt_version": "v8",
+      "trace_quality": "partial",
+      "missing_metadata": [
+        "accepted_claim_ids_not_persisted",
+        "latency_ms_not_persisted"
+      ]
+    },
+    {
+      "agent_role": "bear_manager",
+      "agent_run_id": "fixed:bear_manager",
+      "status": "ok",
+      "input_context_ids": [
+        "research_state_3da102d1a1515b82dbe4f9b7",
+        "rdb_2eb392bf5871eb865dd9f5d5",
+        "sector_context_1a8a5f251dda24246ea83161"
+      ],
+      "provided_claim_ids": [
+        "sector:S03:claim:2",
+        "sector:S03:claim:3",
+        "sector:S03:claim:4",
+        "sector:S03:claim:5"
+      ],
+      "output_claim_ids": [],
+      "accepted_claim_ids": [],
+      "rejected_claim_ids": [],
+      "accepted_claim_count": 4,
+      "rejected_claim_count": 0,
+      "latency_ms": null,
+      "provider": "qwen",
+      "model": "qwen3.7-flash",
+      "prompt_version": "v10",
+      "trace_quality": "partial",
+      "missing_metadata": [
+        "accepted_claim_ids_not_persisted",
+        "latency_ms_not_persisted"
+      ]
+    },
+    {
+      "agent_role": "risk_manager",
+      "agent_run_id": "fixed:risk_manager",
+      "status": "ok",
+      "input_context_ids": [
+        "research_state_3da102d1a1515b82dbe4f9b7",
+        "rdb_2eb392bf5871eb865dd9f5d5",
+        "sector_context_1a8a5f251dda24246ea83161"
+      ],
+      "provided_claim_ids": [
+        "sector:S03:claim:0",
+        "sector:S03:claim:1",
+        "sector:S03:claim:2",
+        "sector:S03:claim:3",
+        "sector:S03:claim:4"
+      ],
+      "output_claim_ids": [],
+      "accepted_claim_ids": [],
+      "rejected_claim_ids": [],
+      "accepted_claim_count": 4,
+      "rejected_claim_count": 0,
+      "latency_ms": null,
+      "provider": "qwen",
+      "model": "qwen3.7-flash",
+      "prompt_version": "v7",
+      "trace_quality": "partial",
+      "missing_metadata": [
+        "accepted_claim_ids_not_persisted",
+        "latency_ms_not_persisted"
+      ]
+    }
+  ],
+  "sector_usage": [
+    {
+      "sector_context_id": "sector_context_1a8a5f251dda24246ea83161",
+      "agent_role": "fundamental_analyst",
+      "provided_sector_claim_ids": [
+        "sector:S03:claim:4"
+      ],
+      "used_sector_claim_ids": [],
+      "provided_event_ids": [],
+      "used_event_ids": [],
+      "serialized_context_chars": 3856
+    },
+    {
+      "sector_context_id": "sector_context_1a8a5f251dda24246ea83161",
+      "agent_role": "technical_text_analyst",
+      "provided_sector_claim_ids": [
+        "sector:S03:claim:4",
+        "sector:S03:claim:5"
+      ],
+      "used_sector_claim_ids": [],
+      "provided_event_ids": [],
+      "used_event_ids": [],
+      "serialized_context_chars": 4117
+    },
+    {
+      "sector_context_id": "sector_context_1a8a5f251dda24246ea83161",
+      "agent_role": "sentiment_analyst",
+      "provided_sector_claim_ids": [
+        "sector:S03:claim:4"
+      ],
+      "used_sector_claim_ids": [],
+      "provided_event_ids": [],
+      "used_event_ids": [],
+      "serialized_context_chars": 3854
+    },
+    {
+      "sector_context_id": "sector_context_1a8a5f251dda24246ea83161",
+      "agent_role": "news_event_analyst",
+      "provided_sector_claim_ids": [
+        "sector:S03:claim:0",
+        "sector:S03:claim:4"
+      ],
+      "used_sector_claim_ids": [],
+      "provided_event_ids": [
+        "sector_anomaly_771da1bb2bc3292eb404c399",
+        "sector_anomaly_bb7ab79794f81cd05b3cbfbc"
+      ],
+      "used_event_ids": [],
+      "serialized_context_chars": 4535
+    },
+    {
+      "sector_context_id": "sector_context_1a8a5f251dda24246ea83161",
+      "agent_role": "research_manager",
+      "provided_sector_claim_ids": [
+        "sector:S03:claim:0",
+        "sector:S03:claim:1",
+        "sector:S03:claim:2",
+        "sector:S03:claim:3",
+        "sector:S03:claim:4",
+        "sector:S03:claim:5"
+      ],
+      "used_sector_claim_ids": [
+        "sector:S03:claim:0",
+        "sector:S03:claim:1",
+        "sector:S03:claim:3",
+        "sector:S03:claim:4"
+      ],
+      "provided_event_ids": [
+        "sector_anomaly_771da1bb2bc3292eb404c399",
+        "sector_anomaly_bb7ab79794f81cd05b3cbfbc"
+      ],
+      "used_event_ids": [
+        "sector_anomaly_771da1bb2bc3292eb404c399",
+        "sector_anomaly_bb7ab79794f81cd05b3cbfbc"
+      ],
+      "serialized_context_chars": 10834
+    },
+    {
+      "sector_context_id": "sector_context_1a8a5f251dda24246ea83161",
+      "agent_role": "bull_manager",
+      "provided_sector_claim_ids": [
+        "sector:S03:claim:0",
+        "sector:S03:claim:1",
+        "sector:S03:claim:5"
+      ],
+      "used_sector_claim_ids": [
+        "sector:S03:claim:0",
+        "sector:S03:claim:1",
+        "sector:S03:claim:5"
+      ],
+      "provided_event_ids": [],
+      "used_event_ids": [],
+      "serialized_context_chars": 7558
+    },
+    {
+      "sector_context_id": "sector_context_1a8a5f251dda24246ea83161",
+      "agent_role": "bear_manager",
+      "provided_sector_claim_ids": [
+        "sector:S03:claim:2",
+        "sector:S03:claim:3",
+        "sector:S03:claim:4",
+        "sector:S03:claim:5"
+      ],
+      "used_sector_claim_ids": [],
+      "provided_event_ids": [],
+      "used_event_ids": [],
+      "serialized_context_chars": 8152
+    },
+    {
+      "sector_context_id": "sector_context_1a8a5f251dda24246ea83161",
+      "agent_role": "risk_manager",
+      "provided_sector_claim_ids": [
+        "sector:S03:claim:0",
+        "sector:S03:claim:1",
+        "sector:S03:claim:2",
+        "sector:S03:claim:3",
+        "sector:S03:claim:4"
+      ],
+      "used_sector_claim_ids": [
+        "sector:S03:claim:1",
+        "sector:S03:claim:2",
+        "sector:S03:claim:4"
+      ],
+      "provided_event_ids": [
+        "sector_anomaly_771da1bb2bc3292eb404c399",
+        "sector_anomaly_bb7ab79794f81cd05b3cbfbc"
+      ],
+      "used_event_ids": [
+        "sector_anomaly_771da1bb2bc3292eb404c399",
+        "sector_anomaly_bb7ab79794f81cd05b3cbfbc"
+      ],
+      "serialized_context_chars": 9045
+    }
+  ],
+  "trace_quality": "partial",
+  "missing_metadata": [
+    "asset_claim_identities_not_persisted_by_day36_summary",
+    "agent_latency_not_persisted_by_day36_summary",
+    "accepted_claim_ids_not_persisted",
+    "latency_ms_not_persisted",
+    "rejected_claim_ids_not_persisted"
+  ],
+  "source_artifact_ids": [
+    "data/live_agent_contract/agent_contract_20260830T135643Z_70442a96/summary.json"
+  ],
+  "created_at": "2026-08-30T13:56:43.802231Z",
+  "input_fingerprint": "d4a588c6bac4fa6fe558cad5706ffde77d5cd9cc1934212543a029de641d9e76"
+}

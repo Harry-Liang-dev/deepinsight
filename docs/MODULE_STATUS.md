@@ -32,8 +32,152 @@
 | Phase 4 Sector Anomaly Radar | Complete | 100% | Deterministic price/volume, breadth, earnings, news/event, macro-shock and graph-grounded propagation candidates with immutable PIT events and existing hierarchical Memory scopes |
 | Phase 4 Sector Research Agent | Complete | 100% | Upstream claim-first Sector synthesis over deterministic state, Macro, Radar, Industry Chain, and PIT Memory contracts with exact numeric/citation grounding and explicit degradation |
 | Phase 4 Sector-to-Asset Integration | Complete | 100% | PIT asset-to-Sector/Chain routing, compact role-specific Sector context, direct-upstream Claim provenance, usage diagnostics, graceful Phase 3 fallback, and real Qwen 8/8 validation |
+| Phase 4 Unified Temporal Contract | Complete | 100% | Shared UTC-aware TemporalMetadata, half-open effective intervals, unified usable-at validator, explicit DuckDB UTC compatibility, and cross-module Data/Sector/Event/Memory leakage rejection |
+| Phase 4 ResearchStateSnapshot | Complete | 100% | Immutable PIT-safe machine research state over frozen Data/Sector/Claim/Memory projections; no Report parsing, LLM, live Provider, Factor, Regime, or training behavior |
+| Phase 4 ResearchEpisode | Complete | 100% | Immutable process audit over ResearchState, Agent runs, Claim identities/counts, reused Sector usage diagnostics, and version/result references; no private reasoning or Outcome behavior |
+| Phase 4 Learning Memory v1 | Complete | 100% | Additive Scope/Time/Episode/provenance metadata over L0–L4, EPISODIC persistence and retrieval, explicit Semantic lifecycle and reference-only Performance reservation |
+| Phase 4 Research Context Attribution | Complete | 100% | Episode-scoped Memory/Sector/Radar provided-selected-used lineage, explicit Memory RetrievalRecord, canonical sources, PIT enforcement, and no Outcome scoring |
+| Phase 4 PIT Research Dataset v1 | Complete | 100% | Stable reference-only State/Episode/Attribution samples, shared PIT validation, explicit historical completeness, empty pending labels, immutable DuckDB rows, and credential-free manifests |
+| Phase 4 Golden PIT Replay Gate | Complete | 100% | Two frozen AAPL runs deterministically reproduce State/Episode/Attribution/Sample identities with zero Provider/LLM calls and five deliberate future-input rejections |
+| Phase 4C Research/Quant Boundary | Complete | 100% | Documentation-only ownership freeze: Research Intelligence remains here; Planetary Alpha, Quant processing, strategy, portfolio, and execution move to future deepinsight-quant |
+| Phase 4C Satellite Alpha Ontology v1 | Complete | 100% | Versioned Selection/Timing/Both Research descriptors, explicit comparison/missing semantics, deterministic PIT State mapping, compact provenance, and zero LLM/Provider calls |
+| Phase 4C Timing Satellite / State Transition v1 | Complete | 100% | Deterministic nearest-prior State continuity, seven existing Timing observations, strict PIT Event/Memory lineage, and no Quant/trading semantics |
+| Phase 4C Research → Quant Handoff v1 | Complete | 100% | Reference-only State/Episode/Candidate/Transition and Selection/Timing Satellite export with deterministic JSON/JSONL identity, mixed coverage, PIT validation, and no Quant runtime |
+| Numeric Grounding Semantics v2 | Complete | 100% | Shared identifier/window/Decimal-format classification with Evidence-specific provenance; no epsilon or unit conversion and no change to quarantine, HIGH-event, PIT, or cardinality policy |
 
 ## Phase Four status
+
+- Day44 freezes the three-layer long-term architecture: Research Intelligence,
+  Quant Alpha/Strategy, and Portfolio/Execution. This repository owns only the
+  first layer and now emits raw Satellite Alpha descriptors through the
+  versioned, reference-only `ResearchQuantHandoffBundle v1` implemented on
+  Day48.
+- Planetary Alpha and all broad PIT universe maintenance, Factor processing,
+  IC/RankIC/ICIR, selection/timing/holdings ranking, Regime/MoE routing,
+  backtesting, portfolio construction, position sizing, orders, and execution
+  belong to the future independent `deepinsight-quant` repository.
+- Satellite Alpha is a Research-produced descriptor with `SELECTION`,
+  `TIMING`, or `BOTH` intent—not a Factor exposure or trading signal. The
+  Research Candidate Universe cannot replace the complete Base Quant PIT
+  Market Universe. Opaque single AI stock scores are prohibited.
+- Older Phase-Two Factor/router/strategy/training/backtest/execution stubs,
+  501 routes, and `p2_*` fields are superseded as ownership plans. They remain
+  inactive historical compatibility artifacts; no stable Phase 3/4A/4B code
+  or identity was changed by Day44.
+- Day44 Gate A: `565 passed, 5 deselected`; Ruff, mypy (316 source files),
+  Black, and `git diff --check` pass. Day44 changed no Python production or
+  test code.
+
+- Day43 closes the Golden point-in-time replay gate. Phase 3 AAPL run
+  `20260814T100747Z` and Day36 Sector-aware run
+  `agent_contract_20260830T135643Z_70442a96` reproduce their exact State,
+  Episode, Attribution where present, and Dataset Sample semantic identities
+  from frozen artifacts only. Provider calls and LLM calls are both zero.
+- The Phase 3 replay preserves null Sector/Chain/Memory/Attribution history;
+  no later Phase 4 context is backfilled. The Day36 replay preserves 24/10
+  provided/used Sector Claim references, 6/4 provided/used Radar Event
+  references, and `EMPTY_VALID` Memory with zero retrievals.
+- Five deliberate future inputs—News, Radar Event, Memory, Sector Membership,
+  and Filing—are rejected by Unified Temporal Contract v1. Repeated replay
+  preserves State, Episode, Sample, and Replay identities while audit
+  `created_at` remains non-semantic.
+- Day43 artifacts are under `data/golden_replay/day43/`. The Day36 source did
+  not persist accepted downstream Asset Claim IDs, so its two sampled
+  context-to-Claim traces remain explicitly PARTIAL rather than inferred.
+- Day43 Gate A: `565 passed, 5 deselected`; Ruff, mypy (316 source files),
+  Black, and `git diff --check` pass. Phase 3 and Phase 4A regression paths
+  remain green under the full offline suite.
+
+- Day42 establishes `ResearchDatasetSample v1` as a stable replay/evaluation
+  unit. It indexes State, Episode, optional Attribution/context, Agent runs,
+  hierarchy and version identities without copying Claims, Evidence, Memory,
+  Report, or SectorContext payloads.
+- The builder is deterministic, performs zero LLM/Provider calls, and reuses
+  Unified Temporal Contract v1. Labels are empty and PENDING; no later price or
+  Outcome is read. DuckDB rows are immutable and validated against their
+  stored Sample JSON, with one credential-free manifest per artifact.
+- Phase 3 Golden materialized as PARTIAL with its original null Sector,
+  Memory, and Attribution references. Day36 AAPL materialized as PARTIAL with
+  its real Consumer Electronics/Apple Chain context and Day41 Attribution;
+  historical partial Agent identities and missing Memory remain unchanged.
+- Day42 focused Builder/Repository/schema suite: `26 passed`; full Gate A:
+  `559 passed, 5 deselected`. Ruff, mypy (312 source files), Black, and
+  `git diff --check` pass.
+
+- Day41 establishes `ResearchEpisodeAttribution v1` as an immutable companion
+  artifact rather than mutating ResearchEpisode or the eight-Agent pipeline.
+  One composable context contract covers Memory, Sector Claims, and Radar
+  Events while Day36 `SectorContextUsageDiagnostic` remains authoritative.
+- `MemoryRetrievalRecord v1` retains query purpose, role/run identity,
+  PIT-eligible candidate/selected IDs, rank, score, Scope filters, snapshot,
+  future exclusion count, and an explicit `empty_valid`. Candidate traces are
+  emitted only after DuckDB metadata and Unified Temporal Contract filtering;
+  no FAISS object crosses the Repository boundary.
+- `provided`, `selected`, and `used` are distinct. Only an explicit reference
+  from a final accepted Claim makes context `used`; rejected-Claim linkage is
+  retained separately and never counts as use. Outcome/usefulness status is
+  only `PENDING` or `NOT_AVAILABLE`, and usefulness score is always null.
+- The historical Day36 AAPL Episode materializes 30 source-preserving
+  attributions with 10 used Sector Claim and four used Radar Event entries.
+  Its source summary omitted accepted asset Claim IDs and Memory retrieval
+  details, so 14 used entries are explicitly
+  `NOT_AVAILABLE_AT_SOURCE_RUN` at Claim-link level and no historical Memory
+  RetrievalRecord is fabricated.
+- Day41 focused Memory/Sector/Temporal/Episode suite: `62 passed`; full Gate A:
+  `548 passed, 5 deselected`. Ruff, mypy (306 source files), Black, and
+  `git diff --check` pass. No live Provider or external Embedding was invoked.
+
+- Day40 establishes `LearningMemoryMetadata v1` without replacing L0–L4,
+  DuckDB, FAISS, or `ResearchContextBundle`. Research Scope and Memory level
+  remain independent dimensions.
+- EPISODIC Memory persists selected Claim, thesis, risk, catalyst, Event,
+  State, and Episode references with canonical source lineage. Macro, Sector,
+  Industry Chain, Asset, and ResearchEpisode scopes are exercised; whole
+  reports are not embedded as episodes.
+- Legacy rows remain compatible through nullable `metadata_json`. Day35 JSON
+  headers are not guessed or rewritten. SEMANTIC has an explicit lifecycle and
+  cannot become validated truth from one Episode; PERFORMANCE stores no
+  computed outcome.
+- Both Memory retrieval paths reuse Unified Temporal Contract v1 and require
+  the strict effective/created/available cutoff. Empty retrieval remains
+  `EMPTY_VALID`, and no historical analog is synthesized.
+- Day40 focused Memory/Temporal/Repository tests: `58 passed`; full pytest:
+  `540 passed, 5 deselected`. No live Provider was invoked.
+
+- Day39 establishes `ResearchEpisode v1` as the third formal artifact and
+  keeps it separate from ResearchState: State records what was knowable;
+  Episode records the structured process actually executed under that State.
+- The Episode stores only references and execution metadata. It never stores
+  private reasoning, chain-of-thought, prompts, report prose, credentials, or
+  unrelated local data. Day36 Sector usage diagnostics are reused unchanged.
+- The Phase 3 AAPL Golden run materialized a COMPLETE Episode with eight Agent
+  runs, 54 accepted and two rejected Claim identities, 20 final research
+  Claims, and its real report identity. The Day36 Sector-aware AAPL run
+  materialized PARTIAL with eight run identities, 52 accepted/5 rejected
+  counts, six Sector Claims, and eight usage records because the historical
+  summary did not retain asset Claim IDs or latency; no identities were
+  invented.
+- Day39 focused Episode/Sector-context tests: `17 passed`; full Gate A:
+  `532 passed, 5 deselected`. Ruff, mypy (301 source files), Black, and
+  `git diff --check` pass.
+
+- Day38 establishes `ResearchStateSnapshot v1` as the second formal research
+  artifact. `ResearchStateBuilder` is deterministic and accepts no Report,
+  Gateway, Provider, or live Repository dependency.
+- Feature types are explicitly deterministic numeric, versioned normalized
+  research state, or semantic/categorical. Provenance is ID-only and closes
+  through accepted Claim graphs to Evidence; Prompt/model/data versions remain
+  centralized in snapshot lineage.
+- The Phase 3 Golden Run `20260814T100747Z` materialized 54 accepted Claims at
+  its original cutoff with Sector/Chain correctly marked
+  `NOT_AVAILABLE_AT_SOURCE_RUN`. No later Phase 4 context was backfilled.
+- The Day36 AAPL source run materialized Macro (PARTIAL), Sector, Apple Chain,
+  and asset state from its own frozen Bundle and real-Qwen Sector context. Its
+  missing asset Agent/Memory payloads remain explicit because the Day36
+  contract summary did not persist those full structured objects.
+- Day38 focused contract tests: `7 passed`; both acceptance materializations
+  reported `llm_calls=0` and `network_calls=0`. Full Gate A: `525 passed, 5
+  deselected`; Ruff, mypy, Black, and `git diff --check` pass.
 
 - Day30 establishes `SectorOntology v1` with exactly 18 stable first-level
   research categories; no additional first-level Sector was introduced.
@@ -171,6 +315,23 @@
   integration diagnostics only and are not evidence of research or investment
   performance improvement.
 - Day36 Gate A: `506 passed, 5 deselected`; Ruff, mypy, Black, and
+  `git diff --check` pass.
+- Day37 adds `TemporalMetadata v1`, `TemporalAccessDecision`,
+  `is_usable_at()`, and `validate_temporal_access()` as the shared PIT rule.
+  Existing Provider and domain fields remain compatible and are mapped rather
+  than renamed. Event/period time describes occurrence; research eligibility
+  depends on canonical availability, ingestion, snapshot, or half-open
+  effective bounds.
+- SEC/FMP fundamentals, Alpaca daily bars/news, FRED vintages, Research
+  Evidence, Sector memberships/anomalies/Claims, and Memory/context records
+  now share the same access decision. Sector state/macro/Radar operators and
+  ResearchDataBundle/ResearchContextBundle boundaries reuse that decision.
+- Memory persistence now retains the service clock's `created_at`; retrieval
+  rejects a Memory created after the replay cutoff even when its
+  `effective_ts` was backdated. Existing UTC-naive DuckDB timestamps are
+  accepted only through an explicitly named UTC storage compatibility
+  function, never through a local-time assumption.
+- Day37 Gate A: `518 passed, 5 deselected`; Ruff, mypy, Black, and
   `git diff --check` pass.
 
 ## Phase Three status
@@ -341,3 +502,203 @@
   recorded as an OpenAI production pass.
 - No Phase Two runtime is enabled. Reserved abstract contracts are
   non-instantiable and API placeholders remain side-effect-free HTTP 501.
+
+## Phase 4C Day45 — Satellite Alpha Ontology v1
+
+- Added versioned Satellite Alpha usage, comparison, coverage, definition,
+  component, observation, registry, and ResearchState semantic-audit contracts.
+- Added a pure deterministic ResearchState mapper. It performs zero LLM,
+  Provider, report parsing, ranking, Factor, or trading operations.
+- Evidence Strength is implemented as decomposed attributable inventory;
+  chain benefit, risk burden, alignment, disagreement, and event window remain
+  truthful partial projections. Unsupported State semantics remain missing.
+- Five historical Timing families are schema-ready and return
+  `REQUIRES_HISTORY`; Day47 history construction was not started.
+- Phase 3 Golden State keeps Sector/Chain observations
+  `NOT_AVAILABLE_AT_SOURCE_RUN`; Phase 4A uses only source-run context.
+- ResearchState v1 was audited but not changed. Full contract and capability
+  matrix: `docs/SATELLITE_ALPHA.md`.
+- Day45 Engineering Gate: `580 passed, 5 deselected`; leakage gate `3 passed,
+  582 deselected`; Ruff, mypy (319 files), Black, and `git diff --check` pass.
+
+## Phase 4C Day46 — Selection Satellite and OpportunityCandidate v1
+
+- Added exact structured Selection mappings without changing ResearchState v1:
+  Sector/Chain alignment supports exact formal inputs; disagreement, coarse
+  Risk, expectation, logic, and chain-benefit mappings retain honest partial
+  coverage where their formal State fields are absent.
+- Added `OpportunityCandidate v1` with rule-based qualification, deterministic
+  identity, explicit coverage, PIT availability, and reference-only lineage.
+- State/Evidence presence alone is not eligibility. No weighted score, rank,
+  Factor, price, position, order, portfolio, or recommendation was added.
+- Phase3 and Phase4A frozen rebuilds remain zero-LLM/zero-Provider and preserve
+  source-run absence. The multi-asset fixture is contract validation only.
+- Day46 focused Day45+Day46 suite: `31 passed` (`16` new tests). Full Gate A:
+  `596 passed, 5 deselected`; leakage `3 passed, 598 deselected`; Ruff, mypy
+  (322 files), Black, and `git diff --check` pass.
+
+## Phase 4C Day47 — Timing Satellite and ResearchStateTransition v1
+
+- Added deterministic, reference-only `ResearchStateTransition v1` with
+  strict same-Asset `T1 < T2`, nearest-prior selection, optional Episode
+  linkage, compact Claim/Event/Evidence/Memory artifact lineage, explicit
+  coverage, and semantic identity independent of audit timestamps.
+- Added deterministic history projection for all seven Timing families using
+  the existing `SatelliteAlphaObservation`. No second Timing schema, L5
+  Memory, FAISS exposure, LLM/Provider call, report parsing, Quant strategy, or
+  trading semantics was added.
+- Two numeric expectation points support direction/delta/rate but never
+  acceleration; three points permit versioned second-order change. Event and
+  catalyst observations use deterministic windows and independent availability
+  clocks. Future State, Event, outcome, Evidence, and Memory inputs are
+  rejected through Unified Temporal Contract v1.
+- Phase3/Phase4A single-State artifacts keep honest `REQUIRES_HISTORY` or
+  `NOT_AVAILABLE_AT_SOURCE_RUN` and receive no synthetic backfill. Positive
+  Memory and three-State paths are deterministic CONTRACT FIXTURES only;
+  `REAL_HISTORICAL_MEMORY_REPLAY = NOT_YET_AVAILABLE`.
+- Day47 focused Day45–Day47 suite: `54 passed`. Full Gate A: `619 passed,
+  5 deselected`; leakage `7 passed, 617 deselected`; Ruff, mypy (325 files),
+  Black, and `git diff --check` pass.
+
+## Phase 4C Day48 — Research → Quant Handoff Contract v1
+
+- Added `ResearchQuantHandoffBundle v1` as the sole formal Research boundary
+  for future `deepinsight-quant`. It carries stable IDs and compact typed
+  references rather than copying State, Episode, Claim, Evidence, Memory,
+  Agent, or report payloads.
+- Selection and Timing Satellite branches retain family, usage, coverage,
+  definition/transform version, and availability. Candidate and Transition
+  are optional; insufficient, partial, negative, source-run-unavailable, and
+  history-required examples remain exportable.
+- Bundle identity is deterministic, independent of `created_at`, and
+  insensitive to observation input ordering. State/Episode/Candidate/
+  Transition identity, cutoff, temporal availability, and provenance closure
+  are validated before export.
+- Added canonical sorted-key JSON and Bundle-ID-ordered JSONL export with a
+  credential-free deterministic batch manifest and mixed-coverage counts.
+  There is no LLM, Provider, database, network, Factor, ranking, Top-K,
+  signal, portfolio, or trading dependency.
+- Independent-consumer repair now projects Satellite values, structured
+  components, comparison scope, coverage, definition versions, quality, and
+  confidence into each compact wire item. `observation_id` remains the stable
+  resolver into full Research provenance; no Evidence payload is inlined.
+- Canonical Quant batch join key v1 is `(asset_id, research_as_of)` and is
+  unique. Duplicate keys fail before files are written; different Assets at one
+  cutoff and one Asset across different cutoffs remain valid.
+- Window 2 external-consumer acceptance: `2 passed`; repaired Day48 focused
+  suite: `25 passed`; cross-phase State/Episode/Attribution/Dataset/Golden/
+  Satellite/Opportunity/Transition/Handoff regression: `134 passed`.
+- Repaired full Gate A: `644 passed, 5 deselected`; leakage selection:
+  `8 passed, 641 deselected`; Ruff, mypy (`329 source files`), Black
+  (`329 files`), and `git diff --check` pass.
+- Day48 focused suite: `18 passed`; explicit Phase 3/4A/4B and Day45–48
+  regression selection: `167 passed`. Full Gate A: `637 passed, 5
+  deselected`; leakage `8 passed, 634 deselected`; Ruff, mypy (328 files),
+  Black, and `git diff --check` pass.
+
+## Phase 4 Day49 — Research Intelligence v1 Golden Acceptance and Freeze
+
+- Status: **FROZEN / PASS**. Phase4A Sector Intelligence, Phase4B Structured
+  Research, and Phase4C Satellite/Opportunity/Transition/Handoff contracts
+  remain accepted with no blocking regression.
+- Replayed Phase3 AAPL `20260814T100747Z` and sector-aware AAPL
+  `agent_contract_20260830T135643Z_70442a96` twice from frozen artifacts with
+  stable State/Episode/Sample/Replay identities, zero Provider calls, and zero
+  LLM calls.
+- Phase3 receives no later Sector/Chain/Timing backfill. Phase4A retains S03,
+  APPLE_CHAIN, 24/10 Sector Claims provided/used, 6/4 Events provided/used,
+  partial historical Claim-ID limitations, and `EMPTY_VALID` Memory.
+- Day46 NVDA/MU/AMD Selection and Day47 T1/T2/T3 Timing paths remain explicitly
+  `CONTRACT_FIXTURE`; they validate interfaces, not predictive Alpha.
+- Phase regression suite: `343 passed`. Full pytest: `650 passed, 5
+  deselected`; leakage: `8 passed, 647 deselected`; Ruff, mypy (`329 source
+  files`), Black (`329 files`), and `git diff --check` pass.
+- Acceptance artifact:
+  `data/golden_replay/day49/acceptance_summary.json`.
+- Release tag `phase4-research-intelligence-v1` is semantically ready but must
+  not be created until the currently uncommitted accepted tree is reviewed and
+  committed.
+
+## Phase 4 Pre-freeze live integration repair
+
+- Status: **PASS** for the two Main-owned blockers identified by the first live
+  attempt. No Provider, Agent, Prompt, ResearchState, Satellite, Handoff, or
+  Quant behavior changed.
+- The checked-in `scripts.live_report` now accepts an explicit PIT-aligned
+  `--sector-context` artifact and injects it through the existing
+  `AssetSectorContextResolver` protocol into the single production
+  `ResearchWorkflowService` graph. The legacy no-Sector Phase 3 path remains
+  available by omitting the option.
+- The live manifest records Sector context, Sector, Chain, Event, artifact, and
+  cutoff identities. Misaligned Asset or cutoff artifacts fail before any
+  Provider request.
+- A full workflow integration fixture proves an accepted Sector/Chain/Radar
+  Claim reaches the human-facing Markdown and retains
+  `sector_anomaly_radar` lineage; context presence alone is not treated as
+  report surfacing.
+- The Sector CLI cycle was removed by placing legacy-record temporal mappings
+  in the neutral `src.temporal_mapping` module and making runtime Memory
+  service exports lazy. The public `src.services.temporal` and `src.memory`
+  imports remain compatible.
+- Focused wiring/CLI suite: `19 passed`; affected cross-phase regression:
+  `106 passed`; full pytest: `669 passed, 5 deselected`; leakage: `8 passed,
+  666 deselected`; Ruff, mypy (`332 source files`), Black (`332 files`), and
+  `git diff --check` pass.
+
+## Phase 4 canonical live research instant repair
+
+- Live orchestration now owns one exact aware UTC information cutoff. Latest
+  completed market session and FRED native date are explicit provider
+  projections and never replace `research_as_of`.
+- Sector State, Macro, Radar, Sector Research, and Sector-to-Asset CLIs accept
+  aware ISO-8601 instants. Historical `YYYY-MM-DD` mode retains frozen UTC-EOD
+  semantics.
+- Unified temporal access now distinguishes strict historical replay from
+  explicit live acquisition: live data still requires source availability by
+  T, while later ingestion is retained as lineage rather than misclassified as
+  future information.
+# Phase 4 live FMP acceptance orchestration
+
+- Main integration exposes `scripts.live_report --configuration-preflight` as
+  the zero-network release precheck and removes the standalone full
+  `scripts.smoke_fmp` step from the formal runbook.
+- `scripts.live_report --fmp-integrated-smoke` exercises the same run-scoped
+  adapter acquisition and snapshot-reuse path without running the AAPL Agent
+  workflow.
+- The full `scripts.live_report` path remains authoritative for one FMP
+  acquisition; its formal ingestion reuses Window 2's `FMPProviderSnapshot`.
+- Persistent Provider 429 remains fail-closed and is reported separately from
+  correctness of the Main orchestration.
+- Main focused orchestration/FMP tests: `23 passed`; full Gate A: `737 passed,
+  5 deselected`; leakage: `8 passed, 734 deselected`; Ruff, mypy (`344 source
+  files`), Black, and `git diff --check`: PASS.
+- The configuration-only live preflight reported zero network/FMP data calls.
+  The subsequent single integrated live acquisition reached the Provider once
+  at the high level, made three bounded `income-statement` HTTP attempts
+  (initial plus two retries), and failed closed on persistent HTTP 429. No
+  snapshot was created, so downstream reuse could not occur in this live
+  attempt. Main integration is complete; Provider availability is temporarily
+  rate-limited and full AAPL rerun readiness remains NO.
+
+## Phase 4 final AAPL live acceptance
+
+- Status: **PASS / ready for independent audit**.
+- Canonical run: `phase4_release_20260916T061759Z_aapl`, cutoff
+  `2026-09-16T06:17:59.936450Z`, report
+  `rep_247bed0b969d44a6bd37449c3c0a6b50`.
+- Human report: 68 Claims, 47/47 numeric Claims grounded, 82/82 unique
+  citations traced, zero invalid citations, zero future leakage, evaluation
+  overall `0.9566666666666667`.
+- Macro, S03 / Consumer Electronics, Radar, `APPLE_CHAIN`, and AAPL surfacing
+  have explicit accepted-Claim lineage. Research Manager v7 binds the Chain
+  Claim to AAPL SEC evidence without adding a new unsupported fact.
+- Phase4B: State `research_state_a8b18be86d3e5add55cde272`, Episode
+  `research_episode_b65bf2ab2fed387908e6307c`, and Attribution
+  `research_attribution_c8a13a9db7be137531b8668c`. Memory is `EMPTY_VALID`.
+- Phase4C: seven Selection and seven Timing observations, Candidate
+  `opportunity_af4bd9f287b760bcf0324625`, transition
+  `research_state_transition_19625e191276555b1d5f0cdd`, and Handoff
+  `research_quant_handoff_c325aedcb141007a2bda4bd0`. Timing remains honestly
+  `MISSING_INPUT`; external JSON consumption passes.
+- Final Gate A: `751 passed, 5 deselected`; leakage: `8 passed, 748
+  deselected`; Ruff, mypy (`344 source files`), Black, and diff check pass.

@@ -16,6 +16,7 @@ from src.schemas.sector_research import (
     SectorCycleAssessment,
     SectorValidatedClaim,
 )
+from src.schemas.temporal import TemporalMetadata, validate_temporal_access
 
 
 class SectorContextClaimSummary(DomainModel):
@@ -112,8 +113,10 @@ class SectorContextBundle(DomainModel):
             raise ValueError("Sector context event IDs must be unique")
         accepted = {item for item in claim_ids if item is not None}
         for event in self.active_events:
-            if event.available_at > self.research_as_of:
-                raise ValueError("future Sector event cannot enter asset context")
+            validate_temporal_access(
+                TemporalMetadata(available_at=event.available_at),
+                self.research_as_of,
+            )
             if not set(event.supporting_sector_claim_ids) <= accepted:
                 raise ValueError("Sector event references an unknown Sector Claim")
         if self.coverage.claim_count != len(self.accepted_claims):
@@ -182,26 +185,4 @@ class SectorContextResolution(DomainModel):
                 raise ValueError("missing Sector resolution requires only a reason")
         elif self.bundle is None:
             raise ValueError("resolved Sector context requires a bundle")
-        return self
-
-
-class SectorContextUsageDiagnostic(DomainModel):
-    """Minimal Day36 usage trace, deliberately not an Agent trajectory."""
-
-    sector_context_id: str = Field(pattern=r"^sector_context_[0-9a-f]{24}$")
-    agent_role: AgentName
-    provided_sector_claim_ids: tuple[str, ...] = ()
-    used_sector_claim_ids: tuple[str, ...] = ()
-    provided_event_ids: tuple[str, ...] = ()
-    used_event_ids: tuple[str, ...] = ()
-    serialized_context_chars: int = Field(ge=0)
-
-    @model_validator(mode="after")
-    def validate_usage_subsets(self) -> Self:
-        """Usage can only reference context actually projected to the role."""
-
-        if not set(self.used_sector_claim_ids) <= set(self.provided_sector_claim_ids):
-            raise ValueError("used Sector Claim was not provided")
-        if not set(self.used_event_ids) <= set(self.provided_event_ids):
-            raise ValueError("used Sector event was not provided")
         return self

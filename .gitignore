@@ -62,4 +62,5 @@ data/live_agent_benchmark/
 data/live_sector_radar/
 data/sector_asset_integration/
 data/live_sector_research/
+data/live_qwen_embedding/
 data/auth/

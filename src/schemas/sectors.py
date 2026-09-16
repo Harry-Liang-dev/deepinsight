@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from datetime import date, datetime
+from datetime import UTC, date, datetime, time
 from typing import Self
 
 from pydantic import Field, field_validator, model_validator
@@ -25,6 +25,12 @@ from src.models.enums import (
 from src.models.identifiers import AssetId
 from src.models.types import DomainModel
 from src.schemas.research_data import DataQualityStatus
+from src.schemas.temporal import (
+    TemporalAccessMode,
+    TemporalMetadata,
+    is_usable_at,
+    validate_temporal_access,
+)
 
 _CHAIN_ID = re.compile(r"^[A-Z][A-Z0-9_]{1,63}$")
 _VERSION = re.compile(r"^[a-z0-9][a-z0-9._-]{0,63}$")
@@ -65,8 +71,12 @@ class TemporalOntologyModel(DomainModel):
     def is_effective(self, as_of: date) -> bool:
         """Return whether this revision is effective on one date."""
 
-        return self.valid_from <= as_of and (
-            self.valid_to is None or as_of < self.valid_to
+        return is_usable_at(
+            TemporalMetadata(
+                effective_from=self.valid_from,
+                effective_to=self.valid_to,
+            ),
+            datetime.combine(as_of, time.max, tzinfo=UTC),
         )
 
 
@@ -616,8 +626,17 @@ class SectorAnomalyEvent(DomainModel):
             raise ValueError("event_time cannot be later than available_at")
         if self.published_at > self.available_at:
             raise ValueError("published_at cannot be later than available_at")
-        if self.available_at > self.as_of or self.ingested_at > self.as_of:
-            raise ValueError("anomaly is not known by as_of")
+        validate_temporal_access(
+            TemporalMetadata(
+                event_time=self.event_time,
+                published_at=self.published_at,
+                available_at=self.available_at,
+                ingested_at=self.ingested_at,
+                as_of=self.as_of,
+            ),
+            self.as_of,
+            mode=TemporalAccessMode.LIVE_ACQUISITION,
+        )
         if self.status is SectorAnomalyStatus.PROPAGATION_CANDIDATE:
             if self.event_type is not SectorAnomalyType.SUPPLY_CHAIN_PROPAGATION:
                 raise ValueError("propagation status requires propagation event type")

@@ -1,0 +1,43 @@
+{
+  "schema_version": "day39_research_episode_acceptance_v1",
+  "llm_calls": 0,
+  "network_calls": 0,
+  "private_reasoning_saved": false,
+  "report_prose_parsed": false,
+  "episodes": [
+    {
+      "name": "phase3_aapl_golden",
+      "episode_id": "research_episode_67b3b89872e7d4246c37d7da",
+      "research_state_id": "research_state_fd95d91fbf0a635951884295",
+      "trace_quality": "complete",
+      "agent_run_count": 8,
+      "accepted_claim_count": 54,
+      "accepted_claim_id_count": 54,
+      "rejected_claim_count": 2,
+      "rejected_claim_id_count": 2,
+      "sector_usage_count": 0,
+      "report_id": "rep_27ce48e18b5443f297c485405792c535"
+    },
+    {
+      "name": "phase4a_aapl_sector_aware",
+      "episode_id": "research_episode_d4a588c6bac4fa6fe558cad5",
+      "research_state_id": "research_state_3da102d1a1515b82dbe4f9b7",
+      "trace_quality": "partial",
+      "agent_run_count": 8,
+      "accepted_claim_count": 52,
+      "accepted_claim_id_count": 0,
+      "rejected_claim_count": 5,
+      "rejected_claim_id_count": 0,
+      "sector_claim_count": 6,
+      "sector_usage_count": 8,
+      "report_id": null,
+      "missing_metadata": [
+        "accepted_claim_ids_not_persisted",
+        "latency_ms_not_persisted",
+        "rejected_claim_ids_not_persisted",
+        "memory_context_not_persisted",
+        "report_id_not_persisted"
+      ]
+    }
+  ]
+}

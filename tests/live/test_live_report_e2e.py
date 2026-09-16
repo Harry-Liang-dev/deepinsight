@@ -33,4 +33,4 @@ _REQUIRED_LIVE_NAMES = (
 def test_multisource_live_report_and_evaluation() -> None:
     """Run the production SEC, Alpaca, Qwen, report, and Judge chain."""
 
-    assert live_report.main() == 0
+    assert live_report.main([]) == 0

@@ -24,7 +24,16 @@ from src.repositories import (
     InstrumentRepository,
     MarketDataRepository,
 )
-from src.schemas.market_data import EodBarRecord, FundamentalRecord, InstrumentRecord
+from src.schemas.documents import TextDocumentRecord
+from src.schemas.market_data import (
+    EodBarRecord,
+    FundamentalRecord,
+    InstrumentRecord,
+    MacroObservationRecord,
+    NewsEvidenceRecord,
+    SentimentEvidenceRecord,
+    SentimentSnapshotRecord,
+)
 from src.schemas.research_data import (
     DataAvailabilityStatus,
     DataCapability,
@@ -41,6 +50,8 @@ from src.schemas.research_data import (
     ResearchDataSection,
     ResearchEvidenceItem,
 )
+from src.schemas.temporal import TemporalAccessMode
+from src.temporal_mapping import temporal_metadata_for
 
 _FUNDAMENTAL_UNITS: Final[dict[str, tuple[str, str | None]]] = {
     "revenue": ("USD", "USD"),
@@ -179,6 +190,7 @@ class ResearchDataBundleService:
         documents: DocumentRepository | None = None,
         market_context: MarketContextOperator | None = None,
         valuation: ValuationOperator | None = None,
+        temporal_access_mode: TemporalAccessMode = TemporalAccessMode.HISTORICAL_REPLAY,
     ) -> None:
         """Bind read-only normalized stores and a deterministic freshness SLA."""
 
@@ -200,6 +212,7 @@ class ResearchDataBundleService:
         self._documents = documents
         self._market_context = market_context or MarketContextOperator()
         self._valuation = valuation or ValuationOperator()
+        self._temporal_access_mode = temporal_access_mode
 
     def build(self, request: ResearchDataBundleRequest) -> ResearchDataBundle:
         """Build a serializable bundle without exposing persistence objects."""
@@ -215,7 +228,12 @@ class ResearchDataBundleService:
                 request.asset_id,
                 start_date=request.window_start,
                 end_date=request.window_end,
-                ingested_as_of=request.as_of,
+                ingested_as_of=(
+                    request.as_of
+                    if self._temporal_access_mode
+                    is TemporalAccessMode.HISTORICAL_REPLAY
+                    else None
+                ),
                 limit=self._eod_history_limit,
             )
             if market_data_requested
@@ -407,13 +425,22 @@ class ResearchDataBundleService:
         evidence = tuple(
             sorted(
                 [
-                    _bar_evidence(bar, field_name, currency)
+                    _bar_evidence(
+                        bar,
+                        field_name,
+                        currency,
+                        temporal_access_mode=self._temporal_access_mode,
+                    )
                     for bar in bars
                     for field_name in _OHLCV_FIELDS
                     if getattr(bar, field_name) is not None
                 ]
                 + [
-                    _bar_metadata_evidence(bars[-1], field_name)
+                    _bar_metadata_evidence(
+                        bars[-1],
+                        field_name,
+                        temporal_access_mode=self._temporal_access_mode,
+                    )
                     for field_name in _OHLCV_METADATA_FIELDS
                     if getattr(bars[-1], field_name) is not None
                 ],
@@ -521,7 +548,12 @@ class ResearchDataBundleService:
 
         currency = None if instrument is None else instrument.currency
         evidence_by_field_date = {
-            (field_name, bar.trade_date): _bar_evidence(bar, field_name, currency)
+            (field_name, bar.trade_date): _bar_evidence(
+                bar,
+                field_name,
+                currency,
+                temporal_access_mode=self._temporal_access_mode,
+            )
             for bar in bars
             for field_name in ("close", "high", "low", "volume")
             if getattr(bar, field_name) is not None
@@ -553,7 +585,12 @@ class ResearchDataBundleService:
                 benchmark_asset,
                 start_date=request.window_start,
                 end_date=request.window_end,
-                ingested_as_of=request.as_of,
+                ingested_as_of=(
+                    request.as_of
+                    if self._temporal_access_mode
+                    is TemporalAccessMode.HISTORICAL_REPLAY
+                    else None
+                ),
                 limit=self._eod_history_limit,
             )
             context = self._market_context.compute(
@@ -585,7 +622,12 @@ class ResearchDataBundleService:
             }[field_name]
             values[field_name] = context.get(context_name)
             benchmark_parents = tuple(
-                _bar_evidence(bar, "close", currency)
+                _bar_evidence(
+                    bar,
+                    "close",
+                    currency,
+                    temporal_access_mode=self._temporal_access_mode,
+                )
                 for bar in benchmark_bars[-21:]
                 if bar.close is not None
             )
@@ -693,7 +735,13 @@ class ResearchDataBundleService:
         raw_evidence = tuple(
             sorted(
                 (
-                    _fundamental_evidence(record, field_name, unit, currency)
+                    _fundamental_evidence(
+                        record,
+                        field_name,
+                        unit,
+                        currency,
+                        temporal_access_mode=self._temporal_access_mode,
+                    )
                     for record in records
                     for field_name, (unit, currency) in _FUNDAMENTAL_UNITS.items()
                     if getattr(record, field_name) is not None
@@ -844,7 +892,12 @@ class ResearchDataBundleService:
         )
         close_parent = next(
             (
-                _bar_evidence(record, "close", "USD")
+                _bar_evidence(
+                    record,
+                    "close",
+                    "USD",
+                    temporal_access_mode=self._temporal_access_mode,
+                )
                 for record in reversed(bars)
                 if record.close is not None
             ),
@@ -856,7 +909,11 @@ class ResearchDataBundleService:
                 if name in fundamental_parents or getattr(record, name) is None:
                     continue
                 fundamental_parents[name] = _fundamental_evidence(
-                    record, name, unit, currency
+                    record,
+                    name,
+                    unit,
+                    currency,
+                    temporal_access_mode=self._temporal_access_mode,
                 )
         evidence: list[ResearchEvidenceItem] = []
         fmp_record = max(
@@ -881,6 +938,7 @@ class ResearchDataBundleService:
                     name,
                     _FUNDAMENTAL_UNITS[name][0],
                     _FUNDAMENTAL_UNITS[name][1],
+                    temporal_access_mode=self._temporal_access_mode,
                 )
                 evidence.append(_repath_evidence(item, f"valuation.{name}"))
         direct_names = {
@@ -954,7 +1012,12 @@ class ResearchDataBundleService:
                 asset_id,
                 start_date=request.window_start,
                 end_date=request.window_end,
-                ingested_as_of=request.as_of,
+                ingested_as_of=(
+                    request.as_of
+                    if self._temporal_access_mode
+                    is TemporalAccessMode.HISTORICAL_REPLAY
+                    else None
+                ),
                 limit=self._eod_history_limit,
             )
             for asset_id in asset_ids
@@ -987,7 +1050,12 @@ class ResearchDataBundleService:
             }
         )
         parents = tuple(
-            _bar_evidence(record, "close", "USD")
+            _bar_evidence(
+                record,
+                "close",
+                "USD",
+                temporal_access_mode=self._temporal_access_mode,
+            )
             for records in bars_by_asset.values()
             for record in records
             if record.close is not None
@@ -1020,6 +1088,7 @@ class ResearchDataBundleService:
             _FRED_SERIES,
             end_date=request.window_end,
             as_of=request.as_of,
+            access_mode=self._temporal_access_mode,
         )
         latest_by_series = {
             series_key: max(
@@ -1036,7 +1105,11 @@ class ResearchDataBundleService:
                 effective_at=datetime.combine(
                     record.observation_date, time.min, tzinfo=UTC
                 ),
-                observed_at=_as_utc(record.ingestion_ts),
+                observed_at=_record_observed_at(
+                    record,
+                    record.ingestion_ts,
+                    self._temporal_access_mode,
+                ),
                 value=record.value,
                 unit=record.unit,
                 provider=record.source_id,
@@ -1081,13 +1154,18 @@ class ResearchDataBundleService:
             request.asset_id,
             start_at=datetime.combine(request.window_start, time.min, tzinfo=UTC),
             as_of=request.as_of,
+            access_mode=self._temporal_access_mode,
         )
         evidence = tuple(
             _record_evidence(
                 subject_id=str(request.asset_id),
                 field_path=f"news_evidence.{field_name}",
                 effective_at=_as_utc(record.created_at),
-                observed_at=_as_utc(record.ingestion_ts),
+                observed_at=_record_observed_at(
+                    record,
+                    record.ingestion_ts,
+                    self._temporal_access_mode,
+                ),
                 value=value,
                 unit=None,
                 provider=record.provider,
@@ -1121,10 +1199,16 @@ class ResearchDataBundleService:
     ) -> ResearchDataSection:
         start_at = datetime.combine(request.window_start, time.min, tzinfo=UTC)
         snapshots = self._market_data.list_sentiment_snapshots(
-            request.asset_id, start_at=start_at, as_of=request.as_of
+            request.asset_id,
+            start_at=start_at,
+            as_of=request.as_of,
+            access_mode=self._temporal_access_mode,
         )
         messages = self._market_data.list_sentiment_evidence(
-            request.asset_id, start_at=start_at, as_of=request.as_of
+            request.asset_id,
+            start_at=start_at,
+            as_of=request.as_of,
+            access_mode=self._temporal_access_mode,
         )
         evidence: list[ResearchEvidenceItem] = []
         for record in snapshots:
@@ -1144,7 +1228,11 @@ class ResearchDataBundleService:
                         subject_id=str(request.asset_id),
                         field_path=f"sentiment_evidence.community_{field_name}",
                         effective_at=_as_utc(record.source_timestamp),
-                        observed_at=_as_utc(record.ingestion_ts),
+                        observed_at=_record_observed_at(
+                            record,
+                            record.ingestion_ts,
+                            self._temporal_access_mode,
+                        ),
                         value=value,
                         unit="score" if isinstance(value, int | float) else None,
                         provider=record.provider,
@@ -1163,7 +1251,11 @@ class ResearchDataBundleService:
                     subject_id=str(request.asset_id),
                     field_path="sentiment_evidence.community_message",
                     effective_at=_as_utc(message.created_at),
-                    observed_at=_as_utc(message.ingestion_ts),
+                    observed_at=_record_observed_at(
+                        message,
+                        message.ingestion_ts,
+                        self._temporal_access_mode,
+                    ),
                     value=message.text,
                     unit=None,
                     provider=message.source,
@@ -1257,7 +1349,11 @@ class ResearchDataBundleService:
                 subject_id=str(request.asset_id),
                 field_path="filings.title",
                 effective_at=_as_utc(document.publish_ts),
-                observed_at=_as_utc(document.created_at),
+                observed_at=_record_observed_at(
+                    document,
+                    document.created_at,
+                    self._temporal_access_mode,
+                ),
                 value=document.title,
                 unit=None,
                 provider=document.source_id,
@@ -1321,7 +1417,10 @@ class ResearchDataBundleService:
             for record in self._market_data.list_fundamentals(
                 request.asset_id, end_date=request.window_end
             )
-            if _as_utc(record.ingestion_ts) <= request.as_of
+            if (
+                self._temporal_access_mode is TemporalAccessMode.LIVE_ACQUISITION
+                or _as_utc(record.ingestion_ts) <= request.as_of
+            )
             and (
                 record.accepted_at is None
                 or _as_utc(record.accepted_at) <= request.as_of
@@ -1504,6 +1603,8 @@ def _fundamental_evidence(
     field_name: str,
     unit: str,
     currency: str | None,
+    *,
+    temporal_access_mode: TemporalAccessMode = TemporalAccessMode.HISTORICAL_REPLAY,
 ) -> ResearchEvidenceItem:
     value = getattr(record, field_name)
     assert isinstance(value, int | float) and not isinstance(value, bool)
@@ -1532,7 +1633,11 @@ def _fundamental_evidence(
         subject_id=str(record.asset_id),
         field_path=f"fundamentals.{field_name}",
         effective_at=datetime.combine(record.fiscal_period_end, time.min, tzinfo=UTC),
-        observed_at=_as_utc(record.accepted_at or record.ingestion_ts),
+        observed_at=_record_observed_at(
+            record,
+            record.accepted_at or record.ingestion_ts,
+            temporal_access_mode,
+        ),
         value=float(value),
         unit=unit,
         currency=currency,
@@ -1608,6 +1713,8 @@ def _bar_evidence(
     record: EodBarRecord,
     field_name: str,
     currency: str | None,
+    *,
+    temporal_access_mode: TemporalAccessMode = TemporalAccessMode.HISTORICAL_REPLAY,
 ) -> ResearchEvidenceItem:
     """Convert one non-null canonical bar field into attributable Evidence."""
 
@@ -1645,7 +1752,11 @@ def _bar_evidence(
         subject_id=str(record.asset_id),
         field_path=f"ohlcv.{field_name}",
         effective_at=datetime.combine(record.trade_date, time.min, tzinfo=UTC),
-        observed_at=_as_utc(record.ingestion_ts),
+        observed_at=_record_observed_at(
+            record,
+            record.ingestion_ts,
+            temporal_access_mode,
+        ),
         value=float(value),
         unit=unit,
         currency=field_currency,
@@ -1656,6 +1767,8 @@ def _bar_evidence(
 def _bar_metadata_evidence(
     record: EodBarRecord,
     field_name: str,
+    *,
+    temporal_access_mode: TemporalAccessMode = TemporalAccessMode.HISTORICAL_REPLAY,
 ) -> ResearchEvidenceItem:
     value = getattr(record, field_name)
     if not isinstance(value, str):
@@ -1665,7 +1778,11 @@ def _bar_metadata_evidence(
         subject_id=str(record.asset_id),
         field_path=f"ohlcv.{field_name}",
         effective_at=datetime.combine(record.trade_date, time.min, tzinfo=UTC),
-        observed_at=_as_utc(record.ingestion_ts),
+        observed_at=_record_observed_at(
+            record,
+            record.ingestion_ts,
+            temporal_access_mode,
+        ),
         value=value,
         unit=None,
         provider=record.source_id,
@@ -2176,3 +2293,45 @@ def _as_utc(value: datetime) -> datetime:
         local_timezone = datetime.now().astimezone().tzinfo or UTC
         return value.replace(tzinfo=local_timezone).astimezone(UTC)
     return value.astimezone(UTC)
+
+
+def _record_observed_at(
+    record: object,
+    historical_observed_at: datetime,
+    mode: TemporalAccessMode,
+) -> datetime:
+    """Select source availability for live data without changing replay truth."""
+
+    if mode is TemporalAccessMode.HISTORICAL_REPLAY:
+        return _as_utc(historical_observed_at)
+    if isinstance(record, EodBarRecord):
+        available_at = temporal_metadata_for(record).available_at
+    elif isinstance(record, FundamentalRecord):
+        available_at = (
+            _as_utc(record.accepted_at)
+            if record.accepted_at is not None
+            else (
+                datetime.combine(record.filing_date, time.min, tzinfo=UTC)
+                if record.filing_date is not None
+                else None
+            )
+        )
+    elif isinstance(record, MacroObservationRecord):
+        available_at = (
+            None
+            if record.realtime_start is None
+            else datetime.combine(record.realtime_start, time.min, tzinfo=UTC)
+        )
+    elif isinstance(record, NewsEvidenceRecord):
+        available_at = _as_utc(record.created_at)
+    elif isinstance(record, SentimentSnapshotRecord):
+        available_at = _as_utc(record.source_timestamp)
+    elif isinstance(record, SentimentEvidenceRecord):
+        available_at = _as_utc(record.created_at)
+    elif isinstance(record, TextDocumentRecord):
+        available_at = None if record.publish_ts is None else _as_utc(record.publish_ts)
+    else:
+        available_at = temporal_metadata_for(record).available_at
+    if available_at is None:
+        raise ValueError(f"{type(record).__name__} has no provider availability")
+    return available_at

@@ -34,6 +34,8 @@ from src.schemas.agents import (
 from src.schemas.common import SourceReference
 from src.schemas.memory import MemoryWriteRequest
 from src.schemas.reports import ReportSection, ResearchReport
+from src.schemas.sector_context import SectorContextBundle
+from src.schemas.sector_research import SectorClaimCategory
 
 _SECTION_TITLES = {
     "executive_view": "Executive View",
@@ -148,6 +150,43 @@ class ReportAssembler:
             created_at=payload.created_at,
         )
 
+    def surface_sector_context(
+        self,
+        report: ResearchReport,
+        sector_context: SectorContextBundle,
+    ) -> ResearchReport:
+        """Project accepted Industry Chain Claims into an existing report.
+
+        This supports deterministic reassembly of a persisted live report. It
+        never generates prose: every inserted statement is a faithful view of
+        one accepted Sector Claim and its existing source references.
+        """
+
+        sections = [
+            StandardReportSection.model_validate(report.report_json[item.section_name])
+            for item in sorted(report.sections, key=lambda value: value.section_order)
+        ]
+        executive = next(
+            item for item in sections if item.section_name == "executive_view"
+        )
+        known_claim_ids = {
+            statement.claim_id
+            for statement in (
+                *executive.facts,
+                *executive.inferences,
+                *executive.risk_warnings,
+            )
+        }
+        projected = [
+            item
+            for item in _sector_chain_statements(sector_context)
+            if item.claim_id not in known_claim_ids
+        ]
+        if not projected:
+            return report
+        executive.facts.extend(projected)
+        return _replace_report_sections(report, sections)
+
     def to_memory_request(self, report: ResearchReport) -> MemoryWriteRequest:
         """Create the attributable L3 trace written after report persistence.
 
@@ -228,12 +267,18 @@ class ReportAssembler:
                 "sentiment", 4, sentiment_result, outputs.sentiment
             )
         )
+        sector_chain_statements = (
+            []
+            if payload.sector_context is None
+            else _sector_chain_statements(payload.sector_context)
+        )
 
         sections = [
             StandardReportSection(
                 section_name="executive_view",
                 title=_SECTION_TITLES["executive_view"],
                 section_order=0,
+                facts=sector_chain_statements,
                 inferences=_claims(
                     research_result,
                     "analysis.summary_points",
@@ -379,6 +424,58 @@ class ReportAssembler:
             ),
         ]
         return sections
+
+
+def _sector_chain_statements(
+    sector_context: SectorContextBundle,
+) -> list[ReportStatement]:
+    """Render accepted Industry Chain Claims without adding new semantics."""
+
+    chain_label = ", ".join(sector_context.active_chain_ids)
+    return [
+        ReportStatement(
+            text=f"Industry Chain context ({chain_label}): {claim.claim_text}",
+            citations=list(claim.source_references),
+            claim_intent=claim.claim_intent,
+            claim_id=claim.claim_id or claim.claim_path,
+            upstream_claim_ids=claim.upstream_claim_ids,
+            numeric_literals=claim.numeric_literals,
+        )
+        for claim in sector_context.accepted_claims
+        if claim.category is SectorClaimCategory.INDUSTRY_CHAINS
+        and claim.source_references
+        and sector_context.active_chain_ids
+    ]
+
+
+def _replace_report_sections(
+    report: ResearchReport,
+    sections: list[StandardReportSection],
+) -> ResearchReport:
+    """Return a report with deterministically re-rendered section views."""
+
+    report_json: JsonObject = {
+        section.section_name: cast(JsonValue, section.model_dump(mode="json"))
+        for section in sections
+    }
+    report_sections = [
+        ReportSection(
+            report_id=report.report_id,
+            section_name=section.section_name,
+            section_order=section.section_order,
+            section_markdown=_render_section_markdown(section),
+            citations=_statements_citations(section),
+        )
+        for section in sections
+    ]
+    return report.model_copy(
+        update={
+            "report_markdown": _render_report_markdown(report.title, sections),
+            "report_json": report_json,
+            "source_trace": _section_citations(sections),
+            "sections": report_sections,
+        }
+    )
 
 
 class _ParsedOutputs:

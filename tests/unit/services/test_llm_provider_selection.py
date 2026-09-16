@@ -57,10 +57,12 @@ def test_factory_selects_qwen_and_gateway_payload_extension() -> None:
     client = _ClientStub()
     settings = AppSettings(
         llm=LLMSettings(provider=LLMProviderName.QWEN),
-        qwen=QwenSettings(
-            api_key=SecretStr("offline-qwen-secret"),
-            model_default="qwen-offline",
-            enable_thinking=False,
+        qwen=QwenSettings.model_validate(
+            {
+                "api_key": SecretStr("offline-qwen-secret"),
+                "QWEN_MODEL_NAME": "qwen-offline",
+                "enable_thinking": False,
+            }
         ),
     )
 
@@ -77,6 +79,11 @@ def test_factory_selects_qwen_and_gateway_payload_extension() -> None:
     assert client.responses.calls[0]["extra_body"] == {"enable_thinking": False}
     assert "text" not in client.responses.calls[0]
     assert runtime.provider.capabilities.native_json_schema is False
+    assert runtime.model_default == "qwen-offline"
+    assert runtime.endpoint == (
+        "https://dashscope.aliyuncs.com/compatible-mode/v1/responses"
+    )
+    assert runtime.settings is settings.qwen
 
 
 def test_qwen_without_key_fails_without_fake_fallback() -> None:
@@ -90,3 +97,4 @@ def test_qwen_without_key_fails_without_fake_fallback() -> None:
         build_configured_llm_provider(settings)
 
     assert raised.value.code == "credential_not_configured"
+    assert raised.value.configuration_stage == "credential_resolution"

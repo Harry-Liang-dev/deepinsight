@@ -1,0 +1,1388 @@
+{
+  "schema_version": "research_state_snapshot_v1",
+  "research_state_id": "research_state_3da102d1a1515b82dbe4f9b7",
+  "research_state_version": "research_state_v1",
+  "feature_version": "research_state_feature_v1",
+  "asset_id": "US:AAPL",
+  "research_as_of": "2026-08-30T23:59:59.999999Z",
+  "hierarchy": {
+    "macro_scope_ids": [
+      "MACRO:US"
+    ],
+    "sector_scope_id": "SECTOR:CONSUMER_ELECTRONICS",
+    "industry_chain_scope_ids": [
+      "CHAIN:APPLE_CHAIN"
+    ],
+    "asset_scope_id": "ASSET:US:AAPL"
+  },
+  "identity": {
+    "section_name": "identity",
+    "status": "missing",
+    "features": [],
+    "missing_reason": "no attributable normalized observation is available"
+  },
+  "macro_state": {
+    "section_name": "macro_state",
+    "status": "partial",
+    "features": [
+      {
+        "feature_name": "sector_claim.sector:S03:claim:1",
+        "value": "Macro financial stress indicators BAMLH0A0HYM2 and VIXCLS are falling, with latest values of 2.63 and 14.51 respectively.",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-30T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": 0.8,
+        "quality": "pass",
+        "source_claim_ids": [
+          "sector:S03:claim:1"
+        ],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "sector_claim.sector:S03:claim:2",
+        "value": "The sector has historical negative association with BAMLH0A0HYM2 (beta=-0.1368842775546454) and positive association with CPIAUCSL (beta=0.09577007289265746).",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-30T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": 0.7,
+        "quality": "pass",
+        "source_claim_ids": [
+          "sector:S03:claim:2"
+        ],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "sector_claim.sector:S03:claim:3",
+        "value": "Sector macro sensitivity to INDPRO shows a beta of 0.04006612553888241 and correlation of 0.2802839059108867.",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-30T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": 0.7,
+        "quality": "pass",
+        "source_claim_ids": [
+          "sector:S03:claim:3"
+        ],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      }
+    ],
+    "missing_reason": "no attributable normalized observation is available; no attributable normalized observation is available; no attributable normalized observation is available; no attributable normalized observation is available; no attributable normalized observation is available; no attributable normalized observation is available; no attributable normalized observation is available; no attributable normalized observation is available; no attributable normalized observation is available; no attributable normalized observation is available; no attributable normalized observation is available; no attributable normalized observation is available"
+  },
+  "sector_state": {
+    "section_name": "sector_state",
+    "status": "present",
+    "features": [
+      {
+        "feature_name": "sector_claim.sector:S03:claim:0",
+        "value": "US:AAPL is a core asset within the active Apple Chain, which belongs to Sector S03 (Consumer Electronics & Hardware).",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-30T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": 0.9,
+        "quality": "pass",
+        "source_claim_ids": [
+          "sector:S03:claim:0"
+        ],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "sector_claim.sector:S03:claim:4",
+        "value": "Two macro-shock anomaly candidates were detected: one driven by INDPRO (change_3m=-0.29692074, confidence=0.2802839059108867) and one by CPIAUCSL (change_3m=-0.40727548, confidence=0.23063425256634312).",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-30T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": 0.6,
+        "quality": "pass",
+        "source_claim_ids": [
+          "sector:S03:claim:4"
+        ],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "sector_claim.sector:S03:claim:5",
+        "value": "Breadth, fundamental, valuation, and market state data for Sector S03 are partial, with all reported metrics returning None values due to limited coverage of 1 constituent.",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-30T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": 0.9,
+        "quality": "pass",
+        "source_claim_ids": [
+          "sector:S03:claim:5"
+        ],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "sector_cycle",
+        "value": "uncertain",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-30T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": 0.3,
+        "quality": "pass",
+        "source_claim_ids": [
+          "sector:S03:claim:5",
+          "sector:S03:claim:1"
+        ],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      }
+    ],
+    "missing_reason": null
+  },
+  "industry_chain_state": {
+    "section_name": "industry_chain_state",
+    "status": "present",
+    "features": [
+      {
+        "feature_name": "active_chain.APPLE_CHAIN",
+        "value": "APPLE_CHAIN",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-30T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [
+          "sector_context_1a8a5f251dda24246ea83161"
+        ],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      }
+    ],
+    "missing_reason": null
+  },
+  "fundamental_state": {
+    "section_name": "fundamental_state",
+    "status": "partial",
+    "features": [
+      {
+        "feature_name": "fundamentals.book_value_per_share",
+        "value": 7.318011926480932,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-06-27T00:00:00Z",
+        "available_at": "2026-07-31T06:01:02Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_2d2ccf555eab159f58a17321"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "fundamentals.current_ratio",
+        "value": 1.0032948046555858,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-06-27T00:00:00Z",
+        "available_at": "2026-07-31T06:01:02Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_3175fd7c71848958c89cc14a"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "fundamentals.debt_to_equity",
+        "value": 0.7841052827380952,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-06-27T00:00:00Z",
+        "available_at": "2026-07-31T06:01:02Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_844c2662c6bdd66dec2e6dea"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "fundamentals.earnings_yield",
+        "value": 0.027448284317456363,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-06-27T00:00:00Z",
+        "available_at": "2026-07-31T06:01:02Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_307a2573e9ebcde2db6acf7f"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "fundamentals.eps_ttm",
+        "value": 8.775216496290799,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-06-27T00:00:00Z",
+        "available_at": "2026-07-31T06:01:02Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_85e562e61423c7a313645e1f"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "fundamentals.gross_margin",
+        "value": 0.4865291555900202,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-06-27T00:00:00Z",
+        "available_at": "2026-07-31T06:01:02Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_340d8ef0aa52ccfd35cbd91b"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "fundamentals.market_cap",
+        "value": 4695547713200.0,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-06-27T00:00:00Z",
+        "available_at": "2026-07-31T06:01:02Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_0be0c31f8ba951e4b9fb72a7"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "fundamentals.net_income_yoy",
+        "value": 0.0071336804381635,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-06-27T00:00:00Z",
+        "available_at": "2026-07-31T06:01:02Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_270335a333f51f82c17e9b44"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "fundamentals.net_margin",
+        "value": 0.27618604910212224,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-06-27T00:00:00Z",
+        "available_at": "2026-07-31T06:01:02Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_a48598544643e1a22b6f70ba"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "fundamentals.operating_margin",
+        "value": 0.3317295848747812,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-06-27T00:00:00Z",
+        "available_at": "2026-07-31T06:01:02Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_3796cc28f744e2ef145cb02c"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "fundamentals.pb",
+        "value": 43.68672847377233,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-06-27T00:00:00Z",
+        "available_at": "2026-07-31T06:01:02Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_38006ab7505b241dcb7f4ff5"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "fundamentals.pe_ttm",
+        "value": 36.49543378995434,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-06-27T00:00:00Z",
+        "available_at": "2026-07-31T06:01:02Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_2aa7365eabc88ee2f2e8edf1"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "fundamentals.revenue_yoy",
+        "value": -0.015892574471146927,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-06-27T00:00:00Z",
+        "available_at": "2026-07-31T06:01:02Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_1ad7070f54b974f9f6cad46c"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "fundamentals.roa",
+        "value": 0.3363982195133406,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-06-27T00:00:00Z",
+        "available_at": "2026-07-31T06:01:02Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_5382c5e11c129bf9d9b3735b"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "fundamentals.roe",
+        "value": 1.3718365457766524,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-06-27T00:00:00Z",
+        "available_at": "2026-07-31T06:01:02Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_25fc530a6fba70ccd8a6811f"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      }
+    ],
+    "missing_reason": "no attributable normalized observation is available; no attributable normalized observation is available; no attributable normalized observation is available; no attributable normalized observation is available; no attributable normalized observation is available; no attributable normalized observation is available; no attributable normalized observation is available; no attributable normalized observation is available; no attributable normalized observation is available; no attributable normalized observation is available; no attributable normalized observation is available; no attributable normalized observation is available; no attributable normalized observation is available"
+  },
+  "valuation_state": {
+    "section_name": "valuation_state",
+    "status": "present",
+    "features": [
+      {
+        "feature_name": "valuation.book_value_per_share",
+        "value": 7.318011926480932,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-06-27T00:00:00Z",
+        "available_at": "2026-07-31T06:01:02Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_14b08a82d1021899bce26b9b"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "valuation.earnings_yield",
+        "value": 0.027448284317456363,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-06-27T00:00:00Z",
+        "available_at": "2026-07-31T06:01:02Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_e2bbeabf16470c64124ebec3"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "valuation.eps_ttm",
+        "value": 8.775216496290799,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-06-27T00:00:00Z",
+        "available_at": "2026-07-31T06:01:02Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_00fd51081bfb6e53078ef672"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "valuation.market_cap",
+        "value": 4695547713200.0,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-06-27T00:00:00Z",
+        "available_at": "2026-07-31T06:01:02Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_f65a6d6c4dc795f5cfdc36ae"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "valuation.pb",
+        "value": 43.68672847377233,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-06-27T00:00:00Z",
+        "available_at": "2026-07-31T06:01:02Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_263ce73dc4417672692635d5"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "valuation.pe_ttm",
+        "value": 36.49543378995434,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-06-27T00:00:00Z",
+        "available_at": "2026-07-31T06:01:02Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_97deadaead85456cce686161"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      }
+    ],
+    "missing_reason": null
+  },
+  "technical_state": {
+    "section_name": "technical_state",
+    "status": "partial",
+    "features": [
+      {
+        "feature_name": "technical_features.atr_14",
+        "value": 5.983571428571436,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-28T00:00:00Z",
+        "available_at": "2026-08-30T03:42:35.361553Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_a73f83e6fbe39634bf0c9686"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "technical_features.close",
+        "value": 319.58,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-28T00:00:00Z",
+        "available_at": "2026-08-30T03:42:35.361553Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_a757d89226b42548593f0b6a"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "technical_features.distance_to_sma20",
+        "value": 0.031389808901780336,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-28T00:00:00Z",
+        "available_at": "2026-08-30T03:42:35.361553Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_5f3257c1734c9179e98628c9"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "technical_features.distance_to_sma60",
+        "value": 0.03217568755460354,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-28T00:00:00Z",
+        "available_at": "2026-08-30T03:42:35.361553Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_f77a68ba570ab0462261aa0a"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "technical_features.macd",
+        "value": -0.03651998122245459,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-28T00:00:00Z",
+        "available_at": "2026-08-30T03:42:35.361553Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_c4a41f137f30dd316c83fd9c"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "technical_features.max_drawdown_60d",
+        "value": -0.11567751678930627,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-28T00:00:00Z",
+        "available_at": "2026-08-30T03:42:35.361553Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_b58ad1c4952e4f95f7f36ab8"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "technical_features.realized_vol_20d",
+        "value": 0.1893108047356684,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-28T00:00:00Z",
+        "available_at": "2026-08-30T03:42:35.361553Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_3e8dff0956399455e5217f49"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "technical_features.realized_vol_60d",
+        "value": 0.3168198186490971,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-28T00:00:00Z",
+        "available_at": "2026-08-30T03:42:35.361553Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_191c5efd0523ddc35cc66106"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "technical_features.relative_strength_vs_spy",
+        "value": 0.004897683989312895,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-28T00:00:00Z",
+        "available_at": "2026-08-30T03:42:35.361553Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_75f753a0175c825e588eb230"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "technical_features.relative_strength_vs_xlk",
+        "value": -0.022723051265842176,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-28T00:00:00Z",
+        "available_at": "2026-08-30T03:42:35.361553Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_8ca88e74a2efb95c951a497d"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "technical_features.return_1d",
+        "value": 0.016023399249697867,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-28T00:00:00Z",
+        "available_at": "2026-08-30T03:42:35.361553Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_b78b36386f985a04680a4fef"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "technical_features.return_20d",
+        "value": 0.03516074176046624,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-28T00:00:00Z",
+        "available_at": "2026-08-30T03:42:35.361553Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_1ebb22457bf10a50b22896b4"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "technical_features.return_5d",
+        "value": 0.03333656675396912,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-28T00:00:00Z",
+        "available_at": "2026-08-30T03:42:35.361553Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_5fcc504398e8c2bf5e38bca0"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "technical_features.return_60d",
+        "value": 0.030172135903552277,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-28T00:00:00Z",
+        "available_at": "2026-08-30T03:42:35.361553Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_7d55bc5e4757235f1048818a"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "technical_features.rsi_14",
+        "value": 64.20567729083658,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-28T00:00:00Z",
+        "available_at": "2026-08-30T03:42:35.361553Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_ab1aa8496254b2e673c7cc65"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "technical_features.sma_20",
+        "value": 309.85375,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-28T00:00:00Z",
+        "available_at": "2026-08-30T03:42:35.361553Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_b9af6ea452ba8324664bc876"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "technical_features.sma_60",
+        "value": 309.61783333333335,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-28T00:00:00Z",
+        "available_at": "2026-08-30T03:42:35.361553Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_f99e8c48e4f7b3557431e0b7"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "technical_features.trend_label",
+        "value": "up",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-28T00:00:00Z",
+        "available_at": "2026-08-30T03:42:35.361553Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_0adb9ae07b2d69417ec7e531"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "technical_features.volume_ratio_20d",
+        "value": 0.7837974216930511,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-28T00:00:00Z",
+        "available_at": "2026-08-30T03:42:35.361553Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_d36fa3634b2d519f7c54dcaf"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      }
+    ],
+    "missing_reason": "relative_strength_vs_qqq could not be computed from the normalized window"
+  },
+  "sentiment_state": {
+    "section_name": "sentiment_state",
+    "status": "missing",
+    "features": [],
+    "missing_reason": "no attributable normalized observation is available; no attributable normalized observation is available; no attributable normalized observation is available"
+  },
+  "event_state": {
+    "section_name": "event_state",
+    "status": "not_available_at_source_run",
+    "features": [],
+    "missing_reason": "Accepted Agent Claims were not persisted by the source run."
+  },
+  "market_context_state": {
+    "section_name": "market_context_state",
+    "status": "partial",
+    "features": [
+      {
+        "feature_name": "industry_sector_context.excess_return_vs_sector",
+        "value": -0.02406893013682332,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-28T00:00:00Z",
+        "available_at": "2026-08-30T03:42:35.361553Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_0a54949ded159274ecd510ab"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "industry_sector_context.relative_strength_sector",
+        "value": -0.022723051265842176,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-28T00:00:00Z",
+        "available_at": "2026-08-30T03:42:35.361553Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_2a166941d93a34237d838923"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "industry_sector_context.sector_return_20d",
+        "value": 0.05922967189728956,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-28T00:00:00Z",
+        "available_at": "2026-08-30T03:42:35.361553Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_fe4f678eca6f00bc8fcd7586"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "industry_sector_context.sector_volatility",
+        "value": 0.2718966977029291,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-28T00:00:00Z",
+        "available_at": "2026-08-30T03:42:35.361553Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_76af511f827db1b30abc2ae9"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "market_context.asset_return_20d",
+        "value": 0.03516074176046624,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-28T00:00:00Z",
+        "available_at": "2026-08-30T03:42:35.361553Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_3064ceb926446d4b26d9ae57"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "market_context.benchmark_trend",
+        "value": "up",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-28T00:00:00Z",
+        "available_at": "2026-08-30T03:42:35.361553Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_fdf70c074608f30880466187"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "market_context.excess_return_vs_market",
+        "value": 0.005045180491568768,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-28T00:00:00Z",
+        "available_at": "2026-08-30T03:42:35.361553Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_845e9c35012abf5db3d8dd13"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "market_context.market_return_20d",
+        "value": 0.030115561268897473,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-28T00:00:00Z",
+        "available_at": "2026-08-30T03:42:35.361553Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_c8a56d3e83c7bc45d30dee54"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "market_context.market_volatility",
+        "value": 0.10427771011728364,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-28T00:00:00Z",
+        "available_at": "2026-08-30T03:42:35.361553Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_a57860f35743cafcfec1fd9a"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "market_context.relative_strength_market",
+        "value": 0.004897683989312895,
+        "feature_type": "deterministic_numeric",
+        "as_of": "2026-08-28T00:00:00Z",
+        "available_at": "2026-08-30T03:42:35.361553Z",
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [
+          "ev_1d8742f631491837ee6fd511"
+        ],
+        "source_artifact_ids": [],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      }
+    ],
+    "missing_reason": "no attributable normalized observation is available; no attributable normalized observation is available; no attributable normalized observation is available"
+  },
+  "debate_state": {
+    "section_name": "debate_state",
+    "status": "not_available_at_source_run",
+    "features": [],
+    "missing_reason": "Accepted Agent Claims were not persisted by the source run."
+  },
+  "risk_state": {
+    "section_name": "risk_state",
+    "status": "not_available_at_source_run",
+    "features": [],
+    "missing_reason": "Accepted Agent Claims were not persisted by the source run."
+  },
+  "thesis_state": {
+    "section_name": "thesis_state",
+    "status": "not_available_at_source_run",
+    "features": [],
+    "missing_reason": "Accepted Agent Claims were not persisted by the source run."
+  },
+  "data_quality_state": {
+    "section_name": "data_quality_state",
+    "status": "present",
+    "features": [
+      {
+        "feature_name": "capability.asset_identity",
+        "value": "missing",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-30T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": null,
+        "quality": "unknown",
+        "source_claim_ids": [],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [
+          "rdb_2eb392bf5871eb865dd9f5d5"
+        ],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "capability.corporate_events",
+        "value": "missing",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-30T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": null,
+        "quality": "unknown",
+        "source_claim_ids": [],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [
+          "rdb_2eb392bf5871eb865dd9f5d5"
+        ],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "capability.filings",
+        "value": "missing",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-30T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": null,
+        "quality": "unknown",
+        "source_claim_ids": [],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [
+          "rdb_2eb392bf5871eb865dd9f5d5"
+        ],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "capability.fundamentals",
+        "value": "partial",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-30T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": null,
+        "quality": "warning",
+        "source_claim_ids": [],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [
+          "rdb_2eb392bf5871eb865dd9f5d5"
+        ],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "capability.industry_sector_context",
+        "value": "present",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-30T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [
+          "rdb_2eb392bf5871eb865dd9f5d5"
+        ],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "capability.macro_indicators",
+        "value": "missing",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-30T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": null,
+        "quality": "unknown",
+        "source_claim_ids": [],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [
+          "rdb_2eb392bf5871eb865dd9f5d5"
+        ],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "capability.market_context",
+        "value": "partial",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-30T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": null,
+        "quality": "warning",
+        "source_claim_ids": [],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [
+          "rdb_2eb392bf5871eb865dd9f5d5"
+        ],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "capability.news_evidence",
+        "value": "missing",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-30T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": null,
+        "quality": "unknown",
+        "source_claim_ids": [],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [
+          "rdb_2eb392bf5871eb865dd9f5d5"
+        ],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "capability.ohlcv",
+        "value": "partial",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-30T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": null,
+        "quality": "warning",
+        "source_claim_ids": [],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [
+          "rdb_2eb392bf5871eb865dd9f5d5"
+        ],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "capability.sentiment_evidence",
+        "value": "missing",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-30T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": null,
+        "quality": "unknown",
+        "source_claim_ids": [],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [
+          "rdb_2eb392bf5871eb865dd9f5d5"
+        ],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "capability.technical_features",
+        "value": "partial",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-30T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": null,
+        "quality": "warning",
+        "source_claim_ids": [],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [
+          "rdb_2eb392bf5871eb865dd9f5d5"
+        ],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      },
+      {
+        "feature_name": "capability.valuation",
+        "value": "present",
+        "feature_type": "semantic_categorical",
+        "as_of": "2026-08-30T23:59:59.999999Z",
+        "available_at": null,
+        "confidence": null,
+        "quality": "pass",
+        "source_claim_ids": [],
+        "source_evidence_ids": [],
+        "source_artifact_ids": [
+          "rdb_2eb392bf5871eb865dd9f5d5"
+        ],
+        "feature_version": "research_state_feature_v1",
+        "transform_name": null,
+        "transform_version": null,
+        "missing_reason": null
+      }
+    ],
+    "missing_reason": null
+  },
+  "memory_context_state": {
+    "section_name": "memory_context_state",
+    "status": "not_available_at_source_run",
+    "features": [],
+    "missing_reason": "Structured Memory retrieval context was not persisted by the source run."
+  },
+  "lineage": {
+    "source_run_id": "agent_contract_20260830T135643Z_70442a96",
+    "data_bundle_id": "rdb_2eb392bf5871eb865dd9f5d5",
+    "data_snapshot_id": null,
+    "dataset_version": "phase4a_day36_fixed_real_snapshot_v1",
+    "sector_context_id": "sector_context_1a8a5f251dda24246ea83161",
+    "memory_context_id": null,
+    "agent_run_ids": [],
+    "versions": [],
+    "input_fingerprint": "3da102d1a1515b82dbe4f9b7a5f74eb5d9380bde37be40f725cd320ab4c01c53"
+  }
+}

@@ -32,6 +32,12 @@ from src.schemas.sectors import (
     SectorNode,
     SectorResearchSnapshot,
 )
+from src.schemas.temporal import (
+    TemporalAccessMode,
+    TemporalLeakageError,
+    validate_temporal_access,
+)
+from src.temporal_mapping import TemporalMappingError, temporal_metadata_for
 
 _VERSION = "sector_radar_v1"
 _PRICE_Z_THRESHOLD = 2.5
@@ -72,10 +78,18 @@ class SectorAnomalyRadar:
         memberships: Sequence[SectorMembership] = (),
         nodes: Sequence[SectorNode] = (),
         edges: Sequence[SectorEdge] = (),
+        research_as_of: datetime | None = None,
+        temporal_access_mode: TemporalAccessMode = TemporalAccessMode.HISTORICAL_REPLAY,
     ) -> tuple[SectorAnomalyEvent, ...]:
         """Return stable anomaly events known by the Sector snapshot cutoff."""
 
-        as_of = datetime.combine(sector_state.as_of, time.max, tzinfo=UTC)
+        as_of = research_as_of or datetime.combine(
+            sector_state.as_of, time.max, tzinfo=UTC
+        )
+        if as_of.date() != sector_state.as_of:
+            raise SectorRadarInputError(
+                "research instant and Sector snapshot date differ"
+            )
         _validate_inputs(
             sector_state=sector_state,
             macro_state=macro_state,
@@ -84,6 +98,7 @@ class SectorAnomalyRadar:
             news=news,
             memberships=memberships,
             as_of=as_of,
+            temporal_access_mode=temporal_access_mode,
         )
         events: list[SectorAnomalyEvent] = []
         events.extend(
@@ -164,7 +179,10 @@ def _price_volume_events(
         )
         chains = _asset_chains(asset_id, memberships)
         evidence_id = f"eod_bar:{asset_id}:{bars[-1].trade_date.isoformat()}"
-        available_at = _as_utc(bars[-1].ingestion_ts)
+        bar_temporal = temporal_metadata_for(bars[-1])
+        assert bar_temporal.available_at is not None
+        available_at = bar_temporal.available_at
+        ingested_at = _as_utc(bars[-1].ingestion_ts)
         summary = (
             f"{asset_id} price/volume anomaly: daily_return={latest_return:.8f}, "
             f"return_z={price_z:.4f}, volume_ratio="
@@ -191,7 +209,7 @@ def _price_volume_events(
                     bars[-1].trade_date, time.min, tzinfo=UTC
                 ),
                 available_at=available_at,
-                ingested_at=available_at,
+                ingested_at=ingested_at,
                 as_of=as_of,
                 evidence_ids=(evidence_id,),
                 summary=summary,
@@ -588,6 +606,7 @@ def _validate_inputs(
     news: Sequence[NewsEvidenceRecord],
     memberships: Sequence[SectorMembership],
     as_of: datetime,
+    temporal_access_mode: TemporalAccessMode,
 ) -> None:
     if (sector_state.sector_id, sector_state.as_of) != (
         macro_state.sector_id,
@@ -598,22 +617,30 @@ def _validate_inputs(
     for asset_id, records in bars_by_asset.items():
         if any(str(item.asset_id) != asset_id for item in records):
             raise SectorRadarInputError("bar mapping contains a different asset")
-        if any(
-            item.trade_date > as_of_date or _as_utc(item.ingestion_ts) > as_of
-            for item in records
-        ):
-            raise SectorRadarInputError("future price input is not allowed")
+        for item in records:
+            if item.trade_date > as_of_date:
+                raise SectorRadarInputError("future price input is not allowed")
+            _require_temporal_input(item, as_of, "price", temporal_access_mode)
     for corporate_record in corporate_events:
-        if _as_utc(corporate_record.event_date) > as_of:
-            raise SectorRadarInputError("future corporate event is not allowed")
+        _require_temporal_input(
+            corporate_record, as_of, "corporate event", temporal_access_mode
+        )
     for news_record in news:
-        if (
-            _as_utc(news_record.created_at) > as_of
-            or _as_utc(news_record.ingestion_ts) > as_of
-        ):
-            raise SectorRadarInputError("future news input is not allowed")
+        _require_temporal_input(news_record, as_of, "news", temporal_access_mode)
     for membership in memberships:
         if membership.sector_id != sector_state.sector_id:
             raise SectorRadarInputError("membership is outside the Radar Sector")
         if not membership.is_effective(as_of_date):
             raise SectorRadarInputError("membership is not effective at as_of")
+
+
+def _require_temporal_input(
+    record: object,
+    as_of: datetime,
+    label: str,
+    mode: TemporalAccessMode,
+) -> None:
+    try:
+        validate_temporal_access(temporal_metadata_for(record), as_of, mode=mode)
+    except (TemporalLeakageError, TemporalMappingError):
+        raise SectorRadarInputError(f"future {label} input is not allowed") from None

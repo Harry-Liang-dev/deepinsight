@@ -24,6 +24,12 @@ from src.schemas.sectors import (
     SectorResearchSnapshot,
     SectorUniverseSnapshot,
 )
+from src.schemas.temporal import (
+    TemporalAccessMode,
+    TemporalLeakageError,
+    validate_temporal_access,
+)
+from src.temporal_mapping import TemporalMappingError, temporal_metadata_for
 
 _VERSION = "sector_macro_features_v1"
 _WINDOW_MONTHS = 36
@@ -60,6 +66,8 @@ class SectorMacroOperator:
         sector_state: SectorResearchSnapshot,
         benchmark_bars: Sequence[EodBarRecord],
         macro_observations: Sequence[MacroObservationRecord],
+        research_as_of: datetime | None = None,
+        temporal_access_mode: TemporalAccessMode = TemporalAccessMode.HISTORICAL_REPLAY,
     ) -> SectorMacroSnapshot:
         """Compute deterministic cycle directions and rolling sensitivities."""
 
@@ -68,6 +76,8 @@ class SectorMacroOperator:
             sector_state=sector_state,
             benchmark_bars=benchmark_bars,
             macro_observations=macro_observations,
+            research_as_of=research_as_of,
+            temporal_access_mode=temporal_access_mode,
         )
         by_series = {
             series_id: tuple(
@@ -357,20 +367,24 @@ def _validate_inputs(
     sector_state: SectorResearchSnapshot,
     benchmark_bars: Sequence[EodBarRecord],
     macro_observations: Sequence[MacroObservationRecord],
+    research_as_of: datetime | None = None,
+    temporal_access_mode: TemporalAccessMode = TemporalAccessMode.HISTORICAL_REPLAY,
 ) -> None:
     if (universe.sector_id, universe.as_of) != (
         sector_state.sector_id,
         sector_state.as_of,
     ):
         raise SectorMacroInputError("Sector universe and state identities differ")
-    cutoff = datetime.combine(universe.as_of, time.max, tzinfo=UTC)
+    cutoff = research_as_of or datetime.combine(universe.as_of, time.max, tzinfo=UTC)
+    if cutoff.date() != universe.as_of:
+        raise SectorMacroInputError("research instant and Sector snapshot date differ")
     benchmark_ids = {str(item) for item in universe.benchmark_ids}
     for bar_record in benchmark_bars:
         if str(bar_record.asset_id) not in benchmark_ids:
             raise SectorMacroInputError("benchmark bar asset is outside Sector mapping")
         if bar_record.trade_date > universe.as_of:
             raise SectorMacroInputError("future benchmark observation is not allowed")
-        _require_known_by(bar_record.ingestion_ts, cutoff, "benchmark")
+        _require_known_by(bar_record, cutoff, "benchmark", temporal_access_mode)
     for macro_record in macro_observations:
         if macro_record.observation_date > universe.as_of:
             raise SectorMacroInputError("future macro observation is not allowed")
@@ -379,16 +393,18 @@ def _validate_inputs(
             and macro_record.realtime_start > universe.as_of
         ):
             raise SectorMacroInputError("future macro vintage is not allowed")
-        _require_known_by(macro_record.ingestion_ts, cutoff, "macro")
+        _require_known_by(macro_record, cutoff, "macro", temporal_access_mode)
 
 
-def _require_known_by(value: datetime, cutoff: datetime, label: str) -> None:
-    observed = (
-        value.replace(tzinfo=UTC)
-        if value.tzinfo is None or value.utcoffset() is None
-        else value.astimezone(UTC)
-    )
-    if observed > cutoff:
+def _require_known_by(
+    record: object,
+    cutoff: datetime,
+    label: str,
+    mode: TemporalAccessMode,
+) -> None:
+    try:
+        validate_temporal_access(temporal_metadata_for(record), cutoff, mode=mode)
+    except (TemporalLeakageError, TemporalMappingError):
         raise SectorMacroInputError(f"future {label} ingestion is not allowed")
 
 

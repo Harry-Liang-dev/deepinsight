@@ -32,10 +32,19 @@ from src.services.embedding import (
     OpenAIEmbeddingService,
     QwenEmbeddingService,
 )
+from src.services.golden_replay import (
+    GoldenReplayError,
+    GoldenReplayInput,
+    GoldenReplayLeakageFixture,
+    GoldenReplayService,
+    validate_leakage_challenges,
+)
 from src.services.llm_gateway import (
     LLMCache,
     LLMCacheError,
     LLMCacheReliabilityPolicy,
+    LLMFailureMetadata,
+    LLMFailureMetadataSink,
     LLMGateway,
     LLMMetadataError,
     LLMRunMetadata,
@@ -66,7 +75,36 @@ from src.services.llm_provider import (
     QwenProvider,
     build_configured_llm_provider,
 )
+from src.services.opportunity import OpportunityCandidateBuilder
+from src.services.provider_transport import (
+    ProviderTransportConfig,
+    resolve_provider_transport_config,
+)
 from src.services.research_data_bundle import ResearchDataBundleService
+from src.services.research_dataset import (
+    ResearchDatasetBuilder,
+    ResearchDatasetBuildError,
+)
+from src.services.research_episode import (
+    ResearchEpisodeBuilder,
+    ResearchEpisodeBuildError,
+)
+from src.services.research_quant_handoff import (
+    ResearchQuantHandoffBuilder,
+    ResearchQuantHandoffBuildError,
+    ResearchQuantHandoffExporter,
+    ResearchQuantHandoffExportError,
+)
+from src.services.research_state import ResearchStateBuilder, ResearchStateBuildError
+from src.services.research_state_transition import (
+    ResearchStateTransitionBuilder,
+    ResearchStateTransitionBuildError,
+)
+from src.services.satellite_alpha import (
+    SatelliteAlphaMapper,
+    build_satellite_alpha_registry_v1,
+    research_state_semantic_support_audit_v1,
+)
 from src.services.sector_ontology import (
     SectorOntologyService,
     SectorOntologyValidationError,
@@ -104,6 +142,10 @@ __all__ = [
     "FakeLLMProvider",
     "FakeEmbeddingService",
     "HashVectorIdAllocator",
+    "GoldenReplayError",
+    "GoldenReplayInput",
+    "GoldenReplayLeakageFixture",
+    "GoldenReplayService",
     "IngestionRequest",
     "IngestionRunError",
     "LLMAuthenticationError",
@@ -112,6 +154,8 @@ __all__ = [
     "LLMCacheReliabilityPolicy",
     "LLMConfigurationError",
     "LLMConnectionError",
+    "LLMFailureMetadata",
+    "LLMFailureMetadataSink",
     "LLMGateway",
     "LLMInvalidRequestError",
     "LLMInvalidJSONError",
@@ -132,12 +176,27 @@ __all__ = [
     "LLMTimeoutError",
     "NormalizationError",
     "NormalizedDocument",
+    "OpportunityCandidateBuilder",
     "OpenAIProvider",
     "OpenAIEmbeddingService",
+    "ProviderTransportConfig",
     "QwenEmbeddingService",
     "QwenProvider",
     "RawTextStore",
     "ResearchDataBundleService",
+    "ResearchDatasetBuilder",
+    "ResearchDatasetBuildError",
+    "ResearchEpisodeBuildError",
+    "ResearchEpisodeBuilder",
+    "ResearchQuantHandoffBuilder",
+    "ResearchQuantHandoffBuildError",
+    "ResearchQuantHandoffExporter",
+    "ResearchQuantHandoffExportError",
+    "ResearchStateBuildError",
+    "ResearchStateBuilder",
+    "ResearchStateTransitionBuildError",
+    "ResearchStateTransitionBuilder",
+    "SatelliteAlphaMapper",
     "SectorOntologyService",
     "SectorOntologyValidationError",
     "SectorRadarMemoryError",
@@ -146,11 +205,15 @@ __all__ = [
     "SectorUniverseService",
     "VectorIdAllocator",
     "build_configured_llm_provider",
+    "build_satellite_alpha_registry_v1",
     "build_sector_ontology_seed_v1",
     "build_sector_ontology_v1",
     "build_current_us_research_memberships_v1",
     "build_us_sector_benchmark_candidates_v1",
     "resolve_validated_benchmark_mappings",
+    "resolve_provider_transport_config",
     "validate_scope_hierarchy",
     "validate_sector_ontology_seed",
+    "validate_leakage_challenges",
+    "research_state_semantic_support_audit_v1",
 ]

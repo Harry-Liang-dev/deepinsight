@@ -1,0 +1,247 @@
+{
+  "acceptance_version": "phase4_research_intelligence_acceptance_v1",
+  "phase": "Phase 4 — Research Intelligence v1",
+  "status": "pass",
+  "generated_at": "2026-09-14T19:55:36Z",
+  "execution_mode": "frozen_artifact_replay",
+  "provider_call_count": 0,
+  "llm_call_count": 0,
+  "architecture": {
+    "research_responsibilities": [
+      "research_intelligence",
+      "opportunity_discovery",
+      "research_state_production",
+      "satellite_alpha_descriptor_production",
+      "research_quant_handoff"
+    ],
+    "quant_responsibilities_not_implemented": [
+      "planetary_alpha",
+      "base_pit_quant_universe",
+      "factor_processing",
+      "ic_rankic",
+      "alpha_model",
+      "selection_top_k",
+      "timing_strategy",
+      "holdings_ranking_or_decay",
+      "regime_or_moe_routing",
+      "portfolio_optimization",
+      "position_sizing",
+      "orders_or_execution"
+    ],
+    "scope_audit": "pass"
+  },
+  "golden_scenarios": {
+    "phase3_aapl": {
+      "scenario_type": "FROZEN_REAL_SOURCE_RUN",
+      "source_run_id": "20260814T100747Z",
+      "research_as_of": "2026-08-14T23:59:59.999999Z",
+      "replay_id": "golden_replay_cebec632adbd5d09f334c4f8",
+      "research_state_id": "research_state_fd95d91fbf0a635951884295",
+      "research_episode_id": "research_episode_67b3b89872e7d4246c37d7da",
+      "research_dataset_sample_id": "research_sample_4b98c4b3f722981a81d51f5d",
+      "opportunity_candidate_id": "opportunity_b67491239848ff9362efbb6a",
+      "research_quant_handoff_bundle_id": "research_quant_handoff_63e79c70e62b74b04847d7b1",
+      "selection_observation_count": 7,
+      "timing_observation_count": 7,
+      "coverage_status": "partial",
+      "sector_status": "NOT_AVAILABLE_AT_SOURCE_RUN",
+      "chain_status": "NOT_AVAILABLE_AT_SOURCE_RUN",
+      "transition_status": "REQUIRES_HISTORY",
+      "memory_status": "not_available_at_source_run",
+      "historical_backfill": false,
+      "status": "pass"
+    },
+    "phase4a_aapl_sector_aware": {
+      "scenario_type": "FROZEN_REAL_QWEN_SOURCE_RUN",
+      "source_run_id": "agent_contract_20260830T135643Z_70442a96",
+      "research_as_of": "2026-08-30T23:59:59.999999Z",
+      "replay_id": "golden_replay_4da67395bcdf1dadaa958e37",
+      "research_state_id": "research_state_3da102d1a1515b82dbe4f9b7",
+      "research_episode_id": "research_episode_d4a588c6bac4fa6fe558cad5",
+      "research_dataset_sample_id": "research_sample_f1b426e6b3eea228bdc61dba",
+      "opportunity_candidate_id": "opportunity_6c4d22c078136d78c13571f5",
+      "opportunity_candidate_status": "insufficient_research",
+      "research_state_transition_id": "research_state_transition_595f56c424f2b811ed332f98",
+      "research_quant_handoff_bundle_id": "research_quant_handoff_0c93b7d56d016f28c086c062",
+      "sector_id": "S03",
+      "chain_ids": [
+        "APPLE_CHAIN"
+      ],
+      "selection_observation_count": 7,
+      "timing_observation_count": 7,
+      "sector_claims_provided": 24,
+      "sector_claims_used": 10,
+      "events_provided": 6,
+      "events_used": 4,
+      "accepted_claim_count": 52,
+      "rejected_claim_count": 5,
+      "memory_status": "empty_valid",
+      "coverage_status": "partial",
+      "historical_backfill": false,
+      "status": "pass"
+    },
+    "selection_multi_asset": {
+      "scenario_type": "CONTRACT_FIXTURE",
+      "research_as_of": "2026-08-30T23:59:59.999999Z",
+      "definition_sets_equal": true,
+      "cross_sectional_alpha_validation": false,
+      "batch_join_keys_unique": true,
+      "external_stdlib_json_read": true,
+      "batch_export_id": "research_quant_export_8785fd0e41f985b954c3c617",
+      "assets": [
+        {
+          "asset_id": "US:AMD",
+          "research_state_id": "research_state_5dceebc96a2f515c0ac70f2a",
+          "opportunity_candidate_id": "opportunity_3a04d0b07d02a79890c71564",
+          "candidate_status": "qualified",
+          "research_quant_handoff_bundle_id": "research_quant_handoff_678959a7b284b5445bdeb540"
+        },
+        {
+          "asset_id": "US:MU",
+          "research_state_id": "research_state_5ffbec39102323aa11489704",
+          "opportunity_candidate_id": "opportunity_9d4c2187649d6fa768f12c07",
+          "candidate_status": "qualified",
+          "research_quant_handoff_bundle_id": "research_quant_handoff_f76f99afe95b8b2469d2226c"
+        },
+        {
+          "asset_id": "US:NVDA",
+          "research_state_id": "research_state_3047a828106c8a971d5dbf7f",
+          "opportunity_candidate_id": "opportunity_839f669e4cc110e272e986c3",
+          "candidate_status": "qualified",
+          "research_quant_handoff_bundle_id": "research_quant_handoff_d1d3f8bac1abf9042dac0945"
+        }
+      ],
+      "status": "pass"
+    },
+    "timing_t1_t2_t3": {
+      "scenario_type": "CONTRACT_FIXTURE",
+      "research_state_ids": [
+        "research_state_628b49d96dcde97a430dd4f5",
+        "research_state_c44474038d459e40e4714afe",
+        "research_state_cece8a9cecfb6c7e7ee4f334"
+      ],
+      "research_state_transition_id": "research_state_transition_a6073fab2c50c8886fb53787",
+      "research_quant_handoff_bundle_id": "research_quant_handoff_a5f4393aef3f81975ca496d7",
+      "timing_observation_count": 7,
+      "expectation_revision_velocity_coverage": "available",
+      "second_order_semantics_present": true,
+      "real_timing_alpha_validation": false,
+      "status": "pass"
+    }
+  },
+  "provenance_challenges": [
+    {
+      "name": "fundamental_numeric",
+      "path": [
+        "research_quant_handoff_63e79c70e62b74b04847d7b1",
+        "research_state_fd95d91fbf0a635951884295",
+        "feature:fundamental_state:fundamentals.book_value_per_share",
+        "ev_2d2ccf555eab159f58a17321",
+        "financial_modeling_prep"
+      ],
+      "status": "pass"
+    },
+    {
+      "name": "sector_radar_macro",
+      "path": [
+        "research_quant_handoff_0c93b7d56d016f28c086c062",
+        "satellite_alpha_71155a930d4180a3276c255b",
+        "sector:S03:claim:4",
+        "event:sector_anomaly_771da1bb2bc3292eb404c399",
+        "sector_anomaly_radar"
+      ],
+      "status": "pass"
+    },
+    {
+      "name": "opportunity_candidate",
+      "path": [
+        "research_quant_handoff_0c93b7d56d016f28c086c062",
+        "opportunity_6c4d22c078136d78c13571f5",
+        "satellite_alpha_1edd33203a450327cc4bf8a5",
+        "research_state_3da102d1a1515b82dbe4f9b7"
+      ],
+      "status": "pass"
+    },
+    {
+      "name": "timing_transition",
+      "path": [
+        "research_quant_handoff_a5f4393aef3f81975ca496d7",
+        "research_state_transition_a6073fab2c50c8886fb53787",
+        "research_state_c44474038d459e40e4714afe",
+        "research_state_cece8a9cecfb6c7e7ee4f334",
+        "claim_t3_satellite.expectation_revision.value",
+        "evidence_t3_satellite.expectation_revision.value"
+      ],
+      "status": "pass",
+      "fixture_type": "CONTRACT_FIXTURE"
+    },
+    {
+      "name": "learning_memory",
+      "status": "contract_fixture_pass_real_history_unavailable"
+    }
+  ],
+  "gate_results": {
+    "phase3_research_completeness": "pass",
+    "phase4a_sector_intelligence": "pass",
+    "phase4b_structured_research": "pass",
+    "day44_architecture_reset": "pass",
+    "day45_satellite_alpha_ontology": "pass",
+    "day46_selection_satellite": "pass",
+    "day47_timing_satellite": "pass",
+    "day48_research_quant_handoff": "pass",
+    "golden_replay": "pass",
+    "determinism": "pass",
+    "unified_temporal_leakage": "pass",
+    "provenance": "pass",
+    "external_quant_consumer": "pass",
+    "no_live_default": "pass",
+    "no_quant_or_trading_scope_leakage": "pass"
+  },
+  "schema_versions": {
+    "temporal_contract": "temporal_contract_v1",
+    "research_state": "research_state_snapshot_v1",
+    "research_state_feature": "research_state_feature_v1",
+    "research_episode": "research_episode_v1",
+    "learning_memory": "learning_memory_v1",
+    "research_attribution": "research_attribution_v1",
+    "research_dataset_sample": "research_dataset_sample_v1",
+    "satellite_alpha_observation": "satellite_alpha_observation_v1",
+    "satellite_alpha_definition": "satellite_alpha_definition_v1",
+    "opportunity_candidate": "opportunity_candidate_v1",
+    "research_state_transition": "research_state_transition_v1",
+    "research_quant_handoff": "research_quant_handoff_bundle_v1",
+    "research_quant_handoff_build": "research_quant_handoff_build_v1"
+  },
+  "tests": {
+    "phase_regression": "343 passed",
+    "full_pytest": "650 passed, 5 deselected",
+    "leakage": "8 passed, 647 deselected",
+    "ruff": "pass",
+    "mypy": "pass: 329 source files",
+    "black": "pass: 329 files unchanged",
+    "git_diff_check": "pass",
+    "default_network_calls": 0,
+    "explicit_live_tests_deselected": 5
+  },
+  "known_limitations": [
+    "Satellite Alpha has not undergone Quant validation.",
+    "Some Selection families retain PARTIAL real structured-semantic coverage.",
+    "Continuous real Timing ResearchState history remains limited.",
+    "PEER_GROUP comparison remains UNSUPPORTED.",
+    "REAL_HISTORICAL_MEMORY_REPLAY = NOT_YET_AVAILABLE.",
+    "Memory predictive usefulness = NOT_VALIDATED.",
+    "Multi-asset Selection validation remains primarily a deterministic contract fixture.",
+    "The Timing fixture is not real timing-alpha validation.",
+    "ResearchQuantHandoff readiness does not mean deepinsight-quant exists.",
+    "This repository contains no Quant, Portfolio, or Execution implementation."
+  ],
+  "ready_flags": {
+    "day49_research_intelligence_gate": true,
+    "phase4_research_intelligence": true,
+    "research_system_v1_ready_for_freeze": true,
+    "research_quant_handoff_v1": true,
+    "ready_for_deepinsight_quant": true,
+    "tag_ready": false,
+    "tag_blocker": "The worktree contains uncommitted Phase 4 source, test, documentation, and generated artifact changes; tagging this commit would not freeze the accepted tree."
+  }
+}

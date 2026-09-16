@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import json
 import re
+from datetime import UTC, datetime, time
 from pathlib import Path
 
 import pytest
 from httpx import ASGITransport, AsyncClient
 
+from apps.api import offline as offline_app
 from apps.api.offline import (
     OFFLINE_ASSET_ID,
     OFFLINE_EMBEDDING_DIMENSION,
@@ -27,9 +29,68 @@ from src.repositories import (
     MemoryItemRepository,
     ReportRepository,
 )
+from src.schemas.sector_context import SectorContextBundle
 from src.services import LLMTimeoutError
+from src.services.sector_context import FrozenSectorContextResolver
+from tests.unit.services.test_sector_context import _aapl_bundle
 
 pytestmark = pytest.mark.integration
+
+
+async def test_phase4_sector_chain_and_radar_surface_through_report(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The formal workflow must render a used Sector Claim, not only carry it."""
+
+    original = _aapl_bundle()
+    research_as_of = datetime.combine(
+        original.research_as_of.date(),
+        time.max,
+        tzinfo=UTC,
+    )
+    raw = original.model_dump(mode="json")
+    raw["research_as_of"] = research_as_of
+    claims = raw["accepted_claims"]
+    assert isinstance(claims, list)
+    anomaly = claims[-1]
+    assert isinstance(anomaly, dict)
+    surfaced_text = (
+        "The Semiconductors & AI Compute sector's NVIDIA AI Infrastructure "
+        "chain has a radar event whose asset implication remains conditional."
+    )
+    anomaly["claim_text"] = surfaced_text
+    sector_context = SectorContextBundle.model_validate(raw)
+    monkeypatch.setattr(
+        offline_app,
+        "OFFLINE_QUERY_TEXT",
+        f"Research evidence for US:AAPL through {research_as_of.date().isoformat()}",
+    )
+    application = create_offline_application(
+        tmp_path,
+        sector_context_resolver=FrozenSectorContextResolver(sector_context),
+    )
+    request = offline_report_request().model_copy(
+        update={"report_date": research_as_of.date()}
+    )
+    transport = ASGITransport(app=application)
+
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        submitted = await client.post(
+            "/v1/reports/generate",
+            json=request.model_dump(mode="json"),
+        )
+        job_id = submitted.json()["job_id"]
+        task = await client.get(f"/v1/reports/jobs/{job_id}")
+        report = await client.get(f"/v1/reports/{task.json()['report_id']}")
+
+    assert task.json()["status"] == TaskStatus.COMPLETED.value
+    payload = report.json()
+    assert surfaced_text in payload["report_markdown"]
+    assert any(
+        item.get("provider") == "sector_anomaly_radar"
+        for item in payload["source_trace"]
+    )
 
 
 async def test_offline_api_runs_the_complete_research_workflow(

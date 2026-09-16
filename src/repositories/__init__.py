@@ -21,10 +21,12 @@ from src.repositories.records import (
     LLMCacheRecord,
     MemoryItemRecord,
     ReportJobRecord,
+    ResearchDatasetSampleRecord,
     SourceRegistryRecord,
 )
 from src.repositories.report_jobs import ReportJobRepository
 from src.repositories.reports import ReportRepository
+from src.repositories.research_dataset import ResearchDatasetRepository
 from src.repositories.runs import AgentRunRepository, IngestionJobRepository
 from src.repositories.schema import CORE_INDEXES, CORE_TABLES
 from src.repositories.sectors import SectorOntologyRepository
@@ -62,6 +64,8 @@ __all__ = [
     "ReportRepository",
     "ReportJobRecord",
     "ReportJobRepository",
+    "ResearchDatasetRepository",
+    "ResearchDatasetSampleRecord",
     "RepositoryError",
     "TransientRepositoryError",
     "SourceRegistryRecord",

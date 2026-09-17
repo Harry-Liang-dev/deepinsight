@@ -1,0 +1,181 @@
+{
+  "fixture_name": "research_quant_handoff_c325aedcb141007a2bda4bd0.json",
+  "fixture_role": "RESEARCH_QUANT_HANDOFF_GOLDEN_CONTRACT_FIXTURE",
+  "fixture_semantics": "EXISTING_PHASE4_ACCEPTED_RUN_ORIGINAL_PAYLOAD_RELEASE_SUPPLEMENT",
+  "created_for": "DeepInsight-Quant Q0 contract binding",
+  "upstream_product_tag": "phase4-research-intelligence-v1",
+  "upstream_product_commit": "be7590bd6f07c120350bbc122f878009ebf7fb6e",
+  "upstream_tag_object": "3fd7f1cd84b186270a6e7f1376aaab13233dffa9",
+  "source_original_local_path": "data/live_acceptance/phase4_prefreeze/phase4_release_20260916T061759Z_aapl/asset_live_retry2/phase4c_v7/research_quant_handoff.json",
+  "source_acceptance_run_id": "phase4_release_20260916T061759Z_aapl",
+  "source_run_id": "asset_live_retry2",
+  "handoff_id": "research_quant_handoff_c325aedcb141007a2bda4bd0",
+  "asset_id": "US:AAPL",
+  "research_as_of": "2026-09-16T06:17:59.936450Z",
+  "serialization": "JSON_UTF8",
+  "content_type": "application/json",
+  "exact_byte_preserved": "YES",
+  "sha256": "4d834d4df77c0911b737916f65b01e9c6a05ed92f4135faf61d7cdfc90c34f78",
+  "byte_size": 49690,
+  "schema_version": "research_quant_handoff_bundle_v1",
+  "versions": {
+    "candidate_version": "opportunity_candidate_v1",
+    "handoff_build_version": "research_quant_handoff_build_v1",
+    "research_episode_schema_version": "research_episode_v1",
+    "research_state_schema_version": "research_state_snapshot_v1",
+    "research_state_version": "research_state_v1",
+    "satellite_definition_version": "satellite_alpha_definition_v1",
+    "satellite_observation_schema_version": "satellite_alpha_observation_v1",
+    "transition_version": "research_state_transition_v1"
+  },
+  "identity_crosscheck": {
+    "research_state_id": "research_state_a8b18be86d3e5add55cde272",
+    "research_episode_id": "research_episode_b65bf2ab2fed387908e6307c",
+    "opportunity_candidate_id": "opportunity_af4bd9f287b760bcf0324625",
+    "opportunity_candidate_status": "qualified",
+    "research_state_transition_id": "research_state_transition_19625e191276555b1d5f0cdd",
+    "selection_observation_count": 7,
+    "timing_observation_count": 7,
+    "coverage_status": "partial",
+    "sector_id": "S03",
+    "chain_ids": [
+      "APPLE_CHAIN"
+    ]
+  },
+  "committed_release_crosscheck_refs": [
+    "phase4-research-intelligence-v1:docs/MODULE_STATUS.md#phase-4-final-aapl-live-acceptance",
+    "phase4-research-intelligence-v1:docs/releases/PHASE4_RESEARCH_INTELLIGENCE_V1.md",
+    "phase4-research-intelligence-v1:data/golden_replay/day49/acceptance_summary.json",
+    "phase4-research-intelligence-v1:src/schemas/research_quant_handoff.py",
+    "phase4-research-intelligence-v1:tests/integration/services/test_research_quant_handoff_external_consumer.py"
+  ],
+  "authenticity_check_summary": {
+    "result": "PASS",
+    "selection_rationale": "The frozen release records this exact handoff, State, Episode, Candidate, Transition, run, and cutoff as the final accepted AAPL live identities. The earlier phase4c candidate has different identities and is not the accepted final output.",
+    "json_and_jsonl_exact_bytes_equal": "YES",
+    "candidate_inventory": [
+      {
+        "path": "data/live_acceptance/phase4_prefreeze/phase4_release_20260916T061759Z_aapl/asset_live_retry2/phase4c/research_quant_handoff.json",
+        "file_type": "JSON",
+        "byte_size": 48279,
+        "mtime_diagnostic": "2026-09-16T15:43:15.137266458+08:00",
+        "sha256": "b689a12433c007982e650493e1cfd73531bdd2440da8573bc9072ce99fae4d87",
+        "serialization": "JSON_UTF8",
+        "ignored": true,
+        "tracked": false,
+        "handoff_id": "research_quant_handoff_c8278af406085d4576cbf21c",
+        "research_state_id": "research_state_315d9b3a40e3bb622aef7593",
+        "source_run_id": "asset_live_retry2",
+        "asset_id": "US:AAPL",
+        "research_as_of": "2026-09-16T06:17:59.936450Z",
+        "schema_version": "research_quant_handoff_bundle_v1",
+        "source_provenance_counts": {
+          "source_artifact_ids": 21,
+          "source_claim_ids": 59,
+          "source_event_ids": 4,
+          "source_evidence_ids": 105,
+          "source_sector_claim_ids": 10
+        },
+        "selected": false
+      },
+      {
+        "path": "data/live_acceptance/phase4_prefreeze/phase4_release_20260916T061759Z_aapl/asset_live_retry2/phase4c/batch/research_quant_export_f6eaa930c8a0ef41d68b0046.jsonl",
+        "file_type": "JSONL",
+        "byte_size": 48279,
+        "mtime_diagnostic": "2026-09-16T15:43:15.137584886+08:00",
+        "sha256": "b689a12433c007982e650493e1cfd73531bdd2440da8573bc9072ce99fae4d87",
+        "serialization": "SINGLE_RECORD_JSONL_UTF8",
+        "ignored": true,
+        "tracked": false,
+        "handoff_id": "research_quant_handoff_c8278af406085d4576cbf21c",
+        "research_state_id": "research_state_315d9b3a40e3bb622aef7593",
+        "source_run_id": "asset_live_retry2",
+        "asset_id": "US:AAPL",
+        "research_as_of": "2026-09-16T06:17:59.936450Z",
+        "schema_version": "research_quant_handoff_bundle_v1",
+        "source_provenance_counts": {
+          "source_artifact_ids": 21,
+          "source_claim_ids": 59,
+          "source_event_ids": 4,
+          "source_evidence_ids": 105,
+          "source_sector_claim_ids": 10
+        },
+        "selected": false
+      },
+      {
+        "path": "data/live_acceptance/phase4_prefreeze/phase4_release_20260916T061759Z_aapl/asset_live_retry2/phase4c_v7/research_quant_handoff.json",
+        "file_type": "JSON",
+        "byte_size": 49690,
+        "mtime_diagnostic": "2026-09-16T16:33:58.210153797+08:00",
+        "sha256": "4d834d4df77c0911b737916f65b01e9c6a05ed92f4135faf61d7cdfc90c34f78",
+        "serialization": "JSON_UTF8",
+        "ignored": true,
+        "tracked": false,
+        "handoff_id": "research_quant_handoff_c325aedcb141007a2bda4bd0",
+        "research_state_id": "research_state_a8b18be86d3e5add55cde272",
+        "source_run_id": "asset_live_retry2",
+        "asset_id": "US:AAPL",
+        "research_as_of": "2026-09-16T06:17:59.936450Z",
+        "schema_version": "research_quant_handoff_bundle_v1",
+        "source_provenance_counts": {
+          "source_artifact_ids": 21,
+          "source_claim_ids": 65,
+          "source_event_ids": 4,
+          "source_evidence_ids": 105,
+          "source_sector_claim_ids": 10
+        },
+        "selected": true
+      },
+      {
+        "path": "data/live_acceptance/phase4_prefreeze/phase4_release_20260916T061759Z_aapl/asset_live_retry2/phase4c_v7/research_quant_export_100b67d182d82f26f0e4cd09.jsonl",
+        "file_type": "JSONL",
+        "byte_size": 49690,
+        "mtime_diagnostic": "2026-09-16T16:33:58.210466509+08:00",
+        "sha256": "4d834d4df77c0911b737916f65b01e9c6a05ed92f4135faf61d7cdfc90c34f78",
+        "serialization": "SINGLE_RECORD_JSONL_UTF8",
+        "ignored": true,
+        "tracked": false,
+        "handoff_id": "research_quant_handoff_c325aedcb141007a2bda4bd0",
+        "research_state_id": "research_state_a8b18be86d3e5add55cde272",
+        "source_run_id": "asset_live_retry2",
+        "asset_id": "US:AAPL",
+        "research_as_of": "2026-09-16T06:17:59.936450Z",
+        "schema_version": "research_quant_handoff_bundle_v1",
+        "source_provenance_counts": {
+          "source_artifact_ids": 21,
+          "source_claim_ids": 65,
+          "source_event_ids": 4,
+          "source_evidence_ids": 105,
+          "source_sector_claim_ids": 10
+        },
+        "selected": false,
+        "note": "Exact-byte duplicate of selected JSON payload"
+      }
+    ]
+  },
+  "contract_validation": {
+    "real_handoff_payload_schema_match": "PASS",
+    "missing_status_encoding_match": "PASS",
+    "selection_satellite_families_match": "PASS",
+    "timing_descriptor_structure_match": "PASS",
+    "provenance_chain_present": "YES",
+    "payload_self_contained_for_consumer_test": "YES"
+  },
+  "provenance_counts": {
+    "source_artifact_ids": 21,
+    "source_claim_ids": 65,
+    "source_event_ids": 4,
+    "source_evidence_ids": 105,
+    "source_sector_claim_ids": 10
+  },
+  "secret_scan_result": "PASS",
+  "release_contamination": {
+    "production_code_changed": "NO",
+    "prompt_changed": "NO",
+    "schema_changed": "NO",
+    "provider_code_changed": "NO",
+    "live_artifact_bulk_included": "NO",
+    "secret_included": "NO"
+  },
+  "proposed_supplement_tag": "phase4-research-intelligence-v1-handoff-fixtures-v1"
+}

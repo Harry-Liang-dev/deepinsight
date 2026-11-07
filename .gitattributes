@@ -1,0 +1,2 @@
+# Preserve independently issued Prompt bytes, including intentional trailing space.
+research_eval/prompts/*.txt -whitespace

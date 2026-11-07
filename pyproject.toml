@@ -16,6 +16,7 @@ dependencies = [
     "httpx[socks]>=0.27,<1",
     "mcp>=1.28,<2",
     "numpy>=2,<3",
+    "jsonschema>=4,<5",
     "openai>=1,<3",
     "pandas>=2,<4",
     "pydantic>=2,<3",
@@ -32,6 +33,7 @@ dependencies = [
 dev = [
     "black>=24,<27",
     "mypy>=1.15,<2",
+    "types-jsonschema>=4,<5",
     "pytest>=8,<10",
     "pytest-asyncio>=0.24,<2",
     "ruff>=0.9,<1",
@@ -39,14 +41,16 @@ dev = [
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["apps*", "src*"]
+include = ["apps*", "src*", "research_eval*", "financial_benchmark*", "evidence_v2*", "h2_pilot*", "tools*"]
 exclude = ["tests*"]
 
 [tool.black]
+force-exclude = "/artifacts/"
 line-length = 88
 target-version = ["py312"]
 
 [tool.ruff]
+extend-exclude = ["artifacts"]
 line-length = 88
 target-version = "py312"
 
@@ -54,6 +58,7 @@ target-version = "py312"
 select = ["E", "F", "I", "UP"]
 
 [tool.mypy]
+exclude = "^(artifacts|data)/"
 python_version = "3.12"
 files = ["apps", "src", "tests"]
 strict = true
@@ -72,3 +77,15 @@ markers = [
     "network: marks tests that require explicit network access",
     "live: marks opt-in tests that call real external services",
 ]
+
+[tool.setuptools.package-data]
+research_eval = ["prompts/*.txt", "prompts/*.json"]
+
+[tool.ruff.lint.per-file-ignores]
+# Preserve W5 independently pinned scorer bytes (format-only long lines).
+"financial_benchmark/*.py" = ["E501"]
+
+[[tool.mypy.overrides]]
+# Immutable predecessor module bytes retain historical import-stub comments.
+module = ["tools.g107_design", "tools.g108_p1_view", "h2_pilot.verifier", "tools.g113_r6_contract", "tools.g113_r7_contract", "tools.g113_r8_contract", "tools.evidence_v2_ab_results"]
+warn_unused_ignores = false

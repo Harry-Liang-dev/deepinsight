@@ -636,6 +636,8 @@ def _macro_values(snapshot: SectorMacroSnapshot) -> tuple[object, ...]:
 
 
 def _anomaly_values(event: SectorAnomalyEvent) -> tuple[object, ...]:
+    if event.sector_id is None:
+        raise ValueError("COMPANY_ONLY_EVENT_NOT_SECTOR_REGISTERED")
     return (
         event.event_id,
         event.event_type.value,

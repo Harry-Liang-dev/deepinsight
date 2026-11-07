@@ -567,7 +567,7 @@ class SectorAnomalyEvent(DomainModel):
 
     event_id: str = Field(pattern=r"^sector_anomaly_[0-9a-f]{24}$")
     event_type: SectorAnomalyType
-    sector_id: SectorId
+    sector_id: SectorId | None
     chain_ids: tuple[str, ...] = ()
     source_asset_ids: tuple[AssetId, ...] = ()
     affected_asset_ids: tuple[AssetId, ...] = ()
@@ -611,6 +611,19 @@ class SectorAnomalyEvent(DomainModel):
     def validate_event_time_and_status(self) -> Self:
         """Enforce availability cutoffs and propagation semantics."""
 
+        if self.sector_id is None and (
+            self.chain_ids
+            or not self.source_asset_ids
+            or self.event_type
+            not in {
+                SectorAnomalyType.PRICE_VOLUME,
+                SectorAnomalyType.NEWS_EVENT,
+                SectorAnomalyType.EARNINGS,
+            }
+            or {str(a) for a in self.affected_asset_ids}
+            - {str(a) for a in self.source_asset_ids}
+        ):
+            raise ValueError("UNVERIFIED_SECTOR_CANNOT_PROPAGATE")
         timestamps = (
             self.event_time,
             self.published_at,

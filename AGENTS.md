@@ -1,5 +1,67 @@
 # DeepInsight Engineering Guide
 
+## Research vNext foundation (G84, opt-in)
+
+These additive rules preserve all provenance, authorization, budget, audit,
+scientific and historical protections below. The existing eight-Agent production
+path remains unchanged until separately integrated; this foundation does not
+certify a nine-role end-to-end implementation.
+
+- Sector Radar is the primary opportunity discovery entry: daily scanning,
+  event-driven research and manual selection. P0 is equity events, genuinely
+  sourced fund flows and relative value; P1 is independently tested medium/low
+  frequency trends; P2 commodity spreads remain a reserve outside the current
+  equity execution path. Radar emits selectable Opportunity Cards, never trades.
+  New research requires human selection or an explicitly preauthorized Mandate.
+- Preserve Fundamental, Technical, Sentiment and News/Event Analysts. The vNext
+  dependency order is four Analysts → Bull/Bear → Risk → Trader → Research
+  Manager. Trader is a logical research role producing non-executable
+  TradeProposals, not orders, positions or system target prices. Research Manager
+  reviews the proposal at the end, not between Analysts and Bull/Bear. Review
+  approval is not trading authorization. Coordinator owns scheduling,
+  dependencies, collaboration and State, not the roles' professional judgment.
+- Preserve L0 Market Snapshot; L1 Macro/Sector Event; L2 Asset Event; L3
+  Research/Debate/Risk/Decision; L4 Regime/Strategy Performance. Preserve
+  orthogonal GLOBAL, MACRO, SECTOR, INDUSTRY_CHAIN, ASSET and RESEARCH_EPISODE
+  scopes and Episodic, Semantic and Performance Learning Memory purposes.
+  Memory is continuing research infrastructure, never a new fact authority.
+  Agents read and propose append-only updates through MemoryService and checked
+  permissions. They cannot directly mutate Raw Evidence, another Agent's
+  historical output, Quant Factors or frozen research results.
+- Detect actual data changes before calculating research impact. No material
+  change permits reuse only when dependencies, freshness, sources and strategy
+  versions still qualify. Daily prices do not automatically rerun nine roles.
+  Execute only affected specialists and their downstream dependencies. State
+  updates create new Revisions; prior States and decisions remain immutable.
+- Preserve DuckDB, FAISS, Evidence, PIT, Claim Validation, ResearchState,
+  ResearchEpisode and ResearchQuantHandoffBundle. FAISS similarity is not fact
+  verification. Distinguish Fact, Inference, Hypothesis, ResearchQuestion,
+  TradeProposal and Outcome. Future outcomes cannot enter historical research.
+  OHLCV cannot fabricate fund flows. Research review cannot bypass downstream
+  Quant risk, cost or portfolio gates; their implementation remains outside this
+  repository. Preserve G65–G83 immutable experiments and prospective services.
+- G84 shared interfaces and permission/impact rules are specified in
+  `docs/G84_RESEARCH_VNEXT_MEMORY.md` and `contracts/g84-memory-v1.json`.
+  They are opt-in development contracts; neither Memory proposals nor Manager
+  review grant new production Claim, State or Quant admission authority.
+
+## Independent review provenance (mandatory)
+
+Window1 may delegate coding, unit_testing, debugging, scientific_precheck and
+candidate_packaging to internal subagents. All such results are INTERNAL_PRECHECK,
+never W4_INDEPENDENT_PASS. Do not use W4, Window4, independent_w4 or confusingly
+similar names for W1-created subagents. Do not launch a separate Codex CLI to enter
+the W4 directory and issue formal independent acceptance on W1's behalf.
+
+Formal Window4 is independently started by the user in
+`/home/harry/deepinsight-rv2-w4`. Verify the separate user-directed session,
+review scope, exact source/candidate/manifest, receipt bytes and chronology;
+an issuer string, directory name or PASS field alone is not independent authority.
+W1 must not write, replace or backdate W4 receipts. Preserve mistaken historical
+records and correct their authority with an append-only provenance addendum.
+An internal precheck never authorizes formal publication. When the user directs
+a post-review reissue, bind the genuine receipt and deduplicate identical facts.
+
 All coding agents must read this file before changing the repository.
 
 ## Project boundary
@@ -213,3 +275,21 @@ IC/RankIC, ranking, Top-K, timing decisions, Holdings, Regime/MoE routing,
 portfolio construction, orders, and execution belong to a future independent
 Quant system. Do not activate reserved interfaces for those capabilities in
 this repository.
+
+## Public Main integration — 2026-11-07
+
+This release is INTERNAL_RESEARCH_ENGINEERING only. The default development model
+is qwen3.8-flash, resolved by trusted configuration; explicit model mismatch fails
+closed. A code release is not a live Provider grant or scientific admission.
+Current receiver/runtime changes require new scoped W4/W5 review before LIVE.
+Keep private datasets, source entities, Owner/Grant installations, original HTTP,
+SDK requests, model responses, independent receipts and archive refs out of public
+Git history. Publish source and synthetic tests only. Never globally replace
+historical model/configuration identities.
+
+Use `python -m research_eval --help` for the offline CLI. The public demo uses
+SDK MockTransport only. External W3/W5 data roots are explicit operator settings;
+permissions cannot come from Prompt metadata. A fresh clone requires no historical
+worker directories for the public smoke tests documented in
+`docs/RESEARCH_EVAL_PLATFORM.md`. Private integration tests retain all assertions
+and run only with separately licensed historical archives.

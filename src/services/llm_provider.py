@@ -747,6 +747,7 @@ class QwenProvider(OpenAIProvider):
         *,
         client: OpenAI | _OpenAIClient | None = None,
         sleeper: Callable[[float], None] = sleep,
+        native_schema_probe: bool = False,
     ) -> None:
         """Initialize Qwen with its OpenAI-compatible endpoint.
 
@@ -756,6 +757,7 @@ class QwenProvider(OpenAIProvider):
             sleeper: Injectable bounded-retry delay function.
         """
 
+        self._native_schema_probe = native_schema_probe
         secret = settings.api_key
         if secret is None or not secret.get_secret_value().strip():
             raise CredentialNotConfigured(
@@ -764,7 +766,14 @@ class QwenProvider(OpenAIProvider):
             )
         super().__init__(
             settings,
-            request_extra_body={"enable_thinking": settings.enable_thinking},
+            request_extra_body={
+                "enable_thinking": settings.enable_thinking,
+                **(
+                    {"max_output_tokens": settings.max_output_tokens}
+                    if settings.max_output_tokens is not None
+                    else {}
+                ),
+            },
             base_url=settings.base_url,
             provider_label="Qwen",
             client=client,
@@ -792,14 +801,26 @@ class QwenProvider(OpenAIProvider):
     ) -> Response:
         """Create Qwen output without leaking unsupported OpenAI text options."""
 
-        del response_schema, schema_name
+        body = deepcopy(self._request_extra_body or {})
+        if self._native_schema_probe:
+            if response_schema is None:
+                raise ValueError("NATIVE_SCHEMA_PROBE_REQUIRES_SCHEMA")
+            body["text"] = {
+                "format": {
+                    "type": "json_schema",
+                    "name": "minimal_semantic_proposal",
+                    "strict": True,
+                    "schema": response_schema,
+                }
+            }
+        del schema_name
         return self._request_client().responses.create(
             model=model,
             instructions=system_prompt,
             input=encoded_input,
             store=self._settings.store_remote,
             timeout=float(self._settings.timeout_seconds),
-            extra_body=self._request_extra_body,
+            extra_body=body,
         )
 
 
@@ -819,12 +840,16 @@ def build_configured_llm_provider(
     settings: AppSettings,
     *,
     client: OpenAI | _OpenAIClient | None = None,
+    expected_model: str | None = None,
+    allowed_models: frozenset[str] | None = None,
 ) -> ConfiguredLLMProvider:
     """Build the configured live LLM provider at the composition boundary.
 
     Args:
         settings: Unified application settings.
         client: Optional compatible SDK client for offline tests.
+        expected_model: Exact new experiment model, checked before client creation.
+        allowed_models: Optional frozen experiment model population, not account access.
 
     Returns:
         Selected provider with model and diagnostic metadata.
@@ -832,15 +857,27 @@ def build_configured_llm_provider(
 
     if settings.llm.provider is LLMProviderName.QWEN:
         qwen = settings.qwen
+        selected = qwen.resolve_model(
+            expected_model=expected_model, allowed_models=allowed_models
+        )
+        if allowed_models is not None and qwen.model_fast not in allowed_models:
+            raise LLMConfigurationError("Active fast model is outside required scope")
         return ConfiguredLLMProvider(
             provider=QwenProvider(qwen, client=client),
             provider_name=LLMProviderName.QWEN,
-            model_default=qwen.model_default,
+            model_default=selected,
             model_fast=qwen.model_fast,
             endpoint=f"{qwen.base_url.rstrip('/')}/responses",
             settings=qwen,
         )
     openai_settings = settings.openai
+    if expected_model is not None and openai_settings.model_default != expected_model:
+        raise LLMConfigurationError("Active provider model differs from required model")
+    if (
+        allowed_models is not None
+        and openai_settings.model_default not in allowed_models
+    ):
+        raise LLMConfigurationError("Active provider model is outside required scope")
     return ConfiguredLLMProvider(
         provider=OpenAIProvider(openai_settings, client=client),
         provider_name=LLMProviderName.OPENAI,

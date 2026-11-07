@@ -5,11 +5,12 @@ from __future__ import annotations
 import re
 from collections.abc import Iterable
 from dataclasses import dataclass
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal, DecimalException, DefaultContext, localcontext
 from enum import StrEnum
 from typing import Protocol
 
 from src.agents.evidence import numeric_literals
+from src.agents.numeric_tokens import decimal_value, valid_numeric_literal
 
 NUMERIC_GROUNDING_EQUIVALENCE_VERSION = "numeric_grounding_equivalence_v1"
 _MINIMUM_ROUNDED_SIGNIFICANT_DIGITS = 6
@@ -65,9 +66,21 @@ class NumericGroundingResult:
     ungrounded_literals: tuple[str, ...]
 
 
+class NativeNumericBinding(Protocol):
+    """Trusted composition dependency; never supplied by model JSON."""
+
+    def ground(
+        self, claim_text: str, entries: tuple[NumericEvidenceEntry, ...]
+    ) -> tuple[NumericGroundingMatch, ...]:
+        """Reverify exact native provenance and return bound numeric matches."""
+        ...
+
+
 def validate_numeric_grounding(
     claim_text: str,
     evidence_entries: Iterable[NumericEvidenceEntry],
+    *,
+    native_binding: NativeNumericBinding | None = None,
 ) -> NumericGroundingResult:
     """Validate Claim numerals against only their bound Evidence entries."""
 
@@ -86,9 +99,27 @@ def validate_numeric_grounding(
     literals = tuple(
         dict.fromkeys((*numeric_literals(claim_text), *unknown_identifier_digits))
     )
+    if native_binding is not None:
+        try:
+            native_matches = native_binding.ground(claim_text, entries)
+            if tuple(m.literal for m in native_matches) != literals:
+                raise ValueError("NATIVE_LITERAL_POPULATION")
+            return NumericGroundingResult(
+                literals, tuple(identifier_components), native_matches, ()
+            )
+        except (ValueError, KeyError):
+            return NumericGroundingResult(
+                literals,
+                tuple(identifier_components),
+                (),
+                literals or ("NATIVE_CONTEXT_REJECTED",),
+            )
     matches: list[NumericGroundingMatch] = []
     ungrounded: list[str] = []
     for literal in literals:
+        if not valid_numeric_literal(literal):
+            ungrounded.append(literal)
+            continue
         window_units = _claim_window_units(claim_text, literal)
         grounding_match = (
             _match_window(literal, window_units, entries)
@@ -168,6 +199,8 @@ def _match_numeric_value(
 ) -> NumericGroundingMatch | None:
     for entry in entries:
         for source_token in entry.numeric_tokens:
+            if not valid_numeric_literal(source_token):
+                continue
             if literal == source_token or _decimal_equal(literal, source_token):
                 return NumericGroundingMatch(
                     literal=literal,
@@ -188,10 +221,8 @@ def _match_numeric_value(
 def _decimal_equal(left: str, right: str) -> bool:
     if left.endswith("%") != right.endswith("%"):
         return False
-    try:
-        return Decimal(left.removesuffix("%")) == Decimal(right.removesuffix("%"))
-    except InvalidOperation:
-        return False
+    a, b = decimal_value(left), decimal_value(right)
+    return a is not None and b is not None and a == b
 
 
 def _deterministic_rounding_equal(rendered: str, source: str) -> bool:
@@ -201,15 +232,13 @@ def _deterministic_rounding_equal(rendered: str, source: str) -> bool:
     source_value = source.removesuffix("%")
     if "." not in rendered_value:
         return False
-    significant_digits = len(rendered_value.lstrip("+-0").replace(".", ""))
+    mantissa = re.split("[eE]", rendered_value)[0]
+    significant_digits = len(mantissa.lstrip("+-0").replace(".", ""))
     if significant_digits < _MINIMUM_ROUNDED_SIGNIFICANT_DIGITS:
         return False
-    try:
-        rendered_decimal = Decimal(rendered_value)
-        source_decimal = Decimal(source_value)
-    except InvalidOperation:
-        return False
-    if not source_decimal.is_finite() or not rendered_decimal.is_finite():
+    rendered_decimal = decimal_value(rendered_value)
+    source_decimal = decimal_value(source_value)
+    if rendered_decimal is None or source_decimal is None:
         return False
     source_exponent = source_decimal.as_tuple().exponent
     rendered_exponent = rendered_decimal.as_tuple().exponent
@@ -217,5 +246,14 @@ def _deterministic_rounding_equal(rendered: str, source: str) -> bool:
         return False
     if source_exponent >= rendered_exponent:
         return False
-    quantum = Decimal(1).scaleb(rendered_exponent)
-    return source_decimal.quantize(quantum) == rendered_decimal
+    try:
+        with localcontext(DefaultContext) as context:
+            context.prec = max(
+                context.prec,
+                len(source_decimal.as_tuple().digits),
+                len(rendered_decimal.as_tuple().digits),
+            )
+            quantum = Decimal((0, (1,), rendered_exponent))
+            return source_decimal.quantize(quantum) == rendered_decimal
+    except DecimalException:
+        return False

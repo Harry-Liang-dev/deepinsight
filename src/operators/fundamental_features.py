@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import cast
 
 import pandas as pd  # type: ignore[import-untyped]
@@ -21,6 +22,22 @@ _OUTPUT_KEYS = (
 )
 
 
+@dataclass(frozen=True)
+class FundamentalOperand:
+    """An exact selected frame row/field, not all historical parent facts."""
+
+    row_index: str
+    field: str
+
+
+@dataclass(frozen=True)
+class TracedFundamentalFeatures:
+    """Existing numerical output with additive operand selection evidence."""
+
+    values: JsonObject
+    operands: dict[str, tuple[FundamentalOperand, ...]]
+
+
 class FundamentalFeatureOperator:
     """Derive growth and accounting ratios from normalized SEC facts."""
 
@@ -34,6 +51,19 @@ class FundamentalFeatureOperator:
         calendars without mixing annual and quarterly observations.
         """
 
+        return self.compute_traced(fundamentals).values
+
+    def compute_traced(self, fundamentals: pd.DataFrame) -> TracedFundamentalFeatures:
+        """Run the same selectors/arithmetic and capture exact selected operands."""
+        traces: dict[str, tuple[FundamentalOperand, ...]] = {}
+        values = self._compute(fundamentals, traces)
+        return TracedFundamentalFeatures(values, traces)
+
+    def _compute(
+        self,
+        fundamentals: pd.DataFrame,
+        traces: dict[str, tuple[FundamentalOperand, ...]],
+    ) -> JsonObject:
         required = {"fiscal_period_end", "report_type", "revenue", "net_income"}
         missing_columns = sorted(required - set(fundamentals.columns))
         if missing_columns:
@@ -78,6 +108,15 @@ class FundamentalFeatureOperator:
             operating_rows["report_type"].isin(("annual", "10-K"))
         ]
         annual = None if annual_rows.empty else annual_rows.iloc[-1]
+        for name, field in (
+            ("revenue_yoy", "revenue"),
+            ("net_income_yoy", "net_income"),
+        ):
+            if prior is not None:
+                traces[name] = (
+                    FundamentalOperand(str(latest.name), field),
+                    FundamentalOperand(str(prior.name), field),
+                )
         features: dict[str, float | None] = {
             "revenue_yoy": _growth(
                 latest.get("revenue"), None if prior is None else prior.get("revenue")
@@ -87,25 +126,38 @@ class FundamentalFeatureOperator:
                 None if prior is None else prior.get("net_income"),
             ),
             "gross_margin": _ratio_or_existing(
-                latest, "gross_profit", "revenue", "gross_margin"
+                latest, "gross_profit", "revenue", "gross_margin", traces=traces
             ),
             "operating_margin": _ratio_or_existing(
-                latest, "operating_income", "revenue", "operating_margin"
+                latest, "operating_income", "revenue", "operating_margin", traces=traces
             ),
             "net_margin": _ratio_or_existing(
-                latest, "net_income", "revenue", "net_margin"
+                latest, "net_income", "revenue", "net_margin", traces=traces
             ),
             "roe": _annual_ratio_or_existing(
-                annual, latest, "net_income", "shareholders_equity", "roe"
+                annual,
+                latest,
+                "net_income",
+                "shareholders_equity",
+                "roe",
+                traces=traces,
             ),
             "roa": _annual_ratio_or_existing(
-                annual, latest, "net_income", "total_assets", "roa"
+                annual, latest, "net_income", "total_assets", "roa", traces=traces
             ),
             "debt_to_equity": _latest_ratio_or_existing(
-                ordered, "total_debt", "shareholders_equity", "debt_to_equity"
+                ordered,
+                "total_debt",
+                "shareholders_equity",
+                "debt_to_equity",
+                traces=traces,
             ),
             "current_ratio": _latest_ratio_or_existing(
-                ordered, "current_assets", "current_liabilities", "current_ratio"
+                ordered,
+                "current_assets",
+                "current_liabilities",
+                "current_ratio",
+                traces=traces,
             ),
         }
         return cast(
@@ -133,10 +185,21 @@ def _comparable_period(records: pd.DataFrame, latest: pd.Series) -> pd.Series | 
 
 
 def _ratio_or_existing(
-    row: pd.Series, numerator: str, denominator: str, existing: str
+    row: pd.Series,
+    numerator: str,
+    denominator: str,
+    existing: str,
+    *,
+    traces: dict[str, tuple[FundamentalOperand, ...]] | None = None,
 ) -> float | None:
     ratio = _ratio(row.get(numerator), row.get(denominator))
-    return ratio if ratio is not None else _finite_or_none(row.get(existing))
+    value = ratio if ratio is not None else _finite_or_none(row.get(existing))
+    if value is not None and traces is not None:
+        fields = (numerator, denominator) if ratio is not None else (existing,)
+        traces[existing] = tuple(
+            FundamentalOperand(str(row.name), field) for field in fields
+        )
+    return value
 
 
 def _annual_ratio_or_existing(
@@ -145,19 +208,31 @@ def _annual_ratio_or_existing(
     numerator: str,
     denominator: str,
     existing: str,
+    *,
+    traces: dict[str, tuple[FundamentalOperand, ...]] | None = None,
 ) -> float | None:
     if row is not None:
-        return _ratio_or_existing(row, numerator, denominator, existing)
+        return _ratio_or_existing(row, numerator, denominator, existing, traces=traces)
     # A Provider-supplied normalized ratio remains usable, but an interim
     # income statement is never silently annualized by this operator.
-    return _finite_or_none(latest.get(existing))
+    value = _finite_or_none(latest.get(existing))
+    if value is not None and traces is not None:
+        traces[existing] = (FundamentalOperand(str(latest.name), existing),)
+    return value
 
 
 def _latest_ratio_or_existing(
-    records: pd.DataFrame, numerator: str, denominator: str, existing: str
+    records: pd.DataFrame,
+    numerator: str,
+    denominator: str,
+    existing: str,
+    *,
+    traces: dict[str, tuple[FundamentalOperand, ...]] | None = None,
 ) -> float | None:
     for _, row in records.iloc[::-1].iterrows():
-        result = _ratio_or_existing(row, numerator, denominator, existing)
+        result = _ratio_or_existing(
+            row, numerator, denominator, existing, traces=traces
+        )
         if result is not None:
             return result
     return None

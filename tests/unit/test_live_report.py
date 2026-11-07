@@ -75,7 +75,7 @@ def test_live_preflight_passes_only_for_complete_real_provider_set(
     assert isinstance(alpaca, dict)
     assert llm == {
         "provider": "qwen",
-        "model": "qwen3.7-flash",
+        "model": settings.qwen.model_default,
         "credential": "configured",
         "real": True,
         "e2e_max_retries": 1,

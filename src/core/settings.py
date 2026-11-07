@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import os
 from datetime import date
 from enum import StrEnum
 from pathlib import Path
+from typing import Any
 
-from pydantic import Field, SecretStr
+from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -72,6 +74,7 @@ class QwenSettings(BaseSettings):
     model_config = SettingsConfigDict(
         env_prefix="QWEN_",
         extra="ignore",
+        populate_by_name=True,
     )
 
     api_key_env: str = "QWEN_API_KEY"
@@ -81,15 +84,15 @@ class QwenSettings(BaseSettings):
         min_length=1,
     )
     model_default: str = Field(
-        default="qwen3.7-flash",
+        default="qwen3.8-flash",
         validation_alias="QWEN_MODEL_NAME",
         min_length=1,
     )
     model_fast: str = Field(
-        default="qwen3.7-flash",
-        validation_alias="QWEN_MODEL_NAME",
+        default="qwen3.8-flash",
         min_length=1,
     )
+    max_output_tokens: int | None = Field(default=None, ge=16, le=131072)
     embedding_model: str = Field(default="text-embedding-v4", min_length=1)
     embedding_base_url: str = Field(
         default="https://dashscope.aliyuncs.com/compatible-mode/v1",
@@ -101,6 +104,47 @@ class QwenSettings(BaseSettings):
     max_retries: int = Field(default=0, ge=0)
     store_remote: bool = False
     enable_thinking: bool = False
+
+    @model_validator(mode="before")
+    @classmethod
+    def prioritize_active_model_environment(cls, values: Any) -> Any:
+        """Resolve model names from process env before explicit active config.
+
+        Other settings retain their existing Pydantic source precedence. A frozen
+        historical call's explicitly passed model is not silently rewritten here.
+        """
+        if isinstance(values, dict):
+            selected = os.environ.get("QWEN_MODEL_NAME", values.get("QWEN_MODEL_NAME"))
+            if selected is not None:
+                return {**values, "model_default": selected, "model_fast": selected}
+        return values
+
+    @field_validator("model_default", "model_fast")
+    @classmethod
+    def require_model_identifier(cls, value: str) -> str:
+        """Reject blank/whitespace identities without normalizing their meaning."""
+        if not value or any(c.isspace() for c in value):
+            raise ValueError("QWEN_INVALID_MODEL_IDENTIFIER")
+        return value
+
+    def resolve_model(
+        self,
+        *,
+        expected_model: str | None = None,
+        allowed_models: frozenset[str] | None = None,
+    ) -> str:
+        """Check an active experiment's explicit model constraints, never fallback.
+
+        Local configuration is not a claim of account access or model permission.
+        Historical callers may keep their own exact frozen model; a new execution
+        should supply its approved experiment model and local allowed population.
+        """
+        selected = self.model_default
+        if allowed_models is not None and selected not in allowed_models:
+            raise ValueError("QWEN_MODEL_NOT_IN_ACTIVE_SCOPE")
+        if expected_model is not None and selected != expected_model:
+            raise ValueError("QWEN_ACTIVE_MODEL_MISMATCH")
+        return selected
 
 
 class StorageSettings(BaseSettings):

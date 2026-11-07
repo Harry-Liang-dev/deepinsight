@@ -702,3 +702,12 @@
   `MISSING_INPUT`; external JSON consumption passes.
 - Final Gate A: `751 passed, 5 deselected`; leakage: `8 passed, 748
   deselected`; Ruff, mypy (`344 source files`), Black, and diff check pass.
+
+## Research evaluation platform public integration — 2026-11-07
+
+INTERNAL_RESEARCH_ENGINEERING: integrated SDK compiler/runner, C01/C02 recovery,
+current twelve-receiver factory, Source gzip normalization, exact Prompt registry
+and W5 Calibration 1.1 adapter. Public synthetic tests and separately licensed
+private regressions are distinct. No live Provider calls, new Pins or scientific
+admission. Latest runtime needs scoped independent review. See
+[platform operation](RESEARCH_EVAL_PLATFORM.md).

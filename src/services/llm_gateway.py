@@ -230,6 +230,7 @@ class LLMGateway:
         failure_sink: LLMFailureMetadataSink | None = None,
         cache_policy: LLMCacheReliabilityPolicy | None = None,
         singleflight: LLMSingleFlight | None = None,
+        allow_structured_repair: bool = True,
         logger: FilteringBoundLogger | None = None,
         clock: Callable[[], datetime] | None = None,
         timer: Callable[[], float] = monotonic,
@@ -245,6 +246,7 @@ class LLMGateway:
             failure_sink: Optional credential-free Provider failure observer.
             cache_policy: Optional bounded cache retry policy.
             singleflight: Optional identical-request concurrency coordinator.
+            allow_structured_repair: Disable paid output repair for no-resampling runs.
             logger: Optional credential-safe structured logger.
             clock: Optional deterministic timezone-aware wall clock.
             timer: Optional monotonic latency clock.
@@ -253,6 +255,7 @@ class LLMGateway:
 
         if provider is None and settings is None:
             raise ValueError("settings or provider must be supplied")
+        self._allow_structured_repair = allow_structured_repair
         self._cache_repo = cache_repo
         self._provider = (
             provider
@@ -276,7 +279,7 @@ class LLMGateway:
     def supports_structured_repair(self) -> bool:
         """Allow one repair only for a real configured Provider."""
 
-        return self._provider.provider_name != "fake"
+        return self._allow_structured_repair and self._provider.provider_name != "fake"
 
     @staticmethod
     def build_cache_key(

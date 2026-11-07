@@ -3,7 +3,17 @@
 from __future__ import annotations
 
 import json
-from typing import cast
+from collections.abc import Callable
+from datetime import datetime
+from typing import TYPE_CHECKING, cast
+
+if TYPE_CHECKING:
+    from src.schemas.research_v2_collaboration import ResearchPlan
+    from src.schemas.research_v2_shared import RunBinding
+    from src.services.research_v2_collaboration.dispatcher import BoundedDispatcher
+    from src.services.research_v2_collaboration.validation import EvidenceResolver
+    from src.services.research_vnext.execution import IncrementalContext, IncrementalRun
+    from src.services.research_vnext.feedback import FeedbackRun, Refresh
 
 from pydantic import ValidationError
 
@@ -94,6 +104,47 @@ class CoordinatorConfigurationError(ValueError):
 class ResearchCoordinator:
     """Run the fixed eight-Agent research chain without report assembly."""
 
+    @staticmethod
+    def run_collaboration(
+        plan: ResearchPlan,
+        resolver: EvidenceResolver,
+        workflow: Callable[[BoundedDispatcher], None],
+        clock: Callable[[], datetime],
+        *,
+        retained_binding: RunBinding | None = None,
+    ) -> BoundedDispatcher:
+        """Dispatch explicit v2 offline work; preserve the v1 eight-Agent path."""
+        from src.schemas.research_v2_shared import RunBinding
+        from src.services.research_v2_collaboration.dispatcher import BoundedDispatcher
+        from src.services.research_v2_collaboration.state import StateReducer
+        from src.services.research_v2_collaboration.validation import ReferenceValidator
+
+        binding = RunBinding(
+            run_id=plan.run_id,
+            capture_id=None,
+            episode=plan.episode,
+            plan=plan.reference,
+            research_as_of=plan.research_as_of,
+            mode="SYNTHETIC_OFFLINE",
+        )
+        if retained_binding is not None:
+            if (
+                retained_binding.mode != "RETAINED_READONLY"
+                or retained_binding.run_id != plan.run_id
+                or retained_binding.plan != plan.reference
+                or retained_binding.episode != plan.episode
+                or retained_binding.research_as_of != plan.research_as_of
+            ):
+                raise ValueError("COLLABORATION_RETAINED_BINDING")
+            binding = retained_binding
+        dispatcher = BoundedDispatcher(
+            StateReducer(plan, ReferenceValidator(resolver, binding)), clock
+        )
+        workflow(dispatcher)
+        if not dispatcher.reducer.head.completed:
+            dispatcher.finalize()
+        return dispatcher
+
     def __init__(self, agent_registry: dict[AgentName, BaseAgent]) -> None:
         """Validate and retain the exact Phase One Agent registry.
 
@@ -113,6 +164,29 @@ class ResearchCoordinator:
                 f"invalid Agent registry; missing={missing}, unexpected={unexpected}"
             )
         self._agents = dict(agent_registry)
+
+    def run_incremental(
+        self, request: ResearchTaskRequest, context: IncrementalContext
+    ) -> IncrementalRun:
+        """Explicit development-only selective path; legacy run is unchanged."""
+        from src.services.research_vnext.execution import execute_incremental
+
+        return execute_incremental(self, request, context)
+
+    def run_memory_feedback(
+        self,
+        request: ResearchTaskRequest,
+        context: IncrementalContext,
+        *,
+        refresh: Refresh,
+        max_dispatches: int = 15,
+    ) -> FeedbackRun:
+        """Opt-in bounded development feedback; reuse the existing selective path."""
+        from src.services.research_vnext.feedback import execute_feedback
+
+        return execute_feedback(
+            self, request, context, refresh=refresh, max_dispatches=max_dispatches
+        )
 
     def run(self, request: ResearchTaskRequest) -> ResearchTaskResult:
         """Run Analysts, synthesis, two single-round theses, then risk review.

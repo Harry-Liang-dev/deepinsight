@@ -50,7 +50,19 @@ from src.schemas.research_data import (
     ResearchDataSection,
     ResearchEvidenceItem,
 )
+from src.schemas.research_data_quality import (
+    LEGACY_POLICY,
+    QUALITY_CONTRACT,
+    ContextDimension,
+    MetricComparisonAssessmentV1,
+    MetricComparisonContextV1,
+)
 from src.schemas.temporal import TemporalAccessMode
+from src.services.fundamental_quality_context import (
+    derived_context,
+    fundamental_context,
+)
+from src.services.research_data_quality import compare_metrics, validate_fact
 from src.temporal_mapping import temporal_metadata_for
 
 _FUNDAMENTAL_UNITS: Final[dict[str, tuple[str, str | None]]] = {
@@ -191,6 +203,7 @@ class ResearchDataBundleService:
         market_context: MarketContextOperator | None = None,
         valuation: ValuationOperator | None = None,
         temporal_access_mode: TemporalAccessMode = TemporalAccessMode.HISTORICAL_REPLAY,
+        quality_policy: str = LEGACY_POLICY,
     ) -> None:
         """Bind read-only normalized stores and a deterministic freshness SLA."""
 
@@ -200,6 +213,18 @@ class ResearchDataBundleService:
             raise ValueError("EOD maximum age must be positive")
         if eod_history_limit < 60:
             raise ValueError("EOD history limit must be at least 60")
+        if quality_policy not in {LEGACY_POLICY, QUALITY_CONTRACT}:
+            raise ValueError("unknown research quality policy")
+        self._quality_policy = quality_policy
+        self.dependency_witnesses: dict[str, ResearchEvidenceItem] = {}
+        self.dependency_witness_batches: list[
+            tuple[AssetId, tuple[ResearchEvidenceItem, ...]]
+        ] = []
+        self.metric_contexts: dict[str, MetricComparisonContextV1] = {}
+        self.metric_assessments: list[MetricComparisonAssessmentV1] = []
+        self.metric_assessment_batches: list[
+            tuple[AssetId, tuple[MetricComparisonAssessmentV1, ...]]
+        ] = []
         self._instruments = instruments
         self._market_data = market_data
         self._fundamental_max_age_days = fundamental_max_age_days
@@ -217,6 +242,31 @@ class ResearchDataBundleService:
     def build(self, request: ResearchDataBundleRequest) -> ResearchDataBundle:
         """Build a serializable bundle without exposing persistence objects."""
 
+        try:
+            return self._build(request)
+        finally:
+            if self._quality_policy == QUALITY_CONTRACT:
+                # Keep every invocation, including failed builds and empty batches.
+                # Export validates all comparisons before any per-asset routing.
+                self.dependency_witness_batches.append(
+                    (
+                        request.asset_id,
+                        tuple(
+                            self.dependency_witnesses[k]
+                            for k in sorted(self.dependency_witnesses)
+                        ),
+                    )
+                )
+                self.metric_assessment_batches.append(
+                    (request.asset_id, tuple(self.metric_assessments))
+                )
+
+    def _build(self, request: ResearchDataBundleRequest) -> ResearchDataBundle:
+        """Build one request while retaining the existing per-build diagnostics."""
+
+        self.dependency_witnesses = {}
+        self.metric_contexts = {}
+        self.metric_assessments = []
         instrument = self._instruments.get(request.asset_id)
         asset_identity = self._asset_identity_section(request, instrument)
         requested = set(request.requested_capabilities)
@@ -631,6 +681,9 @@ class ResearchDataBundleService:
                 for bar in benchmark_bars[-21:]
                 if bar.close is not None
             )
+            self.dependency_witnesses.update(
+                {item.evidence_id: item for item in benchmark_parents}
+            )
             relative_parents[field_name] = (*target_parents, *benchmark_parents)
         technical_items: dict[str, ResearchEvidenceItem] = {}
         all_evidence = {
@@ -749,13 +802,28 @@ class ResearchDataBundleService:
                 key=lambda item: (item.effective_at, item.field_path, item.evidence_id),
             )
         )
+        if self._quality_policy == QUALITY_CONTRACT:
+            for record in records:
+                for item in raw_evidence:
+                    record_key = (
+                        f"{record.asset_id}|{record.fiscal_period_end.isoformat()}|"
+                        f"{record.report_type}"
+                    )
+                    if (
+                        item.source.normalized_record_key == record_key
+                        and item.source.provider_name == record.source_id
+                    ):
+                        self.metric_contexts[item.evidence_id] = fundamental_context(
+                            item, record
+                        )
         sec_records = [
             record for record in records if record.source_id != _FMP_PROVIDER
         ]
         frame = pd.DataFrame(record.model_dump(mode="python") for record in sec_records)
         derived: list[ResearchEvidenceItem] = []
         if sec_records:
-            values = self._fundamental_features.compute(frame)
+            traced = self._fundamental_features.compute_traced(frame)
+            values = traced.values
             parents_by_field: dict[str, tuple[str, ...]] = {
                 "revenue_yoy": ("revenue",),
                 "net_income_yoy": ("net_income",),
@@ -776,12 +844,31 @@ class ResearchDataBundleService:
                     for item in raw_evidence
                     if item.field_path.rsplit(".", maxsplit=1)[-1] in parent_fields
                 )
-                if not all(
-                    any(
-                        parent.field_path.endswith(f".{field_name}")
-                        for parent in parents
+                if self._quality_policy == QUALITY_CONTRACT:
+                    selected: list[ResearchEvidenceItem] = []
+                    for operand in traced.operands.get(name, ()):
+                        record = sec_records[int(operand.row_index)]
+                        key = (
+                            f"{record.asset_id}|{record.fiscal_period_end.isoformat()}|"
+                            f"{record.report_type}"
+                        )
+                        selected.extend(
+                            item
+                            for item in raw_evidence
+                            if item.source.provider_name == record.source_id
+                            and item.source.normalized_record_key == key
+                            and item.field_path == f"fundamentals.{operand.field}"
+                        )
+                    parents = tuple(selected)
+                if not parents or (
+                    self._quality_policy == LEGACY_POLICY
+                    and not all(
+                        any(
+                            parent.field_path.endswith(f".{field_name}")
+                            for parent in parents
+                        )
+                        for field_name in parent_fields
                     )
-                    for field_name in parent_fields
                 ):
                     continue
                 derived.append(
@@ -796,9 +883,28 @@ class ResearchDataBundleService:
                         unit="ratio",
                     )
                 )
+                if self._quality_policy == QUALITY_CONTRACT:
+                    item = derived[-1]
+                    first_operand = traced.operands[name][0]
+                    self.metric_contexts[item.evidence_id] = derived_context(
+                        item,
+                        parents,
+                        self.metric_contexts,
+                        metric=name,
+                        report_type=sec_records[
+                            int(first_operand.row_index)
+                        ].report_type,
+                    )
         chosen_standardized = _choose_standardized_fundamentals(
             raw_evidence,
             tuple(derived),
+            contexts=(
+                self.metric_contexts
+                if self._quality_policy == QUALITY_CONTRACT
+                else None
+            ),
+            assessments=self.metric_assessments,
+            research_as_of=request.as_of,
         )
         evidence = (
             *tuple(
@@ -853,6 +959,14 @@ class ResearchDataBundleService:
                 else DataQualityStatus.WARNING
             )
         )
+        if self._quality_policy == QUALITY_CONTRACT:
+            if any(item.quality is DataQualityStatus.FAIL for item in evidence):
+                quality_status = DataQualityStatus.FAIL
+            elif (
+                any(item.quality is DataQualityStatus.WARNING for item in evidence)
+                and quality_status is DataQualityStatus.PASS
+            ):
+                quality_status = DataQualityStatus.WARNING
         return ResearchDataSection(
             capability=DataCapability.FUNDAMENTALS,
             status=section_status,
@@ -1059,6 +1173,13 @@ class ResearchDataBundleService:
             for records in bars_by_asset.values()
             for record in records
             if record.close is not None
+        )
+        self.dependency_witnesses.update(
+            {
+                item.evidence_id: item
+                for item in parents
+                if item.subject_id != str(request.asset_id)
+            }
         )
         evidence = tuple(
             _derived_evidence(
@@ -1648,6 +1769,10 @@ def _fundamental_evidence(
 def _choose_standardized_fundamentals(
     raw_evidence: tuple[ResearchEvidenceItem, ...],
     derived_evidence: tuple[ResearchEvidenceItem, ...],
+    *,
+    contexts: dict[str, MetricComparisonContextV1] | None = None,
+    assessments: list[MetricComparisonAssessmentV1] | None = None,
+    research_as_of: datetime | None = None,
 ) -> tuple[ResearchEvidenceItem, ...]:
     """Prefer FMP metrics and retain one transparent SEC cross-check."""
 
@@ -1676,7 +1801,63 @@ def _choose_standardized_fundamentals(
         )
         if fmp is None:
             if secondary is not None:
+                if contexts is not None:
+                    if research_as_of is None or secondary.evidence_id not in contexts:
+                        raise ValueError(
+                            "new policy requires exact available-source context"
+                        )
+                    validity = validate_fact(
+                        secondary, contexts[secondary.evidence_id], research_as_of
+                    )
+                    if validity.status == "INVALID" and secondary.quality not in {
+                        DataQualityStatus.FAIL,
+                        DataQualityStatus.CONFLICT,
+                    }:
+                        secondary = secondary.model_copy(
+                            update={"quality": DataQualityStatus.FAIL}
+                        )
                 chosen.append(secondary)
+            continue
+        if contexts is not None:
+            if research_as_of is None or fmp.evidence_id not in contexts:
+                raise ValueError(
+                    "new quality policy requires exact primary context and cutoff"
+                )
+            context = contexts[fmp.evidence_id]
+            validity = validate_fact(fmp, context, research_as_of)
+            semantic_gap = (
+                field_name in {"revenue_yoy", "net_income_yoy"}
+                and context.dimensions[ContextDimension.GROWTH_BASELINE].status
+                != "KNOWN"
+            )
+            quality = fmp.quality
+            if (validity.status == "INVALID" or semantic_gap) and quality not in {
+                DataQualityStatus.FAIL,
+                DataQualityStatus.CONFLICT,
+            }:
+                quality = DataQualityStatus.FAIL
+            if secondary is not None:
+                if secondary.evidence_id not in contexts:
+                    raise ValueError("new quality policy requires secondary context")
+                assessment = compare_metrics(
+                    fmp,
+                    secondary,
+                    context,
+                    contexts[secondary.evidence_id],
+                    research_as_of=research_as_of,
+                )
+                if assessments is not None:
+                    assessments.append(assessment)
+                if quality not in {DataQualityStatus.FAIL, DataQualityStatus.CONFLICT}:
+                    if assessment.disposition == "CONFLICT":
+                        quality = DataQualityStatus.CONFLICT
+                    elif assessment.disposition == "INVALID_INPUT":
+                        quality = DataQualityStatus.FAIL
+                    elif assessment.numeric_outcome == "NOT_EVALUATED":
+                        quality = DataQualityStatus.WARNING
+            chosen.append(
+                fmp.model_copy(update={"quality": quality, "cross_check": None})
+            )
             continue
         if secondary is None:
             chosen.append(fmp)

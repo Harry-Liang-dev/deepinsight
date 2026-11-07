@@ -2228,3 +2228,13 @@ allowlist. The observed `known_missing_data` evidence label maps to the existing
 timestamps are structured metadata in acceptance diagnostics, so their
 components are not independently reclassified as financial numeric facts.
 Numbers outside the timestamp remain subject to Numeric Grounding v2.
+
+## Public integration without private development ancestry — 2026-11-07
+
+Adopt reviewed code snapshots on the existing public main ancestry. Preserve local
+working changes and all private development refs separately; never merge their
+artifact-bearing history into public main. Keep source/authority datasets external
+and byte-pinned. Stable public Runner tests use synthetic inputs while historical
+regressions retain their original assertions and require licensed local archives.
+A GitHub release is not LIVE authority, independent scientific evaluation or a
+Report/ResearchState/Quant contract migration.

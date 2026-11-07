@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import re
 from collections.abc import Iterable
 from datetime import datetime
 
@@ -15,6 +14,7 @@ from src.agents.input_contracts import (
     RiskManagerInputV1,
     VersionedUpstreamOutputV1,
 )
+from src.agents.numeric_tokens import numeric_literals as numeric_literals
 from src.models.enums import AgentStatus
 from src.schemas.agents import (
     AgentContext,
@@ -31,22 +31,6 @@ type ManifestContract = (
     | BearManagerInputV1
     | RiskManagerInputV1
 )
-
-
-def numeric_literals(value: str) -> tuple[str, ...]:
-    """Return unique numeric literals in source order without deriving values."""
-
-    return tuple(
-        dict.fromkeys(
-            token.replace(",", "")
-            for token in re.findall(
-                r"(?<![\w.])(?:"
-                r"\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})?)?"
-                r"|[-+]?\d[\d,]*(?:\.\d+)?%?)",
-                value,
-            )
-        )
-    )
 
 
 def build_role_evidence_manifest(

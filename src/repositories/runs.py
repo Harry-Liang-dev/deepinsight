@@ -9,6 +9,7 @@ from src.repositories.base import (
     map_row,
 )
 from src.repositories.records import AgentRunRecord, IngestionJobRecord
+from src.schemas.temporal import utc_from_storage
 
 _AGENT_RUN_COLUMNS = (
     "run_id",
@@ -98,8 +99,12 @@ class AgentRunRepository(BaseRepository):
                     else encode_json(record.output_payload)
                 ),
                 record.status,
-                record.started_at,
-                record.finished_at,
+                utc_from_storage(record.started_at).replace(tzinfo=None),
+                (
+                    None
+                    if record.finished_at is None
+                    else utc_from_storage(record.finished_at).replace(tzinfo=None)
+                ),
                 record.latency_ms,
                 record.prompt_tokens,
                 record.completion_tokens,

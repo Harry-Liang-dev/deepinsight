@@ -122,6 +122,7 @@ class FundamentalRecord(DomainModel):
     accepted_at: datetime | None = None
     source_id: str = Field(min_length=1)
     ingestion_ts: datetime
+    metric_context_json: str | None = Field(default=None, exclude=True)
     p2_factor_blob_json: JsonObject | None = None
 
 

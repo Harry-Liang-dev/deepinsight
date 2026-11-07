@@ -63,6 +63,8 @@ def _selection(
     sector_context_id: str | None = None
     sector_events: tuple[SelectionSectorEventReference, ...] = ()
     if include_real_sector_context:
+        if not _SECTOR_CONTEXT.is_file():
+            pytest.skip("Requires separately retained private sector-context archive")
         context = cast(dict[str, Any], json.loads(_SECTOR_CONTEXT.read_text()))
         sector_id = SectorId(context["sector_id"])
         sector_context_id = cast(str, context["context_id"])

@@ -64,3 +64,16 @@ data/sector_asset_integration/
 data/live_sector_research/
 data/live_qwen_embedding/
 data/auth/
+
+# Private experiment material is never public release content.
+artifacts/
+data/runtime/
+*.bundle
+*.raw
+*.sqlite
+*.sqlite3
+*.db
+*.db-wal
+*.db-shm
+*.safetensors
+*.ckpt

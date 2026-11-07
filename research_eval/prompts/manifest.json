@@ -1,0 +1,27 @@
+{
+  "version": "PUBLIC_PROMPT_CORES_V1",
+  "permission": "PROMPT_DATA_ONLY_NO_AUTHORITY",
+  "variants": [
+    {
+      "variant_id": "W1_MINIMAL2_FINANCIAL_CORE_V1",
+      "path": "W1_MINIMAL2_FINANCIAL_CORE_V1.txt",
+      "sha256": "baa2c6d7b27841d492a5d0d346e570f36b567cd57b1ec009043837f0265e109b",
+      "source_commit": "6299d7d5cc5dcf56b85524350d4e841d1d0b98d1",
+      "source_path": "shared/baseline.txt"
+    },
+    {
+      "variant_id": "w3-causal-v1",
+      "path": "w3-causal-v1.txt",
+      "sha256": "275890333fc9242807cba28945c663b76f6cc222957dcf4fecf22f93b2802ac4",
+      "source_commit": "6299d7d5cc5dcf56b85524350d4e841d1d0b98d1",
+      "source_path": "causal/prompt.txt"
+    },
+    {
+      "variant_id": "w3-b-evidence-v1",
+      "path": "w3-b-evidence-v1.txt",
+      "sha256": "b1c77a397891d3f98a695ee805597e482921c5c127024a34ce1a437cb83b10e7",
+      "source_commit": "6299d7d5cc5dcf56b85524350d4e841d1d0b98d1",
+      "source_path": "evidence/prompt.txt"
+    }
+  ]
+}

@@ -214,7 +214,9 @@ def main(argv: Sequence[str] | None = None) -> int:
             {
                 "event_id": item.event_id,
                 "type": item.event_type.value,
-                "sector_id": item.sector_id.value,
+                "sector_id": (
+                    item.sector_id.value if item.sector_id is not None else None
+                ),
                 "severity": item.severity.value,
                 "source_evidence_ids": list(item.source_evidence_ids),
                 "chain_ids": list(item.chain_ids),

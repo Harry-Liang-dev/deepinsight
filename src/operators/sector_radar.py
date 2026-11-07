@@ -67,6 +67,29 @@ class SectorAnomalyRadar:
 
     version = _VERSION
 
+    def detect_asset_prices(
+        self,
+        *,
+        bars_by_asset: Mapping[str, Sequence[EodBarRecord]],
+        research_as_of: datetime,
+    ) -> tuple[SectorAnomalyEvent, ...]:
+        """Opt-in company-only scan without inventing Sector membership.
+
+        Reuses the unchanged price/volume rule; never propagates or persists to
+        the production Sector repository. The caller must verify native bytes.
+        """
+        for asset, records in bars_by_asset.items():
+            dates = [b.trade_date for b in records]
+            if dates != sorted(set(dates)):
+                raise SectorRadarInputError("duplicate or unordered sessions")
+            for bar in records:
+                if str(bar.asset_id) != asset:
+                    raise SectorRadarInputError("bar owner mismatch")
+                _require_temporal_input(
+                    bar, research_as_of, "price", TemporalAccessMode.HISTORICAL_REPLAY
+                )
+        return tuple(_price_volume_events(None, bars_by_asset, (), research_as_of))
+
     def detect(
         self,
         *,
@@ -136,7 +159,7 @@ class SectorAnomalyRadar:
 
 
 def _price_volume_events(
-    sector_id: SectorId,
+    sector_id: SectorId | None,
     bars_by_asset: Mapping[str, Sequence[EodBarRecord]],
     memberships: Sequence[SectorMembership],
     as_of: datetime,
@@ -501,7 +524,7 @@ def _propagation_candidates(
 def _event(
     *,
     event_type: SectorAnomalyType,
-    sector_id: SectorId,
+    sector_id: SectorId | None,
     direction: AnomalyDirection,
     severity: EventSeverity,
     confidence: float,
@@ -520,7 +543,7 @@ def _event(
 ) -> SectorAnomalyEvent:
     content = {
         "event_type": event_type.value,
-        "sector_id": sector_id.value,
+        "sector_id": sector_id.value if sector_id is not None else None,
         "chain_ids": sorted(chain_ids),
         "source_asset_ids": sorted(str(item) for item in source_assets),
         "affected_asset_ids": sorted(str(item) for item in affected_assets),

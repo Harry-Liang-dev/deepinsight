@@ -104,6 +104,8 @@ class SectorRadarMemoryService:
             for item in self._repository.list_nodes(as_of=as_of)
             if item.node_type is SectorNodeType.SECTOR and item.sector_id is not None
         }
+        if event.sector_id is None:
+            raise SectorRadarMemoryError("Radar Sector has no effective ontology node")
         sector_node = sector_nodes.get(event.sector_id)
         if sector_node is None:
             raise SectorRadarMemoryError("Radar Sector has no effective ontology node")

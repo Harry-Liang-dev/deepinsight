@@ -63,6 +63,8 @@ def _load_episode(path: Path) -> ResearchEpisode:
 
 
 def _sector_context() -> SectorContextBundle:
+    if not DAY36_SECTOR_PATH.is_file():
+        pytest.skip("Requires separately retained private sector-context archive")
     return SectorContextBundle.model_validate(json.loads(DAY36_SECTOR_PATH.read_text()))
 
 

@@ -18,7 +18,10 @@ from src.agents.contracts import (
 )
 from src.agents.evidence import numeric_literals
 from src.agents.input_contracts import AGENT_OUTPUT_SCHEMA_VERSION
-from src.agents.numeric_grounding import validate_numeric_grounding
+from src.agents.numeric_grounding import (
+    NativeNumericBinding,
+    validate_numeric_grounding,
+)
 from src.models.compliance import infer_claim_intent, prohibited_claim_intent
 from src.models.enums import AgentName, AgentStatus, ClaimIntent
 from src.models.types import DomainModel, JsonObject, JsonValue
@@ -144,6 +147,7 @@ class BaseAgent:
         run_logger: AgentRunLogger,
         *,
         clock: Callable[[], datetime] | None = None,
+        native_numeric: NativeNumericBinding | None = None,
     ) -> None:
         """Bind replaceable public dependencies.
 
@@ -155,6 +159,7 @@ class BaseAgent:
             clock: Optional deterministic UTC clock for tests.
         """
 
+        self._native_numeric = native_numeric
         self._llm_gateway = llm_gateway
         self._memory_service = memory_service
         self._prompt_loader = prompt_loader
@@ -446,7 +451,7 @@ class BaseAgent:
             rejection = (
                 _validate_manager_claim_candidate(item, upstream)
                 if self.provenance_mode == "upstream_claims"
-                else _validate_claim_candidate(item, entries)
+                else _validate_claim_candidate(item, entries, self._native_numeric)
             )
             if rejection is None:
                 retained.append(item)
@@ -729,6 +734,12 @@ class BaseAgent:
                 for literal in expected_literals
                 if not any(literal in entry.numeric_tokens for entry in bound_entries)
             ]
+            if self._native_numeric is not None:
+                unsupported = list(
+                    validate_numeric_grounding(
+                        claim, bound_entries, native_binding=self._native_numeric
+                    ).ungrounded_literals
+                )
             if unsupported:
                 raise AgentOutputError(
                     f"Agent numeric claim was absent from evidence ({claim_path})."
@@ -1390,6 +1401,7 @@ def _reject_trading_output(output: JsonObject) -> None:
 def _validate_claim_candidate(
     item: JsonObject,
     entries: Mapping[str, object],
+    native_numeric: NativeNumericBinding | None = None,
 ) -> JsonObject | None:
     """Return a rejection record or None for one exact Claim candidate."""
 
@@ -1430,7 +1442,9 @@ def _validate_claim_candidate(
         cast(RoleEvidenceManifestEntry, entries[evidence_id])
         for evidence_id in binding.evidence_ids
     ]
-    grounding = validate_numeric_grounding(text, bound_entries)
+    grounding = validate_numeric_grounding(
+        text, bound_entries, native_binding=native_numeric
+    )
     literals = grounding.numeric_literals
     if grounding.ungrounded_literals:
         return rejected(

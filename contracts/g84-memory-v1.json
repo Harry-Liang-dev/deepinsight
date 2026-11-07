@@ -1,0 +1,2117 @@
+{
+  "execution_implemented": false,
+  "files": {
+    "AGENTS.md": "c2c18a16fba18df2a606bb107450652a3ed7482ab2139c2df1c000b852a85407",
+    "docs/G84_RESEARCH_VNEXT_MEMORY.md": "e0366cb0b30b1c0bd671b43691582ad20d564fcebcbce189fd9d01ba1e7bd3b9",
+    "docs/tasks/g84_memory_foundation.md": "8021dd2f3c9e2a076fad4f34b40ba97bd89d595a7d4d5006f25a68a9f29d1fad",
+    "src/memory/vnext.py": "bdd2eeabadd9421a1571ebe2d8e84ee2198e54fef873d87938d61ef5b8453d5e",
+    "src/memory/vnext_contracts.py": "6697d1599d18d60ebafbe6da202981f731489712d32be7613d73cd1e345fdf4f",
+    "tests/unit/memory/test_vnext_foundation.py": "58facffd72436cafb8c9fe6aac85d2d23eec4c97c0c2eb071a188ae7696097d7",
+    "tools/g84_memory_contract.py": "d3eee12d22455ab44b14b5de68b0efd09647c4cc8925fcc99d91f01f34216953"
+  },
+  "memory_levels": [
+    "L0",
+    "L1",
+    "L2",
+    "L3",
+    "L4"
+  ],
+  "owners": {
+    "W1": "shared_contract",
+    "W3": "research_policy_and_agents",
+    "W6": "memory_service_adapters"
+  },
+  "permissions": {
+    "bear_manager": [
+      "APPEND_EVENT",
+      "CITE_VALIDATED_FACT",
+      "PROPOSE_HYPOTHESIS",
+      "READ_HISTORY"
+    ],
+    "bull_manager": [
+      "APPEND_EVENT",
+      "CITE_VALIDATED_FACT",
+      "PROPOSE_HYPOTHESIS",
+      "READ_HISTORY"
+    ],
+    "coordinator": [
+      "READ_HISTORY",
+      "UPDATE_WORKING_STATE"
+    ],
+    "fundamental_analyst": [
+      "APPEND_EVENT",
+      "CITE_VALIDATED_FACT",
+      "PROPOSE_HYPOTHESIS",
+      "READ_HISTORY"
+    ],
+    "news_event_analyst": [
+      "APPEND_EVENT",
+      "CITE_VALIDATED_FACT",
+      "PROPOSE_HYPOTHESIS",
+      "READ_HISTORY"
+    ],
+    "outcome_recorder": [
+      "READ_HISTORY",
+      "RECORD_OUTCOME"
+    ],
+    "research_manager": [
+      "APPEND_EVENT",
+      "CITE_VALIDATED_FACT",
+      "PROPOSE_HYPOTHESIS",
+      "READ_HISTORY",
+      "REVIEW_FINAL_STATE"
+    ],
+    "risk_manager": [
+      "APPEND_EVENT",
+      "CITE_VALIDATED_FACT",
+      "PROPOSE_HYPOTHESIS",
+      "READ_HISTORY"
+    ],
+    "sentiment_analyst": [
+      "APPEND_EVENT",
+      "CITE_VALIDATED_FACT",
+      "PROPOSE_HYPOTHESIS",
+      "READ_HISTORY"
+    ],
+    "technical_text_analyst": [
+      "APPEND_EVENT",
+      "CITE_VALIDATED_FACT",
+      "PROPOSE_HYPOTHESIS",
+      "READ_HISTORY"
+    ],
+    "trader": [
+      "APPEND_EVENT",
+      "CITE_VALIDATED_FACT",
+      "PROPOSE_HYPOTHESIS",
+      "READ_HISTORY"
+    ]
+  },
+  "preserved_existing_contracts": {
+    "src/memory/contracts.py": "eabb4a98ac1d7a741f579874d41f6564cff530cd679d0f913629ddb1c88fb382",
+    "src/memory/service.py": "57dd53261f1bffaf60669d7a1036796c1ddcbe423161597e606ba3b414e89cb0",
+    "src/models/enums.py": "6e34e0ab05d07da284f15619d9051af6402bd6f270b70a12f72996cc2c0feab9",
+    "src/schemas/memory.py": "ae5d0e12f8c162b89ffc586ff1dc1450b4d49b3a13b8c96d306591709da669ea",
+    "src/schemas/research_attribution.py": "880b7ad96b220cd2c442b8bfddb62c0aae647b3974bc7653f4218724297f1bea",
+    "src/services/research_episode.py": "ce00f04bd4b7bd7d855dddbdb97451634bf280e1c5528f8e77789af01337ab26",
+    "src/services/research_quant_handoff.py": "2c8fbc9ab48630ad8586dc32a7a4e24741afae97af220389e84b8153dca86051",
+    "src/services/research_state.py": "c31bbbad7ca03f0c9f045540f0c2c0b3ce1dc4d977d3e60bea4c53ce4e060f22"
+  },
+  "production_admission": false,
+  "role_stages": [
+    [
+      "fundamental_analyst",
+      "technical_text_analyst",
+      "sentiment_analyst",
+      "news_event_analyst"
+    ],
+    [
+      "bull_manager",
+      "bear_manager"
+    ],
+    [
+      "risk_manager"
+    ],
+    [
+      "trader"
+    ],
+    [
+      "research_manager"
+    ]
+  ],
+  "schema_version": "g84_memory_foundation_v1",
+  "schemas": {
+    "ImpactRule": {
+      "$defs": {
+        "AgentName": {
+          "description": "Phase One analyst and manager agent names.",
+          "enum": [
+            "fundamental_analyst",
+            "technical_text_analyst",
+            "sentiment_analyst",
+            "news_event_analyst",
+            "research_manager",
+            "bull_manager",
+            "bear_manager",
+            "risk_manager"
+          ],
+          "title": "AgentName",
+          "type": "string"
+        },
+        "ResearchScopeType": {
+          "description": "Types in the unified hierarchical research scope.",
+          "enum": [
+            "global",
+            "macro",
+            "sector",
+            "industry_chain",
+            "asset",
+            "research_episode"
+          ],
+          "title": "ResearchScopeType",
+          "type": "string"
+        },
+        "Scope": {
+          "additionalProperties": false,
+          "description": "Existing Phase4 Scope identity, orthogonal to L0–L4.",
+          "properties": {
+            "scope_id": {
+              "minLength": 1,
+              "pattern": "\\S",
+              "title": "Scope Id",
+              "type": "string"
+            },
+            "scope_type": {
+              "$ref": "#/$defs/ResearchScopeType"
+            }
+          },
+          "required": [
+            "scope_type",
+            "scope_id"
+          ],
+          "title": "Scope",
+          "type": "object"
+        }
+      },
+      "additionalProperties": false,
+      "description": "Frozen scope-specific policy; changes require a new policy identity.",
+      "properties": {
+        "change_kind": {
+          "enum": [
+            "MARKET_SNAPSHOT",
+            "EVENT",
+            "FILING",
+            "CORRECTION",
+            "RESEARCH"
+          ],
+          "title": "Change Kind",
+          "type": "string"
+        },
+        "direct_roles": {
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/AgentName"
+              },
+              {
+                "enum": [
+                  "trader",
+                  "coordinator",
+                  "outcome_recorder"
+                ],
+                "type": "string"
+              }
+            ]
+          },
+          "title": "Direct Roles",
+          "type": "array"
+        },
+        "owner": {
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Owner",
+          "type": "string"
+        },
+        "rationale": {
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Rationale",
+          "type": "string"
+        },
+        "scope": {
+          "$ref": "#/$defs/Scope"
+        },
+        "version": {
+          "const": "g84_impact_rule_v1",
+          "default": "g84_impact_rule_v1",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "owner",
+        "scope",
+        "change_kind",
+        "direct_roles",
+        "rationale"
+      ],
+      "title": "ImpactRule",
+      "type": "object"
+    },
+    "MemoryAccessContext": {
+      "$defs": {
+        "AgentName": {
+          "description": "Phase One analyst and manager agent names.",
+          "enum": [
+            "fundamental_analyst",
+            "technical_text_analyst",
+            "sentiment_analyst",
+            "news_event_analyst",
+            "research_manager",
+            "bull_manager",
+            "bear_manager",
+            "risk_manager"
+          ],
+          "title": "AgentName",
+          "type": "string"
+        },
+        "ResearchScopeType": {
+          "description": "Types in the unified hierarchical research scope.",
+          "enum": [
+            "global",
+            "macro",
+            "sector",
+            "industry_chain",
+            "asset",
+            "research_episode"
+          ],
+          "title": "ResearchScopeType",
+          "type": "string"
+        },
+        "Scope": {
+          "additionalProperties": false,
+          "description": "Existing Phase4 Scope identity, orthogonal to L0–L4.",
+          "properties": {
+            "scope_id": {
+              "minLength": 1,
+              "pattern": "\\S",
+              "title": "Scope Id",
+              "type": "string"
+            },
+            "scope_type": {
+              "$ref": "#/$defs/ResearchScopeType"
+            }
+          },
+          "required": [
+            "scope_type",
+            "scope_id"
+          ],
+          "title": "Scope",
+          "type": "object"
+        }
+      },
+      "additionalProperties": false,
+      "description": "Composition-root assigned identity/scopes; never filled from model JSON.",
+      "properties": {
+        "enabled": {
+          "default": false,
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "owner": {
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Owner",
+          "type": "string"
+        },
+        "role": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AgentName"
+            },
+            {
+              "enum": [
+                "trader",
+                "coordinator",
+                "outcome_recorder"
+              ],
+              "type": "string"
+            }
+          ],
+          "title": "Role"
+        },
+        "scopes": {
+          "items": {
+            "$ref": "#/$defs/Scope"
+          },
+          "minItems": 1,
+          "title": "Scopes",
+          "type": "array"
+        }
+      },
+      "required": [
+        "owner",
+        "role",
+        "scopes"
+      ],
+      "title": "MemoryAccessContext",
+      "type": "object"
+    },
+    "MemoryDelta": {
+      "$defs": {
+        "ArtifactRef": {
+          "additionalProperties": false,
+          "description": "Exact external identity; a reference is not a verification receipt.",
+          "properties": {
+            "artifact_id": {
+              "minLength": 1,
+              "pattern": "\\S",
+              "title": "Artifact Id",
+              "type": "string"
+            },
+            "available_at": {
+              "format": "date-time",
+              "title": "Available At",
+              "type": "string"
+            },
+            "ingested_at": {
+              "format": "date-time",
+              "title": "Ingested At",
+              "type": "string"
+            },
+            "observed_at": {
+              "format": "date-time",
+              "title": "Observed At",
+              "type": "string"
+            },
+            "owner": {
+              "minLength": 1,
+              "pattern": "\\S",
+              "title": "Owner",
+              "type": "string"
+            },
+            "sha256_digest": {
+              "pattern": "^[0-9a-f]{64}$",
+              "title": "Sha256 Digest",
+              "type": "string"
+            },
+            "version": {
+              "minLength": 1,
+              "pattern": "\\S",
+              "title": "Version",
+              "type": "string"
+            }
+          },
+          "required": [
+            "artifact_id",
+            "sha256_digest",
+            "version",
+            "owner",
+            "available_at",
+            "observed_at",
+            "ingested_at"
+          ],
+          "title": "ArtifactRef",
+          "type": "object"
+        },
+        "MemoryLevel": {
+          "description": "Five-level global memory hierarchy.",
+          "enum": [
+            "L0",
+            "L1",
+            "L2",
+            "L3",
+            "L4"
+          ],
+          "title": "MemoryLevel",
+          "type": "string"
+        },
+        "ResearchScopeType": {
+          "description": "Types in the unified hierarchical research scope.",
+          "enum": [
+            "global",
+            "macro",
+            "sector",
+            "industry_chain",
+            "asset",
+            "research_episode"
+          ],
+          "title": "ResearchScopeType",
+          "type": "string"
+        },
+        "Scope": {
+          "additionalProperties": false,
+          "description": "Existing Phase4 Scope identity, orthogonal to L0–L4.",
+          "properties": {
+            "scope_id": {
+              "minLength": 1,
+              "pattern": "\\S",
+              "title": "Scope Id",
+              "type": "string"
+            },
+            "scope_type": {
+              "$ref": "#/$defs/ResearchScopeType"
+            }
+          },
+          "required": [
+            "scope_type",
+            "scope_id"
+          ],
+          "title": "Scope",
+          "type": "object"
+        }
+      },
+      "additionalProperties": false,
+      "description": "Observed before/after identities, not an LLM assertion of change.",
+      "properties": {
+        "after": {
+          "$ref": "#/$defs/ArtifactRef"
+        },
+        "before": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ArtifactRef"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "change_detector": {
+          "$ref": "#/$defs/ArtifactRef"
+        },
+        "change_kind": {
+          "enum": [
+            "MARKET_SNAPSHOT",
+            "EVENT",
+            "FILING",
+            "CORRECTION",
+            "RESEARCH"
+          ],
+          "title": "Change Kind",
+          "type": "string"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "material": {
+          "title": "Material",
+          "type": "boolean"
+        },
+        "materiality_rule": {
+          "$ref": "#/$defs/ArtifactRef"
+        },
+        "memory_level": {
+          "$ref": "#/$defs/MemoryLevel"
+        },
+        "mode": {
+          "const": "DEVELOPMENT_ONLY_OPT_IN",
+          "default": "DEVELOPMENT_ONLY_OPT_IN",
+          "title": "Mode",
+          "type": "string"
+        },
+        "owner": {
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Owner",
+          "type": "string"
+        },
+        "record_id": {
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "research_as_of": {
+          "format": "date-time",
+          "title": "Research As Of",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": "memory_delta_v1",
+          "default": "memory_delta_v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "scope": {
+          "$ref": "#/$defs/Scope"
+        },
+        "source_refs": {
+          "items": {
+            "$ref": "#/$defs/ArtifactRef"
+          },
+          "minItems": 1,
+          "title": "Source Refs",
+          "type": "array"
+        },
+        "supersedes": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ArtifactRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "owner",
+        "record_id",
+        "revision",
+        "created_at",
+        "research_as_of",
+        "scope",
+        "source_refs",
+        "memory_level",
+        "change_kind",
+        "before",
+        "after",
+        "change_detector",
+        "materiality_rule",
+        "material"
+      ],
+      "title": "MemoryDelta",
+      "type": "object"
+    },
+    "MemoryReadSet": {
+      "$defs": {
+        "AgentName": {
+          "description": "Phase One analyst and manager agent names.",
+          "enum": [
+            "fundamental_analyst",
+            "technical_text_analyst",
+            "sentiment_analyst",
+            "news_event_analyst",
+            "research_manager",
+            "bull_manager",
+            "bear_manager",
+            "risk_manager"
+          ],
+          "title": "AgentName",
+          "type": "string"
+        },
+        "ArtifactRef": {
+          "additionalProperties": false,
+          "description": "Exact external identity; a reference is not a verification receipt.",
+          "properties": {
+            "artifact_id": {
+              "minLength": 1,
+              "pattern": "\\S",
+              "title": "Artifact Id",
+              "type": "string"
+            },
+            "available_at": {
+              "format": "date-time",
+              "title": "Available At",
+              "type": "string"
+            },
+            "ingested_at": {
+              "format": "date-time",
+              "title": "Ingested At",
+              "type": "string"
+            },
+            "observed_at": {
+              "format": "date-time",
+              "title": "Observed At",
+              "type": "string"
+            },
+            "owner": {
+              "minLength": 1,
+              "pattern": "\\S",
+              "title": "Owner",
+              "type": "string"
+            },
+            "sha256_digest": {
+              "pattern": "^[0-9a-f]{64}$",
+              "title": "Sha256 Digest",
+              "type": "string"
+            },
+            "version": {
+              "minLength": 1,
+              "pattern": "\\S",
+              "title": "Version",
+              "type": "string"
+            }
+          },
+          "required": [
+            "artifact_id",
+            "sha256_digest",
+            "version",
+            "owner",
+            "available_at",
+            "observed_at",
+            "ingested_at"
+          ],
+          "title": "ArtifactRef",
+          "type": "object"
+        },
+        "ResearchScopeType": {
+          "description": "Types in the unified hierarchical research scope.",
+          "enum": [
+            "global",
+            "macro",
+            "sector",
+            "industry_chain",
+            "asset",
+            "research_episode"
+          ],
+          "title": "ResearchScopeType",
+          "type": "string"
+        },
+        "Scope": {
+          "additionalProperties": false,
+          "description": "Existing Phase4 Scope identity, orthogonal to L0–L4.",
+          "properties": {
+            "scope_id": {
+              "minLength": 1,
+              "pattern": "\\S",
+              "title": "Scope Id",
+              "type": "string"
+            },
+            "scope_type": {
+              "$ref": "#/$defs/ResearchScopeType"
+            }
+          },
+          "required": [
+            "scope_type",
+            "scope_id"
+          ],
+          "title": "Scope",
+          "type": "object"
+        }
+      },
+      "additionalProperties": false,
+      "description": "Actual supplied Memory versions, wrapping existing retrieval contracts.",
+      "properties": {
+        "agent_role": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AgentName"
+            },
+            {
+              "enum": [
+                "trader",
+                "coordinator",
+                "outcome_recorder"
+              ],
+              "type": "string"
+            }
+          ],
+          "title": "Agent Role"
+        },
+        "agent_run_id": {
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Agent Run Id",
+          "type": "string"
+        },
+        "authority": {
+          "const": "CONTEXT_ONLY",
+          "default": "CONTEXT_ONLY",
+          "title": "Authority",
+          "type": "string"
+        },
+        "bundle_ref": {
+          "$ref": "#/$defs/ArtifactRef"
+        },
+        "bundle_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Bundle Sha256",
+          "type": "string"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "memory_refs": {
+          "items": {
+            "$ref": "#/$defs/ArtifactRef"
+          },
+          "title": "Memory Refs",
+          "type": "array"
+        },
+        "mode": {
+          "const": "DEVELOPMENT_ONLY_OPT_IN",
+          "default": "DEVELOPMENT_ONLY_OPT_IN",
+          "title": "Mode",
+          "type": "string"
+        },
+        "owner": {
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Owner",
+          "type": "string"
+        },
+        "record_id": {
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "research_as_of": {
+          "format": "date-time",
+          "title": "Research As Of",
+          "type": "string"
+        },
+        "retrieval_query_id": {
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Retrieval Query Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": "memory_read_set_v1",
+          "default": "memory_read_set_v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "scope": {
+          "$ref": "#/$defs/Scope"
+        },
+        "source_refs": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ArtifactRef"
+          },
+          "title": "Source Refs",
+          "type": "array"
+        },
+        "supersedes": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ArtifactRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "owner",
+        "record_id",
+        "revision",
+        "created_at",
+        "research_as_of",
+        "scope",
+        "agent_role",
+        "agent_run_id",
+        "retrieval_query_id",
+        "bundle_ref",
+        "bundle_sha256",
+        "memory_refs"
+      ],
+      "title": "MemoryReadSet",
+      "type": "object"
+    },
+    "MemoryWriteProposal": {
+      "$defs": {
+        "AgentName": {
+          "description": "Phase One analyst and manager agent names.",
+          "enum": [
+            "fundamental_analyst",
+            "technical_text_analyst",
+            "sentiment_analyst",
+            "news_event_analyst",
+            "research_manager",
+            "bull_manager",
+            "bear_manager",
+            "risk_manager"
+          ],
+          "title": "AgentName",
+          "type": "string"
+        },
+        "ArtifactRef": {
+          "additionalProperties": false,
+          "description": "Exact external identity; a reference is not a verification receipt.",
+          "properties": {
+            "artifact_id": {
+              "minLength": 1,
+              "pattern": "\\S",
+              "title": "Artifact Id",
+              "type": "string"
+            },
+            "available_at": {
+              "format": "date-time",
+              "title": "Available At",
+              "type": "string"
+            },
+            "ingested_at": {
+              "format": "date-time",
+              "title": "Ingested At",
+              "type": "string"
+            },
+            "observed_at": {
+              "format": "date-time",
+              "title": "Observed At",
+              "type": "string"
+            },
+            "owner": {
+              "minLength": 1,
+              "pattern": "\\S",
+              "title": "Owner",
+              "type": "string"
+            },
+            "sha256_digest": {
+              "pattern": "^[0-9a-f]{64}$",
+              "title": "Sha256 Digest",
+              "type": "string"
+            },
+            "version": {
+              "minLength": 1,
+              "pattern": "\\S",
+              "title": "Version",
+              "type": "string"
+            }
+          },
+          "required": [
+            "artifact_id",
+            "sha256_digest",
+            "version",
+            "owner",
+            "available_at",
+            "observed_at",
+            "ingested_at"
+          ],
+          "title": "ArtifactRef",
+          "type": "object"
+        },
+        "ResearchScopeType": {
+          "description": "Types in the unified hierarchical research scope.",
+          "enum": [
+            "global",
+            "macro",
+            "sector",
+            "industry_chain",
+            "asset",
+            "research_episode"
+          ],
+          "title": "ResearchScopeType",
+          "type": "string"
+        },
+        "Scope": {
+          "additionalProperties": false,
+          "description": "Existing Phase4 Scope identity, orthogonal to L0–L4.",
+          "properties": {
+            "scope_id": {
+              "minLength": 1,
+              "pattern": "\\S",
+              "title": "Scope Id",
+              "type": "string"
+            },
+            "scope_type": {
+              "$ref": "#/$defs/ResearchScopeType"
+            }
+          },
+          "required": [
+            "scope_type",
+            "scope_id"
+          ],
+          "title": "Scope",
+          "type": "object"
+        }
+      },
+      "additionalProperties": false,
+      "description": "Proposal for existing MemoryWriteRequest; never an accepted fact/write.",
+      "properties": {
+        "action": {
+          "enum": [
+            "READ_HISTORY",
+            "CITE_VALIDATED_FACT",
+            "PROPOSE_HYPOTHESIS",
+            "APPEND_EVENT",
+            "UPDATE_WORKING_STATE",
+            "REVIEW_FINAL_STATE",
+            "RECORD_OUTCOME"
+          ],
+          "title": "Action",
+          "type": "string"
+        },
+        "agent_role": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AgentName"
+            },
+            {
+              "enum": [
+                "trader",
+                "coordinator",
+                "outcome_recorder"
+              ],
+              "type": "string"
+            }
+          ],
+          "title": "Agent Role"
+        },
+        "agent_run_id": {
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Agent Run Id",
+          "type": "string"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "mode": {
+          "const": "DEVELOPMENT_ONLY_OPT_IN",
+          "default": "DEVELOPMENT_ONLY_OPT_IN",
+          "title": "Mode",
+          "type": "string"
+        },
+        "owner": {
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Owner",
+          "type": "string"
+        },
+        "payload": {
+          "$ref": "#/$defs/ArtifactRef"
+        },
+        "read_set": {
+          "$ref": "#/$defs/ArtifactRef"
+        },
+        "record_id": {
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "enum": [
+            "FACT",
+            "INFERENCE",
+            "HYPOTHESIS",
+            "RESEARCH_QUESTION",
+            "TRADE_PROPOSAL",
+            "OUTCOME"
+          ],
+          "title": "Record Kind",
+          "type": "string"
+        },
+        "research_as_of": {
+          "format": "date-time",
+          "title": "Research As Of",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": "memory_write_proposal_v1",
+          "default": "memory_write_proposal_v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "scope": {
+          "$ref": "#/$defs/Scope"
+        },
+        "source_refs": {
+          "items": {
+            "$ref": "#/$defs/ArtifactRef"
+          },
+          "minItems": 1,
+          "title": "Source Refs",
+          "type": "array"
+        },
+        "status": {
+          "const": "PENDING_EXISTING_VALIDATION",
+          "default": "PENDING_EXISTING_VALIDATION",
+          "title": "Status",
+          "type": "string"
+        },
+        "supersedes": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ArtifactRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "owner",
+        "record_id",
+        "revision",
+        "created_at",
+        "research_as_of",
+        "scope",
+        "source_refs",
+        "agent_role",
+        "agent_run_id",
+        "action",
+        "record_kind",
+        "payload",
+        "read_set"
+      ],
+      "title": "MemoryWriteProposal",
+      "type": "object"
+    },
+    "ResearchImpactPlan": {
+      "$defs": {
+        "AgentName": {
+          "description": "Phase One analyst and manager agent names.",
+          "enum": [
+            "fundamental_analyst",
+            "technical_text_analyst",
+            "sentiment_analyst",
+            "news_event_analyst",
+            "research_manager",
+            "bull_manager",
+            "bear_manager",
+            "risk_manager"
+          ],
+          "title": "AgentName",
+          "type": "string"
+        },
+        "ArtifactRef": {
+          "additionalProperties": false,
+          "description": "Exact external identity; a reference is not a verification receipt.",
+          "properties": {
+            "artifact_id": {
+              "minLength": 1,
+              "pattern": "\\S",
+              "title": "Artifact Id",
+              "type": "string"
+            },
+            "available_at": {
+              "format": "date-time",
+              "title": "Available At",
+              "type": "string"
+            },
+            "ingested_at": {
+              "format": "date-time",
+              "title": "Ingested At",
+              "type": "string"
+            },
+            "observed_at": {
+              "format": "date-time",
+              "title": "Observed At",
+              "type": "string"
+            },
+            "owner": {
+              "minLength": 1,
+              "pattern": "\\S",
+              "title": "Owner",
+              "type": "string"
+            },
+            "sha256_digest": {
+              "pattern": "^[0-9a-f]{64}$",
+              "title": "Sha256 Digest",
+              "type": "string"
+            },
+            "version": {
+              "minLength": 1,
+              "pattern": "\\S",
+              "title": "Version",
+              "type": "string"
+            }
+          },
+          "required": [
+            "artifact_id",
+            "sha256_digest",
+            "version",
+            "owner",
+            "available_at",
+            "observed_at",
+            "ingested_at"
+          ],
+          "title": "ArtifactRef",
+          "type": "object"
+        },
+        "ResearchScopeType": {
+          "description": "Types in the unified hierarchical research scope.",
+          "enum": [
+            "global",
+            "macro",
+            "sector",
+            "industry_chain",
+            "asset",
+            "research_episode"
+          ],
+          "title": "ResearchScopeType",
+          "type": "string"
+        },
+        "Scope": {
+          "additionalProperties": false,
+          "description": "Existing Phase4 Scope identity, orthogonal to L0–L4.",
+          "properties": {
+            "scope_id": {
+              "minLength": 1,
+              "pattern": "\\S",
+              "title": "Scope Id",
+              "type": "string"
+            },
+            "scope_type": {
+              "$ref": "#/$defs/ResearchScopeType"
+            }
+          },
+          "required": [
+            "scope_type",
+            "scope_id"
+          ],
+          "title": "Scope",
+          "type": "object"
+        }
+      },
+      "additionalProperties": false,
+      "description": "Deterministic dependency closure; not a dispatch or publication grant.",
+      "properties": {
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "delta_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Delta Sha256",
+          "type": "string"
+        },
+        "direct_roles": {
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/AgentName"
+              },
+              {
+                "enum": [
+                  "trader",
+                  "coordinator",
+                  "outcome_recorder"
+                ],
+                "type": "string"
+              }
+            ]
+          },
+          "title": "Direct Roles",
+          "type": "array"
+        },
+        "disposition": {
+          "enum": [
+            "SELECTIVE_EXECUTION",
+            "REUSE",
+            "BLOCKED_REUSE",
+            "BLOCKED_MANDATE"
+          ],
+          "title": "Disposition",
+          "type": "string"
+        },
+        "execution_stages": {
+          "items": {
+            "items": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/AgentName"
+                },
+                {
+                  "enum": [
+                    "trader",
+                    "coordinator",
+                    "outcome_recorder"
+                  ],
+                  "type": "string"
+                }
+              ]
+            },
+            "type": "array"
+          },
+          "title": "Execution Stages",
+          "type": "array"
+        },
+        "mandate_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Mandate Sha256",
+          "type": "string"
+        },
+        "mode": {
+          "const": "DEVELOPMENT_ONLY_OPT_IN",
+          "default": "DEVELOPMENT_ONLY_OPT_IN",
+          "title": "Mode",
+          "type": "string"
+        },
+        "owner": {
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Owner",
+          "type": "string"
+        },
+        "policy_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Policy Sha256",
+          "type": "string"
+        },
+        "reason": {
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Reason",
+          "type": "string"
+        },
+        "record_id": {
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "research_as_of": {
+          "format": "date-time",
+          "title": "Research As Of",
+          "type": "string"
+        },
+        "reusable_state": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ArtifactRef"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": "research_impact_plan_v1",
+          "default": "research_impact_plan_v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "scope": {
+          "$ref": "#/$defs/Scope"
+        },
+        "source_refs": {
+          "items": {
+            "$ref": "#/$defs/ArtifactRef"
+          },
+          "minItems": 1,
+          "title": "Source Refs",
+          "type": "array"
+        },
+        "supersedes": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ArtifactRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "owner",
+        "record_id",
+        "revision",
+        "created_at",
+        "research_as_of",
+        "scope",
+        "source_refs",
+        "delta_sha256",
+        "mandate_sha256",
+        "policy_sha256",
+        "direct_roles",
+        "execution_stages",
+        "reusable_state",
+        "disposition",
+        "reason"
+      ],
+      "title": "ResearchImpactPlan",
+      "type": "object"
+    },
+    "ResearchMandate": {
+      "$defs": {
+        "AgentName": {
+          "description": "Phase One analyst and manager agent names.",
+          "enum": [
+            "fundamental_analyst",
+            "technical_text_analyst",
+            "sentiment_analyst",
+            "news_event_analyst",
+            "research_manager",
+            "bull_manager",
+            "bear_manager",
+            "risk_manager"
+          ],
+          "title": "AgentName",
+          "type": "string"
+        },
+        "ArtifactRef": {
+          "additionalProperties": false,
+          "description": "Exact external identity; a reference is not a verification receipt.",
+          "properties": {
+            "artifact_id": {
+              "minLength": 1,
+              "pattern": "\\S",
+              "title": "Artifact Id",
+              "type": "string"
+            },
+            "available_at": {
+              "format": "date-time",
+              "title": "Available At",
+              "type": "string"
+            },
+            "ingested_at": {
+              "format": "date-time",
+              "title": "Ingested At",
+              "type": "string"
+            },
+            "observed_at": {
+              "format": "date-time",
+              "title": "Observed At",
+              "type": "string"
+            },
+            "owner": {
+              "minLength": 1,
+              "pattern": "\\S",
+              "title": "Owner",
+              "type": "string"
+            },
+            "sha256_digest": {
+              "pattern": "^[0-9a-f]{64}$",
+              "title": "Sha256 Digest",
+              "type": "string"
+            },
+            "version": {
+              "minLength": 1,
+              "pattern": "\\S",
+              "title": "Version",
+              "type": "string"
+            }
+          },
+          "required": [
+            "artifact_id",
+            "sha256_digest",
+            "version",
+            "owner",
+            "available_at",
+            "observed_at",
+            "ingested_at"
+          ],
+          "title": "ArtifactRef",
+          "type": "object"
+        },
+        "ResearchScopeType": {
+          "description": "Types in the unified hierarchical research scope.",
+          "enum": [
+            "global",
+            "macro",
+            "sector",
+            "industry_chain",
+            "asset",
+            "research_episode"
+          ],
+          "title": "ResearchScopeType",
+          "type": "string"
+        },
+        "Scope": {
+          "additionalProperties": false,
+          "description": "Existing Phase4 Scope identity, orthogonal to L0–L4.",
+          "properties": {
+            "scope_id": {
+              "minLength": 1,
+              "pattern": "\\S",
+              "title": "Scope Id",
+              "type": "string"
+            },
+            "scope_type": {
+              "$ref": "#/$defs/ResearchScopeType"
+            }
+          },
+          "required": [
+            "scope_type",
+            "scope_id"
+          ],
+          "title": "Scope",
+          "type": "object"
+        }
+      },
+      "additionalProperties": false,
+      "description": "Research-only selection record; runtime must resolve actual authority.",
+      "properties": {
+        "allowed_roles": {
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/AgentName"
+              },
+              {
+                "enum": [
+                  "trader",
+                  "coordinator",
+                  "outcome_recorder"
+                ],
+                "type": "string"
+              }
+            ]
+          },
+          "minItems": 1,
+          "title": "Allowed Roles",
+          "type": "array"
+        },
+        "allowed_scopes": {
+          "items": {
+            "$ref": "#/$defs/Scope"
+          },
+          "minItems": 1,
+          "title": "Allowed Scopes",
+          "type": "array"
+        },
+        "authority": {
+          "const": "RESEARCH_ONLY",
+          "default": "RESEARCH_ONLY",
+          "title": "Authority",
+          "type": "string"
+        },
+        "authorization": {
+          "$ref": "#/$defs/ArtifactRef"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "expires_at": {
+          "format": "date-time",
+          "title": "Expires At",
+          "type": "string"
+        },
+        "mode": {
+          "const": "DEVELOPMENT_ONLY_OPT_IN",
+          "default": "DEVELOPMENT_ONLY_OPT_IN",
+          "title": "Mode",
+          "type": "string"
+        },
+        "opportunity": {
+          "$ref": "#/$defs/ArtifactRef"
+        },
+        "owner": {
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Owner",
+          "type": "string"
+        },
+        "record_id": {
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "research_as_of": {
+          "format": "date-time",
+          "title": "Research As Of",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": "research_mandate_v1",
+          "default": "research_mandate_v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "scope": {
+          "$ref": "#/$defs/Scope"
+        },
+        "selection": {
+          "enum": [
+            "HUMAN_SELECTION",
+            "PREAUTHORIZED_MANDATE"
+          ],
+          "title": "Selection",
+          "type": "string"
+        },
+        "source_refs": {
+          "items": {
+            "$ref": "#/$defs/ArtifactRef"
+          },
+          "minItems": 1,
+          "title": "Source Refs",
+          "type": "array"
+        },
+        "supersedes": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ArtifactRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "owner",
+        "record_id",
+        "revision",
+        "created_at",
+        "research_as_of",
+        "scope",
+        "source_refs",
+        "opportunity",
+        "authorization",
+        "selection",
+        "allowed_scopes",
+        "allowed_roles",
+        "expires_at"
+      ],
+      "title": "ResearchMandate",
+      "type": "object"
+    },
+    "ResearchReviewDecision": {
+      "$defs": {
+        "ArtifactRef": {
+          "additionalProperties": false,
+          "description": "Exact external identity; a reference is not a verification receipt.",
+          "properties": {
+            "artifact_id": {
+              "minLength": 1,
+              "pattern": "\\S",
+              "title": "Artifact Id",
+              "type": "string"
+            },
+            "available_at": {
+              "format": "date-time",
+              "title": "Available At",
+              "type": "string"
+            },
+            "ingested_at": {
+              "format": "date-time",
+              "title": "Ingested At",
+              "type": "string"
+            },
+            "observed_at": {
+              "format": "date-time",
+              "title": "Observed At",
+              "type": "string"
+            },
+            "owner": {
+              "minLength": 1,
+              "pattern": "\\S",
+              "title": "Owner",
+              "type": "string"
+            },
+            "sha256_digest": {
+              "pattern": "^[0-9a-f]{64}$",
+              "title": "Sha256 Digest",
+              "type": "string"
+            },
+            "version": {
+              "minLength": 1,
+              "pattern": "\\S",
+              "title": "Version",
+              "type": "string"
+            }
+          },
+          "required": [
+            "artifact_id",
+            "sha256_digest",
+            "version",
+            "owner",
+            "available_at",
+            "observed_at",
+            "ingested_at"
+          ],
+          "title": "ArtifactRef",
+          "type": "object"
+        },
+        "ResearchScopeType": {
+          "description": "Types in the unified hierarchical research scope.",
+          "enum": [
+            "global",
+            "macro",
+            "sector",
+            "industry_chain",
+            "asset",
+            "research_episode"
+          ],
+          "title": "ResearchScopeType",
+          "type": "string"
+        },
+        "Scope": {
+          "additionalProperties": false,
+          "description": "Existing Phase4 Scope identity, orthogonal to L0–L4.",
+          "properties": {
+            "scope_id": {
+              "minLength": 1,
+              "pattern": "\\S",
+              "title": "Scope Id",
+              "type": "string"
+            },
+            "scope_type": {
+              "$ref": "#/$defs/ResearchScopeType"
+            }
+          },
+          "required": [
+            "scope_type",
+            "scope_id"
+          ],
+          "title": "Scope",
+          "type": "object"
+        }
+      },
+      "additionalProperties": false,
+      "description": "Final research-only review; existing State builders still own admission.",
+      "properties": {
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "decision": {
+          "enum": [
+            "APPROVE_RESEARCH",
+            "REVISE",
+            "REJECT",
+            "ABSTAIN"
+          ],
+          "title": "Decision",
+          "type": "string"
+        },
+        "execution_authorized": {
+          "const": false,
+          "default": false,
+          "title": "Execution Authorized",
+          "type": "boolean"
+        },
+        "mode": {
+          "const": "DEVELOPMENT_ONLY_OPT_IN",
+          "default": "DEVELOPMENT_ONLY_OPT_IN",
+          "title": "Mode",
+          "type": "string"
+        },
+        "owner": {
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Owner",
+          "type": "string"
+        },
+        "production_admission": {
+          "const": false,
+          "default": false,
+          "title": "Production Admission",
+          "type": "boolean"
+        },
+        "proposal": {
+          "$ref": "#/$defs/ArtifactRef"
+        },
+        "reasons": {
+          "items": {
+            "minLength": 1,
+            "pattern": "\\S",
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Reasons",
+          "type": "array"
+        },
+        "record_id": {
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "research_as_of": {
+          "format": "date-time",
+          "title": "Research As Of",
+          "type": "string"
+        },
+        "reviewer_role": {
+          "const": "research_manager",
+          "default": "research_manager",
+          "title": "Reviewer Role",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": "research_review_decision_v1",
+          "default": "research_review_decision_v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "scope": {
+          "$ref": "#/$defs/Scope"
+        },
+        "source_refs": {
+          "items": {
+            "$ref": "#/$defs/ArtifactRef"
+          },
+          "minItems": 1,
+          "title": "Source Refs",
+          "type": "array"
+        },
+        "supersedes": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ArtifactRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "working_state": {
+          "$ref": "#/$defs/ArtifactRef"
+        }
+      },
+      "required": [
+        "owner",
+        "record_id",
+        "revision",
+        "created_at",
+        "research_as_of",
+        "scope",
+        "source_refs",
+        "proposal",
+        "working_state",
+        "decision",
+        "reasons"
+      ],
+      "title": "ResearchReviewDecision",
+      "type": "object"
+    },
+    "ReuseQualification": {
+      "$defs": {
+        "ArtifactRef": {
+          "additionalProperties": false,
+          "description": "Exact external identity; a reference is not a verification receipt.",
+          "properties": {
+            "artifact_id": {
+              "minLength": 1,
+              "pattern": "\\S",
+              "title": "Artifact Id",
+              "type": "string"
+            },
+            "available_at": {
+              "format": "date-time",
+              "title": "Available At",
+              "type": "string"
+            },
+            "ingested_at": {
+              "format": "date-time",
+              "title": "Ingested At",
+              "type": "string"
+            },
+            "observed_at": {
+              "format": "date-time",
+              "title": "Observed At",
+              "type": "string"
+            },
+            "owner": {
+              "minLength": 1,
+              "pattern": "\\S",
+              "title": "Owner",
+              "type": "string"
+            },
+            "sha256_digest": {
+              "pattern": "^[0-9a-f]{64}$",
+              "title": "Sha256 Digest",
+              "type": "string"
+            },
+            "version": {
+              "minLength": 1,
+              "pattern": "\\S",
+              "title": "Version",
+              "type": "string"
+            }
+          },
+          "required": [
+            "artifact_id",
+            "sha256_digest",
+            "version",
+            "owner",
+            "available_at",
+            "observed_at",
+            "ingested_at"
+          ],
+          "title": "ArtifactRef",
+          "type": "object"
+        }
+      },
+      "additionalProperties": false,
+      "description": "Exact resolver comparisons; completeness remains the resolver's duty.",
+      "properties": {
+        "current_dependencies": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Current Dependencies",
+          "type": "string"
+        },
+        "current_source_policy": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Current Source Policy",
+          "type": "string"
+        },
+        "current_strategy": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Current Strategy",
+          "type": "string"
+        },
+        "previous_dependencies": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Previous Dependencies",
+          "type": "string"
+        },
+        "previous_source_policy": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Previous Source Policy",
+          "type": "string"
+        },
+        "previous_strategy": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Previous Strategy",
+          "type": "string"
+        },
+        "state": {
+          "$ref": "#/$defs/ArtifactRef"
+        },
+        "valid_until": {
+          "format": "date-time",
+          "title": "Valid Until",
+          "type": "string"
+        }
+      },
+      "required": [
+        "state",
+        "previous_dependencies",
+        "current_dependencies",
+        "previous_source_policy",
+        "current_source_policy",
+        "previous_strategy",
+        "current_strategy",
+        "valid_until"
+      ],
+      "title": "ReuseQualification",
+      "type": "object"
+    },
+    "TradeProposal": {
+      "$defs": {
+        "ArtifactRef": {
+          "additionalProperties": false,
+          "description": "Exact external identity; a reference is not a verification receipt.",
+          "properties": {
+            "artifact_id": {
+              "minLength": 1,
+              "pattern": "\\S",
+              "title": "Artifact Id",
+              "type": "string"
+            },
+            "available_at": {
+              "format": "date-time",
+              "title": "Available At",
+              "type": "string"
+            },
+            "ingested_at": {
+              "format": "date-time",
+              "title": "Ingested At",
+              "type": "string"
+            },
+            "observed_at": {
+              "format": "date-time",
+              "title": "Observed At",
+              "type": "string"
+            },
+            "owner": {
+              "minLength": 1,
+              "pattern": "\\S",
+              "title": "Owner",
+              "type": "string"
+            },
+            "sha256_digest": {
+              "pattern": "^[0-9a-f]{64}$",
+              "title": "Sha256 Digest",
+              "type": "string"
+            },
+            "version": {
+              "minLength": 1,
+              "pattern": "\\S",
+              "title": "Version",
+              "type": "string"
+            }
+          },
+          "required": [
+            "artifact_id",
+            "sha256_digest",
+            "version",
+            "owner",
+            "available_at",
+            "observed_at",
+            "ingested_at"
+          ],
+          "title": "ArtifactRef",
+          "type": "object"
+        },
+        "ResearchScopeType": {
+          "description": "Types in the unified hierarchical research scope.",
+          "enum": [
+            "global",
+            "macro",
+            "sector",
+            "industry_chain",
+            "asset",
+            "research_episode"
+          ],
+          "title": "ResearchScopeType",
+          "type": "string"
+        },
+        "Scope": {
+          "additionalProperties": false,
+          "description": "Existing Phase4 Scope identity, orthogonal to L0–L4.",
+          "properties": {
+            "scope_id": {
+              "minLength": 1,
+              "pattern": "\\S",
+              "title": "Scope Id",
+              "type": "string"
+            },
+            "scope_type": {
+              "$ref": "#/$defs/ResearchScopeType"
+            }
+          },
+          "required": [
+            "scope_type",
+            "scope_id"
+          ],
+          "title": "Scope",
+          "type": "object"
+        }
+      },
+      "additionalProperties": false,
+      "description": "Non-executable thesis/risk/counterevidence submitted by logical Trader.",
+      "properties": {
+        "author_role": {
+          "const": "trader",
+          "default": "trader",
+          "title": "Author Role",
+          "type": "string"
+        },
+        "authority": {
+          "const": "NON_EXECUTABLE_RESEARCH",
+          "default": "NON_EXECUTABLE_RESEARCH",
+          "title": "Authority",
+          "type": "string"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "invalidation_conditions": {
+          "items": {
+            "minLength": 1,
+            "pattern": "\\S",
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Invalidation Conditions",
+          "type": "array"
+        },
+        "mandate_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Mandate Sha256",
+          "type": "string"
+        },
+        "mode": {
+          "const": "DEVELOPMENT_ONLY_OPT_IN",
+          "default": "DEVELOPMENT_ONLY_OPT_IN",
+          "title": "Mode",
+          "type": "string"
+        },
+        "owner": {
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Owner",
+          "type": "string"
+        },
+        "record_id": {
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "research_as_of": {
+          "format": "date-time",
+          "title": "Research As Of",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "risk_review": {
+          "$ref": "#/$defs/ArtifactRef"
+        },
+        "schema_version": {
+          "const": "trade_proposal_v1",
+          "default": "trade_proposal_v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "scope": {
+          "$ref": "#/$defs/Scope"
+        },
+        "source_refs": {
+          "items": {
+            "$ref": "#/$defs/ArtifactRef"
+          },
+          "minItems": 1,
+          "title": "Source Refs",
+          "type": "array"
+        },
+        "supersedes": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ArtifactRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "thesis": {
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Thesis",
+          "type": "string"
+        }
+      },
+      "required": [
+        "owner",
+        "record_id",
+        "revision",
+        "created_at",
+        "research_as_of",
+        "scope",
+        "source_refs",
+        "mandate_sha256",
+        "thesis",
+        "invalidation_conditions",
+        "risk_review"
+      ],
+      "title": "TradeProposal",
+      "type": "object"
+    }
+  },
+  "scope_types": [
+    "global",
+    "macro",
+    "sector",
+    "industry_chain",
+    "asset",
+    "research_episode"
+  ],
+  "status": "DEVELOPMENT_ONLY_OPT_IN"
+}
